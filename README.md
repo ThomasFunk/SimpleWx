@@ -1,8 +1,6 @@
 SimpleWx version 0.1.0
 =======================
 
-!!!!! This is a work in progress! Currently not usable because all is untested. The complete functionality of SimpleGtk2 is integrated plus missing WxWidget widgets with the help of GitHub Copilot (Auto). If all is tested this note will disappear ^^ !!!!!
-
 SimpleWx is a Python wrapper around wxPython (the Python binding for wxWidgets)
 to support RAD (Rapid Application Development).
 
@@ -13,17 +11,24 @@ top of Python and the wx toolkit (wxPython).
 Most commonly used widgets are already implemented with convenience functions.
 At the same time, you can still use native wxPython functionality directly.
 
+<center><span style="color:red"><strong>This is a work in progress!</strong></span></center>
+
+<center><span style="color:red"><strong>Currently not usable because all is untested.</strong></span></center>
+
+<center><span style="color:red"><strong>The complete functionality of SimpleGtk2 is integrated plus missing WxWidget widgets with the help of GitHub Copilot (Auto).</strong></span></center>
+
+<center><span style="color:red"><strong>If all is tested this note will disappear ^^</strong></span></center>
 
 Implemented widgets (current status)
 ------------------------------------
 
-Windows
+**Windows**
 - Window
 - MessageDialog (normal + simple/one-shot)
 - Dialog (normal)
 - AboutDialog (normal)
 
-Display Widgets
+**Display Widgets**
 - Image
 - Label
 - Statusbar
@@ -31,7 +36,7 @@ Display Widgets
 - ProgressBar
 - StatusIcon (perhaps)
 
-Buttons and Toggles
+**Buttons and Toggles**
 - Button
 - CheckButton
 - RadioButton
@@ -39,28 +44,28 @@ Buttons and Toggles
 - FontButton
 - FileChooserButton
 
-Numeric/Text Data Entry
+**Numeric/Text Data Entry**
 - TextEntry
 - ComboBox
 - Slider
 - SpinButton
 
-Multiline Text Editor
+**Multiline Text Editor**
 - TextView (Plain + RichTextCtrl via Rich=1)
 
-Tree, List and Icon Grid Widgets
+**Tree, List and Icon Grid Widgets**
 - TreeView
 - ListView
 - Grid (Sorting + Editing)
 - DataViewCtrl (Sorting + Editing)
 
-Menus and Toolbar
+**Menus and Toolbar**
 - MenuBar
 - Menu
 - MenuItem
 - Toolbar
 
-Selectors (File/Font/Color)
+**Selectors (File/Font/Color)**
 - FileChooserDialog (normal + simple/one-shot)
 - DirPickerCtrl
 - DatePickerCtrl
@@ -68,22 +73,22 @@ Selectors (File/Font/Color)
 - FontSelectionDialog (normal + simple/one-shot)
 - ColorSelectionDialog (normal + simple/one-shot)
 
-Layout Containers
+**ayout Containers**
 - Notebook (Close-Tabs, Images, Events)
 - NotebookPage
 - SplitterWindow
 - Frame
 - Separator
 
-Scrolling
+**Scrolling**
 - Scrollbar
 
-Printing
+**Printing**
 - PrintDialog (normal + simple/one-shot)
 - PageSetupDialog (normal + simple/one-shot)
 - PrintPreview + Printer + Printout
 
-Miscellaneous
+**Miscellaneous**
 - Tooltip
 
 
@@ -113,37 +118,35 @@ Minimal Hello-World example with SimpleWx (Python):
 
     win.show_and_run()
 
-Notebook extensions (close tabs, images, events) are shown in
-examples/notebook_extensions.py.
-
-DirPickerCtrl (directory selection) is shown in
-examples/dirpicker_ctrl.py.
-
-TextView with RichTextCtrl is shown in
-examples/textview_richtext.py.
-
-The print pipeline (PrintPreview + Printer + Printout) is shown in
-examples/print_pipeline.py.
-
-The print pipeline with header/footer templates is shown in
-examples/print_pipeline_template.py.
-
-SplitterWindow (2 panes, draggable split, collapse/expand) is shown in
-examples/splitter_basic.py.
-
 Basic examples for a quick start:
-- Windows:              examples/windows_basic.py
-- Buttons & Toggles:    examples/buttons_toggles_basic.py
-- Numeric/Text Entries: examples/numeric_text_entries_basic.py
-- TreeView:             examples/treeview_basic.py
-- ListView:             examples/listview_basic.py
-
-Localization (`use_gettext` + `translate`) is shown in
-    examples/i18n_basic.py.
-A German translation is provided in
-  locale/de/LC_MESSAGES/simplewx_demo.po.
-The compiled runtime file is
-  locale/de/LC_MESSAGES/simplewx_demo.mo.
+- **Windows:**
+  - examples/windows_basic.py
+- **Buttons & Toggles:**
+  - examples/buttons_toggles_basic.py
+- **Numeric/Text Entries:**
+  - examples/numeric_text_entries_basic.py
+- **TreeView:**
+  - examples/treeview_basic.py
+- **ListView:**
+  - examples/listview_basic.py
+- **TextView with RichTextCtrl:**
+  - examples/textview_richtext.py
+- **SplitterWindow (2 panes, draggable split, collapse/expand):**
+  - examples/splitter_basic.py
+- **Notebook + extensions  (close tabs, images, events):**
+  - examples/notebook_extensions.py
+- **DirPickerCtrl (directory selection):**
+  - examples/dirpicker_ctrl.py
+- **print pipeline  (PrintPreview + Printer + Printout):**
+  - examples/print_pipeline.py
+- **print pipeline with header/footer templates:**
+  - examples/print_pipeline_template.py
+- **Localization (gettext):**
+  - examples/i18n_basic.py.
+  - German translation:
+    - locale/de/LC_MESSAGES/simplewx_demo.po.
+  - Compiled runtime file: 
+    - locale/de/LC_MESSAGES/simplewx_demo.mo.
 
 You can rebuild it with:
 
