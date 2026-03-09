@@ -1,10 +1,7 @@
 SimpleWx version 0.1.0
 =======================
 
-!!!!! This is a work in progress! Currently not usable because all is untested. !!!!!
-!!!!! the complete functionality of SimpleGtk2 is integrated plus missing       !!!!!
-!!!!! WxWidget widgets with the help of Github Copilot (Auto).                  !!!!!
-!!!!!            If all is tested this note will disapear ^^                    !!!!!
+!!!!! This is a work in progress! Currently not usable because all is untested. The complete functionality of SimpleGtk2 is integrated plus missing WxWidget widgets with the help of GitHub Copilot (Auto). If all is tested this note will disappear ^^ !!!!!
 
 SimpleWx is a Python wrapper around wxPython (the Python binding for wxWidgets)
 to support RAD (Rapid Application Development).
@@ -21,73 +18,73 @@ Implemented widgets (current status)
 ------------------------------------
 
 Windows
-    - Window
-    - MessageDialog (normal + simple/one-shot)
-    - Dialog (normal)
-    - AboutDialog (normal)
+- Window
+- MessageDialog (normal + simple/one-shot)
+- Dialog (normal)
+- AboutDialog (normal)
 
 Display Widgets
-    - Image
-    - Label
-    - Statusbar
-    - DrawingArea
-    - ProgressBar
-    - StatusIcon (perhaps)
+- Image
+- Label
+- Statusbar
+- DrawingArea
+- ProgressBar
+- StatusIcon (perhaps)
 
 Buttons and Toggles
-    - Button
-    - CheckButton
-    - RadioButton
-    - LinkButton
-    - FontButton
-    - FileChooserButton
+- Button
+- CheckButton
+- RadioButton
+- LinkButton
+- FontButton
+- FileChooserButton
 
 Numeric/Text Data Entry
-    - TextEntry
-    - ComboBox
-    - Slider
-    - SpinButton
+- TextEntry
+- ComboBox
+- Slider
+- SpinButton
 
 Multiline Text Editor
-    - TextView (Plain + RichTextCtrl via Rich=1)
+- TextView (Plain + RichTextCtrl via Rich=1)
 
 Tree, List and Icon Grid Widgets
-    - TreeView
-    - ListView
-    - Grid (Sorting + Editing)
-    - DataViewCtrl (Sorting + Editing)
+- TreeView
+- ListView
+- Grid (Sorting + Editing)
+- DataViewCtrl (Sorting + Editing)
 
 Menus and Toolbar
-    - MenuBar
-    - Menu
-    - MenuItem
-    - Toolbar
+- MenuBar
+- Menu
+- MenuItem
+- Toolbar
 
 Selectors (File/Font/Color)
-    - FileChooserDialog (normal + simple/one-shot)
-    - DirPickerCtrl
-    - DatePickerCtrl
-    - TimePickerCtrl
-    - FontSelectionDialog (normal + simple/one-shot)
-    - ColorSelectionDialog (normal + simple/one-shot)
+- FileChooserDialog (normal + simple/one-shot)
+- DirPickerCtrl
+- DatePickerCtrl
+- TimePickerCtrl
+- FontSelectionDialog (normal + simple/one-shot)
+- ColorSelectionDialog (normal + simple/one-shot)
 
 Layout Containers
-    - Notebook (Close-Tabs, Images, Events)
-    - NotebookPage
-    - SplitterWindow
-    - Frame
-    - Separator
+- Notebook (Close-Tabs, Images, Events)
+- NotebookPage
+- SplitterWindow
+- Frame
+- Separator
 
 Scrolling
-    - Scrollbar
+- Scrollbar
 
 Printing
-    - PrintDialog (normal + simple/one-shot)
-    - PageSetupDialog (normal + simple/one-shot)
-    - PrintPreview + Printer + Printout
+- PrintDialog (normal + simple/one-shot)
+- PageSetupDialog (normal + simple/one-shot)
+- PrintPreview + Printer + Printout
 
 Miscellaneous
-    - Tooltip
+- Tooltip
 
 
 EXAMPLES

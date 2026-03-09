@@ -83,6 +83,7 @@ The format is based on Keep a Changelog.
 - Translated README example/i18n sections to English.
 - Added i18n usage notes in README for `.po`/`.mo`, `msgfmt`, and running with `LANGUAGE=de_DE`.
 - Replaced absolute project paths in README commands with project-root relative paths.
+- Fixed README markdown list formatting for the "Implemented widgets" section so GitHub renders category items as proper bullet lists (not collapsed inline text).
 
 ### Removed
 
