@@ -1,0 +1,41 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: Aktuelles File debuggen (SimpleWx)",
+            "type": "debugpy",
+            "request": "launch",
+            "python": "${workspaceFolder}/venv/bin/python",
+            "program": "${file}",
+            "cwd": "${workspaceFolder}",
+            "args": [],
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "redirectOutput": false,
+            "justMyCode": true,
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}:${env:PYTHONPATH}"
+            }
+        },
+        {
+            "name": "Python: Aktuelles File debuggen (Wayland)",
+            "type": "debugpy",
+            "request": "launch",
+            "python": "${workspaceFolder}/venv/bin/python",
+            "program": "${file}",
+            "cwd": "${workspaceFolder}",
+            "args": [],
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "redirectOutput": false,
+            "justMyCode": true,
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}:${env:PYTHONPATH}",
+                "WAYLAND_DISPLAY": "wayland-1"
+            }
+        }
+    ]
+}
