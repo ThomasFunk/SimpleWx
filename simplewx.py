@@ -8654,6 +8654,7 @@ class SimpleWx:
             "popup": popup,
             "closetabs": closetabs,
             "pages": [],
+            "tab_tooltips": [],
             "lastclosed": None,
             "imagesize": 16,
             "image_index_map": {},
@@ -8699,8 +8700,33 @@ class SimpleWx:
             else:
                 event.Skip()
 
+        def _on_notebook_mouse_move(event: wx.MouseEvent, notebook_name: str = object_entry.name) -> None:
+            notebook_obj = self.get_object(notebook_name)
+            notebook_ref = notebook_obj.ref
+            if notebook_ref is None or not hasattr(notebook_ref, "HitTest"):
+                event.Skip()
+                return
+
+            page_idx, _flags = notebook_ref.HitTest(event.GetPosition())
+            notebook_data = notebook_obj.data if isinstance(notebook_obj.data, dict) else {}
+            tooltip_values = notebook_data.get("tab_tooltips") if isinstance(notebook_data.get("tab_tooltips"), list) else []
+
+            tip_text = ""
+            if int(page_idx) >= 0 and int(page_idx) < len(tooltip_values):
+                tip_text = str(tooltip_values[int(page_idx)] or "")
+
+            current_tip = notebook_ref.GetToolTipText() if hasattr(notebook_ref, "GetToolTipText") else ""
+            if tip_text:
+                if current_tip != tip_text:
+                    notebook_ref.SetToolTip(tip_text)
+            elif hasattr(notebook_ref, "UnsetToolTip"):
+                notebook_ref.UnsetToolTip()
+
+            event.Skip()
+
         notebook.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, _on_notebook_page_changed)
         notebook.Bind(wx.EVT_MIDDLE_DOWN, _on_notebook_middle_click)
+        notebook.Bind(wx.EVT_MOTION, _on_notebook_mouse_move)
 
         self._set_commons(object_entry.name, **params)
         self._add_to_container(object_entry.name)
@@ -8783,6 +8809,7 @@ class SimpleWx:
         object_entry.data = {
             "notebook": Notebook,
             "image": str(Image).strip() if Image is not None and str(Image).strip() else None,
+            "tooltip": str(Tooltip).strip() if Tooltip is not None and str(Tooltip).strip() else "",
         }
         self.containers[object_entry.name] = page_panel
 
@@ -8809,11 +8836,16 @@ class SimpleWx:
 
         notebook_data = notebook_object.data if isinstance(notebook_object.data, dict) else {}
         pages = notebook_data.get("pages") if isinstance(notebook_data.get("pages"), list) else []
+        tab_tooltips = notebook_data.get("tab_tooltips") if isinstance(notebook_data.get("tab_tooltips"), list) else []
+        tooltip_text = str(Tooltip).strip() if isinstance(Tooltip, str) else ""
         if page_index < 0 or page_index > len(pages):
             pages.append(object_entry.name)
+            tab_tooltips.append(tooltip_text)
         else:
             pages.insert(page_index, object_entry.name)
+            tab_tooltips.insert(page_index, tooltip_text)
         notebook_data["pages"] = pages
+        notebook_data["tab_tooltips"] = tab_tooltips
         notebook_object.data = notebook_data
 
         self._set_commons(object_entry.name, **params)
@@ -8907,11 +8939,18 @@ class SimpleWx:
 
         notebook_data = notebook_object.data if isinstance(notebook_object.data, dict) else {}
         pages = notebook_data.get("pages") if isinstance(notebook_data.get("pages"), list) else []
+        tab_tooltips = notebook_data.get("tab_tooltips") if isinstance(notebook_data.get("tab_tooltips"), list) else []
         if page_object is not None and page_object.name in pages:
+            remove_index = pages.index(page_object.name)
             pages = [entry_name for entry_name in pages if entry_name != page_object.name]
+            if 0 <= remove_index < len(tab_tooltips):
+                tab_tooltips.pop(remove_index)
         elif 0 <= page_index < len(pages):
             pages.pop(page_index)
+            if 0 <= page_index < len(tab_tooltips):
+                tab_tooltips.pop(page_index)
         notebook_data["pages"] = pages
+        notebook_data["tab_tooltips"] = tab_tooltips
         notebook_object.data = notebook_data
 
         return 1
