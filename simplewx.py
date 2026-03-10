@@ -7228,7 +7228,8 @@ class SimpleWx:
         }
 
         # hover underline behavior (normal state without underline)
-        link_button.SetUnderlines(False, True, True)
+        if hasattr(link_button, "SetUnderlines"):
+            link_button.SetUnderlines(False, True, True)
 
         # apply optional font settings
         font = params.get("font")
@@ -7563,14 +7564,14 @@ class SimpleWx:
         if object_entry.ref is not None:
             object_entry.ref.Refresh()
 
-    def _create_check_widget(self, name: str, **params: Any) -> wx.CheckBox:
+    def _create_check_widget(self, widget_name: str, **params: Any) -> wx.CheckBox:
         """
         Creates and configures a wx.CheckBox for a stored check-button object.
 
         Parameters
         ----------
 
-        name : str
+        widget_name : str
             Widget name key.
 
         **params : Any
@@ -7583,7 +7584,7 @@ class SimpleWx:
             Created check widget reference.
         """
         # get object
-        object_entry = self.get_object(name)
+        object_entry = self.get_object(widget_name)
 
         # check button specific fields
         active = 1 if params.get("active") else 0
@@ -7607,15 +7608,15 @@ class SimpleWx:
 
         # change font if set
         if font is not None:
-            self.set_font(name, font)
+            self.set_font(widget_name, font)
 
         # set font color if defined
         if isinstance(color, (list, tuple)) and len(color) > 0 and color[0]:
             cstate = color[1] if len(color) > 1 else None
-            self.set_font_color(name, str(color[0]), cstate)
+            self.set_font_color(widget_name, str(color[0]), cstate)
 
         # apply common setup (tooltip, callbacks, sensitive, size)
-        self._set_commons(name, **params)
+        self._set_commons(widget_name, **params)
 
         return check_widget
 
@@ -7713,14 +7714,14 @@ class SimpleWx:
         # position the check button
         self._add_to_container(object_entry.name)
 
-    def _create_radio_widget(self, name: str, **params: Any) -> wx.RadioButton:
+    def _create_radio_widget(self, widget_name: str, **params: Any) -> wx.RadioButton:
         """
         Creates and configures a wx.RadioButton for a stored radio-button object.
 
         Parameters
         ----------
 
-        name : str
+        widget_name : str
             Widget name key.
 
         **params : Any
@@ -7733,7 +7734,7 @@ class SimpleWx:
             Created radio widget reference.
         """
         # get object
-        object_entry = self.get_object(name)
+        object_entry = self.get_object(widget_name)
 
         # radio button specific fields
         group_name = str(params.get("group") or "default")
@@ -7775,15 +7776,15 @@ class SimpleWx:
 
         # change font if set
         if font is not None:
-            self.set_font(name, font)
+            self.set_font(widget_name, font)
 
         # set font color if defined
         if isinstance(color, (list, tuple)) and len(color) > 0 and color[0]:
             cstate = color[1] if len(color) > 1 else None
-            self.set_font_color(name, str(color[0]), cstate)
+            self.set_font_color(widget_name, str(color[0]), cstate)
 
         # apply common setup (tooltip, callbacks, sensitive, size)
-        self._set_commons(name, **params)
+        self._set_commons(widget_name, **params)
 
         # register button name in groups list
         self.groups[group_name].append(object_entry.name)
