@@ -8866,9 +8866,14 @@ class SimpleWx:
                     page_object = entry
                     break
         else:
+            if Name not in self.widgets:
+                self.show_error(Name, f'NotebookPage "{Name}" not found.')
+                return 0
+
             page_object = self.get_object(Name)
             if page_object.type != "NotebookPage" or page_object.ref is None:
-                self.internal_die(Name, f'NotebookPage "{Name}" not found.')
+                self.show_error(Name, f'NotebookPage "{Name}" not found.')
+                return 0
 
             page_data = page_object.data if isinstance(page_object.data, dict) else {}
             notebook_name = page_data.get("notebook")
