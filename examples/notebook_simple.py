@@ -73,12 +73,25 @@ win.add_button(
 )
 
 # Button to remove a notebook page
+def remove_current_page(_event):
+    notebook_obj = win.get_object("NB1")
+    notebook_ref = notebook_obj.ref
+    if notebook_ref is None:
+        return
+
+    current_index = int(notebook_ref.GetSelection())
+    if current_index < 0:
+        return
+
+    win.remove_nb_page("NB1", current_index)
+
+
 win.add_button(
     Name="removeButton",
     Position=[310, 345],
     Title="_Remove",
-    Tooltip="Click removes page 6",
-    Function=lambda _event: win.remove_nb_page("NB_page7"),
+    Tooltip="Click removes current page",
+    Function=remove_current_page,
 )
 
 # Show window and start event loop
