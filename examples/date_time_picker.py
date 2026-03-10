@@ -1,7 +1,13 @@
 #!/usr/bin/env python3
+author = 'Thomas Funk'
+coauthors = 'Github Copilot'
+date = "2026/03/10"
+# What this example demonstrates:
+# Using DatePickerCtrl and TimePickerCtrl with change-event callbacks.
 from simplewx import SimpleWx as simplewx
 
 
+# Called whenever the date picker value changes.
 def on_date_changed(event):
     picker = event.GetEventObject()
     value = picker.GetValue()
@@ -10,6 +16,7 @@ def on_date_changed(event):
     event.Skip()
 
 
+# Called whenever the time picker value changes.
 def on_time_changed(event):
     picker = event.GetEventObject()
     value = picker.GetValue()
@@ -18,6 +25,7 @@ def on_time_changed(event):
     event.Skip()
 
 
+# Create main window and place picker widgets.
 win = simplewx()
 
 win.new_window(

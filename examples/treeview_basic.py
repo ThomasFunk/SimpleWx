@@ -1,7 +1,13 @@
 #!/usr/bin/env python3
+author = 'Thomas Funk'
+coauthors = 'Github Copilot'
+date = "2026/03/10"
+# What this example demonstrates:
+# Building a tree view, selecting nodes, and reading selected values.
 from simplewx import SimpleWx as simplewx
 
 
+# Create a minimal tree view demo window.
 win = simplewx()
 
 win.new_window(
@@ -11,6 +17,7 @@ win.new_window(
 )
 
 headers = ["Project"]
+# Nested format: [label, [children...]].
 data = [
     ["src", [["core", []], ["widgets", [["buttons.py", []], ["listview.py", []]]]]],
     ["tests", [["test_core.py", []], ["test_widgets.py", []]]],

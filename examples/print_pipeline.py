@@ -1,7 +1,13 @@
 #!/usr/bin/env python3
+author = 'Thomas Funk'
+coauthors = 'Github Copilot'
+date = "2026/03/10"
+# What this example demonstrates:
+# End-to-end print workflow with printout creation, preview, and print dialog.
 from simplewx import SimpleWx as simplewx
 
 
+# Create host window for print actions.
 win = simplewx()
 
 win.new_window(
@@ -20,6 +26,7 @@ to preview and printer output.
 - Printout
 """
 
+# Standard printout without template placeholders.
 win.add_printout(
     Name="doc1",
     Title="SimpleWx Demo Document",
@@ -27,6 +34,7 @@ win.add_printout(
     LinesPerPage=45,
 )
 
+# Template printout with header/footer placeholders.
 win.add_printout(
     Name="docTemplate",
     Title="SimpleWx Demo Document",
@@ -55,6 +63,7 @@ win.add_pagesetup_dialog(
 
 
 def on_preview(_event):
+    # Choose printout variant based on checkbox state.
     use_template = int(win.get_value("chkTemplate", "active")) == 1
     printout_name = "docTemplate" if use_template else "doc1"
     title = "Preview (Template)" if use_template else "Preview (Standard)"
@@ -62,6 +71,7 @@ def on_preview(_event):
 
 
 def on_print(_event):
+    # Start print job with the selected printout.
     use_template = int(win.get_value("chkTemplate", "active")) == 1
     printout_name = "docTemplate" if use_template else "doc1"
     result = win.print_document(printout_name, PrintDialog="printCfg", PageSetup="pageCfg", Prompt=1)
@@ -69,11 +79,13 @@ def on_print(_event):
 
 
 def on_page_setup(_event):
+    # Open page setup and print returned settings.
     setup = win.show_pagesetup_dialog("pageCfg")
     print(f"PageSetup: {setup}")
 
 
 def update_mode_label() -> None:
+    # Keep status text aligned with current print mode.
     use_template = int(win.get_value("chkTemplate", "active")) == 1
     mode_text = "Template" if use_template else "Standard"
     win.set_title("lblMode", f"Active print mode: {mode_text}")

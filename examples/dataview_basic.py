@@ -1,8 +1,14 @@
 #!/usr/bin/env python3
+author = 'Thomas Funk'
+coauthors = 'Github Copilot'
+date = "2026/03/10"
+# What this example demonstrates:
+# Creating and populating a DataViewCtrl with editable tabular data.
 from simplewx import SimpleWx as simplewx
 import wx.dataview as wxdataview
 
 
+# Build the host window for the DataView demo.
 win = simplewx()
 
 win.new_window(
@@ -12,6 +18,7 @@ win.new_window(
 )
 
 headers = ["ID", "Name", "Score"]
+# Initial table data displayed in the control.
 rows = [
     [1, "Alice", 92],
     [2, "Bob", 78],
@@ -37,6 +44,7 @@ win.add_dataview(
 
 
 def on_item_changed(event):
+    # Read edited cell coordinates and print current value.
     item = event.GetItem()
     col = event.GetColumn()
     view = event.GetEventObject()
@@ -46,6 +54,7 @@ def on_item_changed(event):
     event.Skip()
 
 
+# Bind native wx event to track inline edits.
 win.add_signal_handler("scoreDataView", wxdataview.EVT_DATAVIEW_ITEM_VALUE_CHANGED, on_item_changed)
 
 win.show_and_run()

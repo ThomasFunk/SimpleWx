@@ -1,7 +1,13 @@
 #!/usr/bin/env python3
+author = 'Thomas Funk'
+coauthors = 'Github Copilot'
+date = "2026/03/10"
+# What this example demonstrates:
+# Numeric and text entry controls with value retrieval and updates.
 from simplewx import SimpleWx as simplewx
 
 
+# Build a form-style demo for text and numeric controls.
 win = simplewx()
 
 win.new_window(
@@ -48,6 +54,7 @@ win.add_spin_button(
 
 
 def on_dump(_event):
+    # Collect current values from all widgets and print them.
     entry_value = win.get_object("nameEntry").ref.GetValue()
     combo_value = win.get_object("roleCombo").ref.GetStringSelection()
     slider_value = win.get_object("scoreSlider").ref.GetValue()

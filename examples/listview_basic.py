@@ -1,7 +1,13 @@
 #!/usr/bin/env python3
+author = 'Thomas Funk'
+coauthors = 'Github Copilot'
+date = "2026/03/10"
+# What this example demonstrates:
+# Creating a list view and filling it with rows of text data.
 from simplewx import SimpleWx as simplewx
 
 
+# Build a simple list view demo window.
 win = simplewx()
 
 win.new_window(
@@ -11,6 +17,7 @@ win.new_window(
 )
 
 headers = ["ID", "Name", "Role"]
+# Seed rows for the initial list content.
 rows = [
     [1, "Alice", "Admin"],
     [2, "Bob", "Editor"],
@@ -29,12 +36,14 @@ next_id = {"value": 4}
 
 
 def on_add(_event):
+    # Append a generated user row.
     user_id = next_id["value"]
     win.modify_list_data("usersList", push=[user_id, f"User {user_id}", "Viewer"])
     next_id["value"] += 1
 
 
 def on_remove_last(_event):
+    # Remove the last row from the list.
     win.modify_list_data("usersList", pop=1)
 
 

@@ -1,7 +1,13 @@
 #!/usr/bin/env python3
+author = 'Thomas Funk'
+coauthors = 'Github Copilot'
+date = "2026/03/10"
+# What this example demonstrates:
+# Advanced notebook features like close tabs, icons, and page events.
 from simplewx import SimpleWx as simplewx
 
 
+# Receive page-change events from the notebook.
 def on_notebook_page_changed(event):
     notebook = event.GetEventObject()
     page_index = notebook.GetSelection()
@@ -10,6 +16,7 @@ def on_notebook_page_changed(event):
     event.Skip()
 
 
+# Create notebook demo with closeable tabs and icons.
 win = simplewx()
 
 win.new_window(
@@ -34,6 +41,7 @@ win.add_notebook(
     Function=on_notebook_page_changed,
 )
 
+# Page 1: home tab.
 win.add_nb_page(
     Name="pageHome",
     Notebook="mainNotebook",
@@ -47,6 +55,7 @@ win.add_label(
     Frame="pageHome",
 )
 
+# Page 2: search tab.
 win.add_nb_page(
     Name="pageSearch",
     Notebook="mainNotebook",
@@ -60,6 +69,7 @@ win.add_label(
     Frame="pageSearch",
 )
 
+# Page 3: settings tab.
 win.add_nb_page(
     Name="pageSettings",
     Notebook="mainNotebook",

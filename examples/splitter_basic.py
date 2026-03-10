@@ -1,7 +1,13 @@
 #!/usr/bin/env python3
+author = 'Thomas Funk'
+coauthors = 'Github Copilot'
+date = "2026/03/10"
+# What this example demonstrates:
+# SplitterWindow setup, sash control, and pane collapse/expand behavior.
 from simplewx import SimpleWx as simplewx
 
 
+# Create base window for splitter interactions.
 win = simplewx()
 
 win.new_window(
@@ -19,6 +25,7 @@ win.add_splitter_window(
     MinSize=120,
 )
 
+# Register both panes managed by the splitter.
 win.add_splitter_pane(
     Name="leftPane",
     Splitter="mainSplit",
@@ -47,6 +54,7 @@ win.add_label(
 
 
 def update_splitter_status() -> None:
+    # Reflect split/collapse state in a label.
     is_unsplit = int(win.get_value("mainSplit", "Unsplit")) == 1
     if not is_unsplit:
         state = "expanded"
@@ -57,16 +65,19 @@ def update_splitter_status() -> None:
 
 
 def on_expand(_event):
+    # Restore normal split view.
     win.expand_splitter("mainSplit")
     update_splitter_status()
 
 
 def on_collapse_right(_event):
+    # Collapse second pane.
     win.collapse_splitter("mainSplit", "second")
     update_splitter_status()
 
 
 def on_collapse_left(_event):
+    # Collapse first pane.
     win.collapse_splitter("mainSplit", "first")
     update_splitter_status()
 

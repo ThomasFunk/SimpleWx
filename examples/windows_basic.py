@@ -1,7 +1,13 @@
 #!/usr/bin/env python3
+author = 'Thomas Funk'
+coauthors = 'Github Copilot'
+date = "2026/03/10"
+# What this example demonstrates:
+# Creating a basic main window and placing simple widgets in it.
 from simplewx import SimpleWx as simplewx
 
 
+# Create a basic top-level window with statusbar.
 win = simplewx()
 
 win.new_window(
@@ -20,6 +26,7 @@ win.add_label(
 
 
 def on_click(_event):
+    # Simple handler to demonstrate button event wiring.
     print("Window is running.")
 
 

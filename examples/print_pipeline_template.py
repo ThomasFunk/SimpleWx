@@ -1,7 +1,13 @@
 #!/usr/bin/env python3
+author = 'Thomas Funk'
+coauthors = 'Github Copilot'
+date = "2026/03/10"
+# What this example demonstrates:
+# Print headers and footers using template placeholders in the print pipeline.
 from simplewx import SimpleWx as simplewx
 
 
+# Create a focused demo for template-based print output.
 win = simplewx()
 
 win.new_window(
@@ -19,6 +25,7 @@ Header and footer are generated using placeholders:
 - {pages}
 """
 
+# Define printout with dynamic header/footer placeholders.
 win.add_printout(
     Name="docTemplate",
     Title="SimpleWx Report",
@@ -35,10 +42,12 @@ win.add_pagesetup_dialog(Name="pageCfg", Title="Page setup", Orientation="portra
 
 
 def on_preview(_event):
+    # Open preview for the template printout.
     win.show_print_preview("docTemplate", PrintDialog="printCfg", PageSetup="pageCfg", Title="Template Preview")
 
 
 def on_print(_event):
+    # Send template printout to printer with prompt dialog.
     result = win.print_document("docTemplate", PrintDialog="printCfg", PageSetup="pageCfg", Prompt=1)
     print(f"Print started: {result}")
 

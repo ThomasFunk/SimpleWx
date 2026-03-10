@@ -1,7 +1,13 @@
 #!/usr/bin/env python3
+author = 'Thomas Funk'
+coauthors = 'Github Copilot'
+date = "2026/03/10"
+# What this example demonstrates:
+# Plain and rich text modes in TextView, including formatting behavior.
 from simplewx import SimpleWx as simplewx
 
 
+# Build rich-text demo window.
 win = simplewx()
 
 win.new_window(
@@ -27,6 +33,7 @@ win.add_text_view(
 )
 
 is_rich = win.get_textview("richTextView", "Rich")
+# Rewrite content to show detected rich-mode value.
 win.set_textview(
     Name="richTextView",
     Text=f"Dies ist ein RichText-basierter TextView.\\n\\nAktueller Modus (get_textview(..., 'Rich')): {is_rich}",

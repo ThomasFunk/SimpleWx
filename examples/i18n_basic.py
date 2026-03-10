@@ -1,8 +1,14 @@
 #!/usr/bin/env python3
+author = 'Thomas Funk'
+coauthors = 'Github Copilot'
+date = "2026/03/10"
+# What this example demonstrates:
+# Enabling gettext localization and translating UI strings at runtime.
 from pathlib import Path
 from simplewx import SimpleWx as simplewx
 
 
+# Create window instance and enable gettext lookup paths.
 win = simplewx()
 
 project_root = Path(__file__).resolve().parents[1]
@@ -29,6 +35,7 @@ win.add_label(
 
 
 def on_click(_event):
+    # Print translated message to stdout.
     print(win.translate("Button clicked"))
 
 

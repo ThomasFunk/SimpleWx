@@ -1,8 +1,14 @@
 #!/usr/bin/env python3
+author = 'Thomas Funk'
+coauthors = 'Github Copilot'
+date = "2026/03/10"
+# What this example demonstrates:
+# Building and updating a wx.grid-based table with headers and rows.
 from simplewx import SimpleWx as simplewx
 import wx.grid as wxgrid
 
 
+# Build the host window for the grid demo.
 win = simplewx()
 
 win.new_window(
@@ -12,6 +18,7 @@ win.new_window(
 )
 
 headers = ["ID", "Name", "Score"]
+# Initial row set shown by the grid.
 rows = [
     [1, "Alice", 92],
     [2, "Bob", 78],
@@ -37,6 +44,7 @@ win.add_grid(
 
 
 def on_cell_changed(event):
+    # Report changed cell and its new value.
     row = event.GetRow()
     col = event.GetCol()
     value = win.get_value("scoreGrid", "Cell", [row, col])
@@ -44,6 +52,7 @@ def on_cell_changed(event):
     event.Skip()
 
 
+# Bind grid cell-change event.
 win.add_signal_handler("scoreGrid", wxgrid.EVT_GRID_CELL_CHANGED, on_cell_changed)
 
 win.show_and_run()
