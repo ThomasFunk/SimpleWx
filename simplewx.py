@@ -190,6 +190,22 @@ class SimpleWx:
         self.gettext_appname = ""
         self.gettext_localedir = ""
         self._translator: Callable[[str], str] = lambda text: str(text)
+        self._modeless_dialogs: list[wx.Dialog] = []
+
+    def _register_modeless_dialog(self, dialog: wx.Dialog) -> None:
+        """
+        Keeps a strong reference to a modeless dialog until it is destroyed.
+        """
+        self._modeless_dialogs.append(dialog)
+
+        def _on_destroy(event: wx.WindowDestroyEvent) -> None:
+            try:
+                self._modeless_dialogs.remove(dialog)
+            except ValueError:
+                pass
+            event.Skip()
+
+        dialog.Bind(wx.EVT_WINDOW_DESTROY, _on_destroy)
 
     def init_app(self) -> None:
         """
@@ -215,6 +231,25 @@ class SimpleWx:
         # ensure image handlers are available for bitmap/image widgets
         try:
             wx.InitAllImageHandlers()
+        except Exception:
+            pass
+
+        # on wxGTK, menu icons may be hidden by default
+        try:
+            wx.SystemOptions.SetOption("gtk.menuimages", 1)
+        except Exception:
+            pass
+
+        # additional GTK-level fallback for environments that ignore wx option
+        try:
+            import gi  # type: ignore
+            gi.require_version("Gtk", "3.0")
+            from gi.repository import Gtk  # type: ignore
+
+            settings = Gtk.Settings.get_default()
+            if settings is not None:
+                settings.set_property("gtk-menu-images", True)
+                settings.set_property("gtk-button-images", True)
         except Exception:
             pass
 
@@ -4036,6 +4071,7 @@ class SimpleWx:
                     dialog.Destroy()
 
             dialog.Bind(wx.EVT_BUTTON, _on_dialog_response)
+        self._register_modeless_dialog(dialog)
         dialog.Show()
         return None
 
@@ -4924,7 +4960,7 @@ class SimpleWx:
 
         if isinstance(icon, str) and icon:
             try:
-                if wx.FileExists(icon):
+                if os.path.isfile(icon):
                     custom_icon = wx.Icon(icon, wx.BITMAP_TYPE_ANY)
                     if custom_icon.IsOk():
                         dialog.SetIcon(custom_icon)
@@ -4936,6 +4972,21 @@ class SimpleWx:
             dialog.Destroy()
             return result
 
+        # wxGTK may not show modeless wx.MessageDialog reliably; use fallback
+        shown = bool(dialog.Show())
+        if not shown:
+            dialog.Destroy()
+            self._show_modeless_msg_dialog_fallback(
+                parent=parent,
+                title=title,
+                message_primary=message_primary,
+                message_secondary=message_secondary,
+                dialog_type=dialog_type,
+                message_type=message_type,
+                response_function=response_function,
+            )
+            return None
+
         if callable(response_function):
             def _on_dialog_response(event: wx.CommandEvent) -> None:
                 try:
@@ -4945,8 +4996,83 @@ class SimpleWx:
 
             dialog.Bind(wx.EVT_BUTTON, _on_dialog_response)
 
-        dialog.Show()
+        self._register_modeless_dialog(dialog)
         return None
+
+    def _show_modeless_msg_dialog_fallback(
+        self,
+        parent: Optional[wx.Window],
+        title: str,
+        message_primary: str,
+        message_secondary: str,
+        dialog_type: str,
+        message_type: str,
+        response_function: Optional[Callable[..., Any]],
+    ) -> None:
+        """
+        Shows a modeless message dialog fallback when wx.MessageDialog.Show()
+        is not available/visible on the current platform.
+        """
+        dialog = wx.Dialog(parent, wx.ID_ANY, title, style=wx.DEFAULT_DIALOG_STYLE)
+
+        outer = wx.BoxSizer(wx.VERTICAL)
+
+        icon_map = {
+            "info": wx.ART_INFORMATION,
+            "warning": wx.ART_WARNING,
+            "error": wx.ART_ERROR,
+            "question": wx.ART_QUESTION,
+        }
+        art_id = icon_map.get(str(message_type).lower(), wx.ART_INFORMATION)
+        bitmap = wx.ArtProvider.GetBitmap(art_id, wx.ART_MESSAGE_BOX, wx.Size(32, 32))
+
+        top_row = wx.BoxSizer(wx.HORIZONTAL)
+        if isinstance(bitmap, wx.Bitmap) and bitmap.IsOk():
+            top_row.Add(wx.StaticBitmap(dialog, wx.ID_ANY, bitmap), 0, wx.ALIGN_TOP | wx.RIGHT, 10)
+
+        text_col = wx.BoxSizer(wx.VERTICAL)
+        text_col.Add(wx.StaticText(dialog, wx.ID_ANY, str(message_primary or "")), 0, wx.BOTTOM, 6)
+        if str(message_secondary or ""):
+            text_col.Add(wx.StaticText(dialog, wx.ID_ANY, str(message_secondary or "")), 0)
+        top_row.Add(text_col, 1, wx.EXPAND)
+
+        outer.Add(top_row, 1, wx.EXPAND | wx.ALL, 12)
+
+        dtypes = str(dialog_type or "ok").lower()
+        if dtypes == "yesno":
+            button_ids = [wx.ID_YES, wx.ID_NO]
+        elif dtypes == "okcancel":
+            button_ids = [wx.ID_OK, wx.ID_CANCEL]
+        elif dtypes == "yesnocancel":
+            button_ids = [wx.ID_YES, wx.ID_NO, wx.ID_CANCEL]
+        else:
+            button_ids = [wx.ID_OK]
+
+        buttons = wx.StdDialogButtonSizer()
+        for btn_id in button_ids:
+            buttons.AddButton(wx.Button(dialog, btn_id))
+        buttons.Realize()
+        outer.Add(buttons, 0, wx.ALIGN_CENTER | wx.ALL, 10)
+
+        dialog.SetSizerAndFit(outer)
+        dialog.CentreOnParent() if parent is not None else dialog.Centre()
+
+        if callable(response_function):
+            def _on_click(event: wx.CommandEvent) -> None:
+                try:
+                    response_function(dialog, int(event.GetId()))
+                finally:
+                    dialog.Destroy()
+            for btn_id in button_ids:
+                dialog.Bind(wx.EVT_BUTTON, _on_click, id=btn_id)
+        else:
+            def _on_close(event: wx.CommandEvent) -> None:
+                dialog.Destroy()
+            for btn_id in button_ids:
+                dialog.Bind(wx.EVT_BUTTON, _on_close, id=btn_id)
+
+        self._register_modeless_dialog(dialog)
+        dialog.Show()
 
     def show_message(self, ObjectOrMsg: Any, Msg: Optional[str] = None, Dialog: int = 0) -> None:
         """
@@ -5520,7 +5646,7 @@ class SimpleWx:
             try:
                 if wx.DirExists(default_path):
                     dialog.SetDirectory(default_path)
-                elif wx.FileExists(default_path):
+                elif os.path.isfile(default_path):
                     dialog.SetPath(default_path)
                 else:
                     dialog.SetDirectory(default_path)
@@ -6291,7 +6417,7 @@ class SimpleWx:
             # resolve bitmap from path or stock art-id compatible name
             bitmap = wx.ArtProvider.GetBitmap(wx.ART_MISSING_IMAGE, wx.ART_TOOLBAR, wx.Size(16, 16))
             if isinstance(icon_ref, str) and icon_ref:
-                if wx.FileExists(icon_ref):
+                if os.path.isfile(icon_ref):
                     icon_bitmap = wx.Bitmap(icon_ref, wx.BITMAP_TYPE_ANY)
                     if icon_bitmap.IsOk():
                         bitmap = icon_bitmap
@@ -6703,6 +6829,8 @@ class SimpleWx:
         parent_menu: wx.Menu = menu_object.ref
         item_id = wx.NewIdRef()
 
+        menu_bitmap: Optional[wx.Bitmap] = None
+
         if item_type == "separator":
             menu_item = wx.MenuItem(parent_menu, item_id, "", "", wx.ITEM_SEPARATOR)
         else:
@@ -6713,7 +6841,14 @@ class SimpleWx:
             else:
                 kind = wx.ITEM_NORMAL
 
-            label = str(object_entry.title or "")
+            label = str(object_entry.title or "").strip()
+            if label == "":
+                icon_name = str(params.get("icon") or "").strip().lower()
+                if icon_name.startswith("gtk-"):
+                    fallback = icon_name[4:].replace("-", " ").strip()
+                    label = fallback.title() if fallback else "Item"
+                else:
+                    label = "Item"
             if self.is_underlined(label):
                 label = label.replace("__", "\0")
                 label = label.replace("_", "&")
@@ -6725,15 +6860,31 @@ class SimpleWx:
             icon = params.get("icon")
             if isinstance(icon, str) and icon:
                 bitmap: Optional[wx.Bitmap] = None
-                if wx.FileExists(icon):
+                if os.path.isfile(icon):
                     bitmap = wx.Bitmap(icon, wx.BITMAP_TYPE_ANY)
                 else:
                     art_id = self._resolve_art_id(icon)
                     bitmap = wx.ArtProvider.GetBitmap(art_id, wx.ART_MENU, wx.Size(16, 16))
                 if isinstance(bitmap, wx.Bitmap) and bitmap.IsOk():
-                    menu_item.SetBitmap(bitmap)
+                    # normalize custom icons to menu-friendly size
+                    try:
+                        image = bitmap.ConvertToImage()
+                        if image.IsOk() and (image.GetWidth() != 16 or image.GetHeight() != 16):
+                            image = image.Scale(16, 16, wx.IMAGE_QUALITY_HIGH)
+                            bitmap = wx.Bitmap(image)
+                    except Exception:
+                        pass
+                    menu_bitmap = bitmap
 
         parent_menu.Append(menu_item)
+
+        # set bitmap after append for better wxGTK compatibility
+        if isinstance(menu_bitmap, wx.Bitmap) and menu_bitmap.IsOk() and hasattr(menu_item, "SetBitmap"):
+            try:
+                menu_item.SetBitmap(menu_bitmap)
+            except Exception:
+                pass
+
         menu_item.Enable(bool(int(Sensitive)))
 
         if item_type in ("check", "radio"):
@@ -8299,7 +8450,7 @@ class SimpleWx:
             return None
 
         bitmap: Optional[wx.Bitmap] = None
-        if wx.FileExists(icon_text):
+        if os.path.isfile(icon_text):
             source = wx.Bitmap(icon_text, wx.BITMAP_TYPE_ANY)
             if source.IsOk():
                 bitmap = source
