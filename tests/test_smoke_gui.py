@@ -12,7 +12,9 @@ _STATUS_COLUMN = 72
 
 def _passed(scope: str, check: str) -> None:
     global _LAST_SCOPE
-    if _LAST_SCOPE is not None and _LAST_SCOPE != scope:
+    if _LAST_SCOPE is None:
+        print("", flush=True)
+    elif _LAST_SCOPE != scope:
         print("", flush=True)
     _LAST_SCOPE = scope
     left = f"{scope}: {check}"
