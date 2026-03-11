@@ -14,6 +14,23 @@ The format is based on Keep a Changelog.
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-03-11
+
+### Changed
+
+- Bumped library metadata in `simplewx.py` to `__version__ = "0.2.2"` and kept the release date current.
+- Updated the README headline version from `0.2.0` to `0.2.2`.
+
+### Fixed
+
+- Fixed wxGTK menu item icons by applying `SetBitmap()` before `Append()` in `add_menu_item()`.
+- Fixed notebook pages inside scrolled containers so absolute-positioned children expand the virtual size correctly.
+- Rejected unsupported per-page tab font/color styling on `wx.Notebook` with explicit error handling instead of silently doing nothing.
+
+### Documentation
+
+- Added inline comments to `add_menu_bar()`, `add_menu()`, and `add_menu_item()` for easier maintenance and code navigation.
+
 ## [0.2.0] - 2026-03-11
 
 ### Changed
