@@ -6722,30 +6722,37 @@ class SimpleWx:
 
         win.add_menu_bar(Name="menubar1")
         """
+        # A menubar requires an existing top-level frame to attach to.
         if self.ref is None:
             self.internal_die(Name, "No main window available!")
 
+        # Normalize parameters (Position/Size are accepted but ignored by wx for menubars).
         params = self._normalize(
             Name=Name,
             Position=Position,
             Size=Size,
         )
 
+        # Guard against accidentally reusing an existing name for a different widget type.
         object_entry = self.widgets.get(Name)
         if object_entry is not None and object_entry.type != "MenuBar":
             self.internal_die(Name, "Object exists and is not a menubar.")
 
+        # Create the native menubar and attach it to the frame immediately.
         menubar = wx.MenuBar()
         self.ref.SetMenuBar(menubar)
 
+        # Register or reuse the widget entry; calling add_menu_bar twice on the same
+        # name replaces the native wx.MenuBar but keeps the object registration intact.
         if object_entry is None:
             object_entry = self._new_widget(**params)
             object_entry.type = "MenuBar"
             self.widgets[object_entry.name] = object_entry
 
+        # Store the native reference and an empty menu list for later tracking.
         object_entry.ref = menubar
         object_entry.data = {
-            "menus": [],
+            "menus": [],   # populated by subsequent add_menu() calls
         }
 
     def add_menu(
@@ -6787,10 +6794,12 @@ class SimpleWx:
 
         win.add_menu(Name="menu_file", Menubar="menubar1", Title="_File")
         """
+        # Verify that the target menubar exists and is fully initialized.
         mbar_object = self.get_object(Menubar)
         if mbar_object.type != "MenuBar" or mbar_object.ref is None:
             self.internal_die(Name, f"Menubar \"{Menubar}\" not found.")
 
+        # Normalize parameter keys to lowercase and sanitize None values.
         params = self._normalize(
             Name=Name,
             Menubar=Menubar,
@@ -6799,14 +6808,16 @@ class SimpleWx:
             Sensitive=Sensitive,
         )
 
+        # Create the internal widget entry and register it immediately.
         object_entry = self._new_widget(**params)
         object_entry.type = "Menu"
         self.widgets[object_entry.name] = object_entry
 
+        # Create the native dropdown menu (items are added later via add_menu_item).
         menu = wx.Menu()
         menubar = mbar_object.ref
 
-        # convert underscore mnemonic markers to wx style (&)
+        # Convert SimpleGtk2-style underscore mnemonics (_File) to wx style (&File).
         raw_title = str(object_entry.title or "")
         if self.is_underlined(raw_title):
             menu_label = raw_title.replace("__", "\0")
@@ -6815,17 +6826,23 @@ class SimpleWx:
         else:
             menu_label = raw_title
 
+        # Append to the menubar; capture the resulting position index for later use
+        # (e.g. EnableTop requires the positional index, not the menu object).
         menu_index = menubar.GetMenuCount()
         menubar.Append(menu, menu_label)
+
+        # Apply initial sensitivity to the entire top-level menu entry.
         menubar.EnableTop(menu_index, bool(Sensitive))
 
+        # Persist the native reference and metadata for later API calls.
         object_entry.ref = menu
         object_entry.data = {
-            "menubar": Menubar,
-            "title_index": menu_index,
-            "justify": str(Justify).lower(),
+            "menubar": Menubar,       # parent menubar name
+            "title_index": menu_index, # positional index in the menubar (for EnableTop)
+            "justify": str(Justify).lower(),  # alignment hint (left/right)
         }
 
+        # Register this menu in the parent menubar's menu list for group-wide operations.
         mbar_data = mbar_object.data if isinstance(mbar_object.data, dict) else {}
         menus = mbar_data.get("menus") if isinstance(mbar_data.get("menus"), list) else []
         menus.append(object_entry.name)
@@ -6895,12 +6912,15 @@ class SimpleWx:
 
         win.add_menu_item(Name="menu_item_quit", Menu="menu_file", Title="_Quit")
         """
+        # Verify that the target menu exists and is fully initialized.
         menu_object = self.get_object(Menu)
         if menu_object.type != "Menu" or menu_object.ref is None:
             self.internal_die(Name, f"Menu \"{Menu}\" not found.")
+        # EVT_MENU callbacks are bound to the top-level frame, so we need it now.
         if self.ref is None:
             self.internal_die(Name, "No main window available for menu item binding.")
 
+        # Normalize parameter keys to lowercase and sanitize None values.
         params = self._normalize(
             Name=Name,
             Menu=Menu,
@@ -6915,23 +6935,29 @@ class SimpleWx:
             Sensitive=Sensitive,
         )
 
+        # Map item type; wx has no tearoff concept, so treat it as a separator.
         item_type = str(params.get("type") or "item").lower()
         if item_type == "tearoff":
             item_type = "separator"
 
+        # Create the internal widget entry and register it immediately.
         object_entry = self._new_widget(**params)
         object_entry.type = "MenuItem"
         object_entry.title = str(params.get("title") or "")
         self.widgets[object_entry.name] = object_entry
 
         parent_menu: wx.Menu = menu_object.ref
+        # Unique id used both for the wx.MenuItem and for EVT_MENU binding.
         item_id = wx.NewIdRef()
 
+        # Resolved bitmap to attach to the item (None if no icon requested).
         menu_bitmap: Optional[wx.Bitmap] = None
 
         if item_type == "separator":
+            # Separators carry no label, help text, or icon.
             menu_item = wx.MenuItem(parent_menu, item_id, "", "", wx.ITEM_SEPARATOR)
         else:
+            # Map SimpleWx type strings to wx item kind constants.
             if item_type == "check":
                 kind = wx.ITEM_CHECK
             elif item_type == "radio":
@@ -6939,6 +6965,8 @@ class SimpleWx:
             else:
                 kind = wx.ITEM_NORMAL
 
+            # Derive label: use Title if given, otherwise fall back to a human-
+            # readable form of the stock-icon name (e.g. "gtk-save" → "Save").
             label = str(object_entry.title or "").strip()
             if label == "":
                 icon_name = str(params.get("icon") or "").strip().lower()
@@ -6947,6 +6975,7 @@ class SimpleWx:
                     label = fallback.title() if fallback else "Item"
                 else:
                     label = "Item"
+            # Convert SimpleGtk2-style underscore mnemonics (_Save) to wx (&Save).
             if self.is_underlined(label):
                 label = label.replace("__", "\0")
                 label = label.replace("_", "&")
@@ -6955,16 +6984,19 @@ class SimpleWx:
             help_text = str(params.get("tooltip") or "")
             menu_item = wx.MenuItem(parent_menu, item_id, label, help_text, kind)
 
+            # Resolve icon: prefer file path, fall back to wx.ArtProvider stock lookup.
             icon = params.get("icon")
             if isinstance(icon, str) and icon:
                 bitmap: Optional[wx.Bitmap] = None
                 if os.path.isfile(icon):
+                    # Load bitmap directly from file system.
                     bitmap = wx.Bitmap(icon, wx.BITMAP_TYPE_ANY)
                 else:
+                    # Map gtk-* names (and others) to wx ART_ constants.
                     art_id = self._resolve_art_id(icon)
                     bitmap = wx.ArtProvider.GetBitmap(art_id, wx.ART_MENU, wx.Size(16, 16))
                 if isinstance(bitmap, wx.Bitmap) and bitmap.IsOk():
-                    # normalize custom icons to menu-friendly size
+                    # Normalize all icons to the standard menu icon size (16×16).
                     try:
                         image = bitmap.ConvertToImage()
                         if image.IsOk() and (image.GetWidth() != 16 or image.GetHeight() != 16):
@@ -6981,21 +7013,25 @@ class SimpleWx:
             except Exception:
                 pass
 
+        # Add the item to the menu (after SetBitmap, see above).
         parent_menu.Append(menu_item)
 
+        # Apply initial sensitivity (enabled/disabled state).
         menu_item.Enable(bool(int(Sensitive)))
 
+        # Set initial checked state for check and radio items.
         if item_type in ("check", "radio"):
             menu_item.Check(bool(int(Active)))
 
-        # radio menu groups are tracked in self.groups for group-wide APIs
+        # Radio menu groups are tracked in self.groups for group-wide enable/check APIs.
         group_name: Optional[str] = None
         if item_type == "radio" and isinstance(params.get("group"), str) and str(params.get("group")).strip():
             group_name = str(params.get("group")).strip()
             if group_name not in self.groups:
                 self.groups[group_name] = []
 
-            # activate exactly one element when this item is marked active
+            # When a new radio item joins as active, uncheck all previous group members
+            # to enforce single-selection semantics within the group.
             if bool(int(Active)):
                 for entry_name in self.groups[group_name]:
                     group_entry = self.get_object(entry_name)
@@ -7004,8 +7040,11 @@ class SimpleWx:
                         if isinstance(group_entry.data, dict):
                             group_entry.data["active"] = 0
 
+            # Register this item as a member of the named radio group.
             self.groups[group_name].append(object_entry.name)
 
+        # Build a normalized callback from the Function argument (plain callable
+        # or [callable, payload] list for data-passing convenience).
         callback: Optional[Callable[..., Any]] = None
         if Function is not None:
             if isinstance(Function, (list, tuple)) and len(Function) > 0 and callable(Function[0]):
@@ -7017,20 +7056,21 @@ class SimpleWx:
             elif callable(Function):
                 callback = Function
 
-        # menu items are dispatched through EVT_MENU on the main frame
+        # Menu item events are dispatched as EVT_MENU on the main frame (not on the item itself).
         if callback is not None:
             self.ref.Bind(wx.EVT_MENU, callback, id=int(item_id))
             object_entry.handler[wx.EVT_MENU] = callback
 
+        # Persist the wx object reference and all relevant metadata for later API calls.
         object_entry.ref = menu_item
         object_entry.data = {
-            "menu": Menu,
-            "type": item_type,
-            "group": group_name,
+            "menu": Menu,           # Parent menu name
+            "type": item_type,      # Resolved item kind (item/check/radio/separator)
+            "group": group_name,    # Radio group name, or None
             "active": 1 if menu_item.IsCheckable() and menu_item.IsChecked() else 0,
-            "icon": params.get("icon"),
-            "signal": Signal,
-            "id": int(item_id),
+            "icon": params.get("icon"),  # Original icon spec (path or stock name)
+            "signal": Signal,       # Optional custom event binder (future use)
+            "id": int(item_id),     # wx id used for EVT_MENU binding
         }
 
     def new_window(
