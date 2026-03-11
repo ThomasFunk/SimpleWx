@@ -18,6 +18,53 @@ if str(PROJECT_ROOT) not in sys.path:
 from simplewx import SimpleWx
 
 
+_TEST_FILE_ORDER: list[str] = [
+    "test_smoke_gui.py",
+    "test_unit_core.py",
+    "test_widget_state_roundtrip.py",
+    "test_notebook_regressions.py",
+    "test_menu_toolbar_regressions.py",
+    "test_data_widget_regressions.py",
+    "test_dialog_mocking.py",
+]
+
+_TEST_SECTION_HEADERS: dict[str, str] = {
+    "test_smoke_gui.py": "Smoke tests for core examples (startup + basic interactions).",
+    "test_unit_core.py": "Unit test baseline for core helpers (alias normalization, filter building, art-id mapping, scale-factor calculation).",
+    "test_widget_state_roundtrip.py": "Widget-state roundtrip tests (`set_value`/`get_value`) for CheckButton, RadioButton, ComboBox, Slider, SpinButton, ProgressBar.",
+    "test_notebook_regressions.py": "Notebook regression tests: page add/remove, current page, icon assignment, event wiring.",
+    "test_menu_toolbar_regressions.py": "Menu/toolbar regressions: radio groups, callback bindings.",
+    "test_data_widget_regressions.py": "Data-widget tests: ListView/Grid/DataView data updates, cell access, sorting behavior.",
+    "test_dialog_mocking.py": "Dialog tests with mocking (`ShowModal`/return codes) instead of native interaction.",
+}
+
+_PRINTED_SECTION_HEADERS: set[str] = set()
+
+
+def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
+    order_map = {name: index for index, name in enumerate(_TEST_FILE_ORDER)}
+    original_position = {id(item): index for index, item in enumerate(items)}
+
+    def _sort_key(item: pytest.Item) -> tuple[int, str]:
+        file_name = Path(str(item.fspath)).name
+        order = order_map.get(file_name, len(_TEST_FILE_ORDER))
+        return (order, original_position[id(item)])
+
+    items.sort(key=_sort_key)
+
+
+def pytest_runtest_setup(item: pytest.Item) -> None:
+    file_name = Path(str(item.fspath)).name
+    header = _TEST_SECTION_HEADERS.get(file_name)
+    if header is None or file_name in _PRINTED_SECTION_HEADERS:
+        return
+
+    print("", flush=True)
+    print(header, flush=True)
+    print("-" * len(header), flush=True)
+    _PRINTED_SECTION_HEADERS.add(file_name)
+
+
 def _has_display() -> bool:
     return sys.platform in ("win32", "darwin") or bool(
         os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY")
