@@ -3220,7 +3220,61 @@ class SimpleWx:
             self.show_error(object_entry, f'"{object_entry.type}" supports no tooltips!')
             return
 
-        object_entry.ref.SetToolTip(object_entry.tip)
+        elif object_entry.type == "NotebookPage":
+            # Notebook tab tooltip support:
+            # store tooltip by page name (not index), because tab indices can
+            # change when pages are inserted/removed/reordered.
+            page_data = object_entry.data if isinstance(object_entry.data, dict) else {}
+            notebook_name = page_data.get("notebook")
+            if not isinstance(notebook_name, str) or notebook_name not in self.widgets:
+                self.show_error(object_entry, '"NotebookPage" has no parent notebook reference!')
+                return
+
+            notebook_object = self.get_object(notebook_name)
+            notebook_ref = notebook_object.ref
+            if not isinstance(notebook_ref, wx.Notebook):
+                self.show_error(object_entry, 'Parent of "NotebookPage" is not a notebook widget!')
+                return
+
+            # Create tooltip store lazily on first notebook-page tooltip.
+            tab_tooltips = getattr(notebook_ref, "_tab_tooltips_by_name", None)
+            if not isinstance(tab_tooltips, dict):
+                tab_tooltips = {}
+                setattr(notebook_ref, "_tab_tooltips_by_name", tab_tooltips)
+
+            # Use stable page name key to avoid tooltip/index drift.
+            tab_tooltips[object_entry.name] = object_entry.tip
+        else:
+            # Standardverhalten für alle anderen Widgets
+            object_entry.ref.SetToolTip(object_entry.tip)
+
+# def add_tooltip(self, Name: str, Tip: str):
+#     widget_entry = self.widgets.get(Name)
+#     if not widget_entry:
+#         return
+
+#     # Prüfen, ob es sich um eine Notebook-Seite handelt
+#     # In wxPython sind Pages oft einfache wx.Panel oder ähnliches, 
+#     # die in ein wx.Notebook eingefügt wurden.
+#     parent = widget_entry.ref.GetParent()
+
+#     if isinstance(parent, wx.Notebook):
+#         # Initialisiere den Tooltip-Speicher am Notebook, falls noch nicht vorhanden
+#         if not hasattr(parent, "_tab_tooltips"):
+#             parent._tab_tooltips = {}
+#             # Event nur einmal binden
+#             parent.Bind(wx.EVT_MOTION, self._on_notebook_motion)
+
+#         # Finde den Index der Seite im Notebook
+#         for i in range(parent.GetPageCount()):
+#             if parent.GetPage(i) == widget_entry.ref:
+#                 parent._tab_tooltips[i] = Tip
+#                 break
+#     else:
+#         # Standardverhalten für alle anderen Widgets
+#         widget_entry.ref.SetToolTip(Tip)
+
+
 
     def get_tooltip(self, Name: str) -> Optional[str]:
         """
@@ -8613,6 +8667,7 @@ class SimpleWx:
 
         None.
         """
+        # Normalize parameters (keys to lowercase, sanitize None values)
         params = self._normalize(
             Name=Name,
             Position=Position,
@@ -8628,17 +8683,22 @@ class SimpleWx:
             Sensitive=Sensitive,
         )
 
+        # Create widget entry, set its type, and register it in the widget table
         object_entry = self._new_widget(**params)
         object_entry.type = "Notebook"
         self.widgets[object_entry.name] = object_entry
 
+        # Read notebook options from normalized parameters and coerce to 0/1
         scrollable = 1 if int(params.get("scrollable") or 0) else 0
         popup = 1 if int(params.get("popup") or 0) else 0
         closetabs = 1 if int(params.get("closetabs") or 0) else 0
         tabs = str(params.get("tabs") or "top").lower()
+        # Derive wx style flags from tab position and scrollable option
         style = self._get_notebook_style(tabs, scrollable)
 
+        # Determine parent widget: use current container or fall back to default container
         provisional_parent = self.container if self.container is not None else self._get_container(self.default_container_name)
+        # Create the actual wx.Notebook widget
         notebook = wx.Notebook(
             provisional_parent,
             wx.ID_ANY,
@@ -8647,46 +8707,95 @@ class SimpleWx:
             style=style,
         )
 
+        # Store the wx object in the widget entry
         object_entry.ref = notebook
+        # Initialize notebook-specific metadata
         object_entry.data = {
-            "tabs": tabs,
-            "scrollable": scrollable,
-            "popup": popup,
-            "closetabs": closetabs,
-            "pages": [],
-            "tab_tooltips": [],
-            "lastclosed": None,
-            "imagesize": 16,
-            "image_index_map": {},
-            "imagelist": None,
+            "tabs": tabs,           # Tab position (top/bottom/left/right/none)
+            "scrollable": scrollable,  # Multi-line tab bar enabled?
+            "popup": popup,         # Popup tab support (compatibility metadata)
+            "closetabs": closetabs, # Tabs closable via middle-click?
+            "pages": [],            # List of associated page names
+            "lastclosed": None,     # Index of the last page closed via middle-click
+            "imagesize": 16,        # Default tab icon size in pixels
+            "image_index_map": {},  # Mapping of image path -> ImageList index
+            "imagelist": None,      # wx.ImageList instance (created on demand)
         }
 
         def _on_notebook_page_changed(event: wx.BookCtrlEvent, notebook_name: str = object_entry.name) -> None:
+            """Keep the current page index in the data dict in sync when the user switches tabs."""
             notebook_obj = self.get_object(notebook_name)
             if isinstance(notebook_obj.data, dict) and notebook_obj.ref is not None:
+                # Persist the index of the newly selected page
                 notebook_obj.data["currentpage"] = int(notebook_obj.ref.GetSelection())
             event.Skip()
 
+        def _on_notebook_motion(event: wx.MouseEvent, notebook_name: str = object_entry.name) -> None:
+            # Resolve notebook from object registry (event source can be a child).
+            notebook_obj = self.get_object(notebook_name)
+            notebook = notebook_obj.ref
+            if not isinstance(notebook, wx.Notebook):
+                event.Skip()
+                return
+
+            source = event.GetEventObject()
+            pos = event.GetPosition()
+            # Normalize coordinates to notebook client space for reliable HitTest.
+            if isinstance(source, wx.Window) and source is not notebook:
+                try:
+                    pos = notebook.ScreenToClient(source.ClientToScreen(pos))
+                except Exception:
+                    pass
+
+            tab_index, flags = notebook.HitTest(pos)
+            # Ignore page-content hits: tooltip is only for tab strip.
+            if int(flags) & int(getattr(wx, "NB_HITTEST_ONPAGE", 0)):
+                tab_index = wx.NOT_FOUND
+
+            pages = notebook_obj.data.get("pages") if isinstance(notebook_obj.data, dict) and isinstance(notebook_obj.data.get("pages"), list) else []
+            tab_tooltips = getattr(notebook, "_tab_tooltips_by_name", {})
+            if tab_index != wx.NOT_FOUND and 0 <= int(tab_index) < len(pages):
+                # Map current tab index -> current page name -> tooltip text.
+                page_name = pages[int(tab_index)]
+                new_tip = str(tab_tooltips.get(page_name, ""))
+            else:
+                new_tip = ""
+
+            if new_tip:
+                if notebook.GetToolTipText() != new_tip:
+                    notebook.SetToolTip(new_tip)
+            else:
+                notebook.UnsetToolTip()
+
+            event.Skip()
+
         def _on_notebook_middle_click(event: wx.MouseEvent, notebook_name: str = object_entry.name) -> None:
+            """Close a tab on middle-click if CloseTabs is enabled."""
             notebook_obj = self.get_object(notebook_name)
             notebook_data = notebook_obj.data if isinstance(notebook_obj.data, dict) else {}
+            # Early exit if the feature is disabled
             if int(notebook_data.get("closetabs", 0)) == 0:
                 event.Skip()
                 return
 
             notebook_ref = notebook_obj.ref
+            # Ensure the wx object supports HitTest
             if notebook_ref is None or not hasattr(notebook_ref, "HitTest"):
                 event.Skip()
                 return
 
+            # Determine which tab index was clicked
             page_idx, _flags = notebook_ref.HitTest(event.GetPosition())
             if int(page_idx) < 0:
+                # Click did not hit any tab -> ignore
                 event.Skip()
                 return
 
+            # Look up the page name by its index
             pages = notebook_data.get("pages") if isinstance(notebook_data.get("pages"), list) else []
             target_name = pages[int(page_idx)] if int(page_idx) < len(pages) else None
 
+            # Remove the page either by name or by numeric index
             removed = 0
             if isinstance(target_name, str) and target_name in self.widgets:
                 removed = self.remove_nb_page(target_name)
@@ -8694,41 +8803,21 @@ class SimpleWx:
                 removed = self.remove_nb_page(notebook_name, int(page_idx))
 
             if int(removed) == 1:
+                # Store the index of the closed page for later reference
                 notebook_data = notebook_obj.data if isinstance(notebook_obj.data, dict) else {}
                 notebook_data["lastclosed"] = int(page_idx)
                 notebook_obj.data = notebook_data
             else:
                 event.Skip()
 
-        def _on_notebook_mouse_move(event: wx.MouseEvent, notebook_name: str = object_entry.name) -> None:
-            notebook_obj = self.get_object(notebook_name)
-            notebook_ref = notebook_obj.ref
-            if notebook_ref is None or not hasattr(notebook_ref, "HitTest"):
-                event.Skip()
-                return
-
-            page_idx, _flags = notebook_ref.HitTest(event.GetPosition())
-            notebook_data = notebook_obj.data if isinstance(notebook_obj.data, dict) else {}
-            tooltip_values = notebook_data.get("tab_tooltips") if isinstance(notebook_data.get("tab_tooltips"), list) else []
-
-            tip_text = ""
-            if int(page_idx) >= 0 and int(page_idx) < len(tooltip_values):
-                tip_text = str(tooltip_values[int(page_idx)] or "")
-
-            current_tip = notebook_ref.GetToolTipText() if hasattr(notebook_ref, "GetToolTipText") else ""
-            if tip_text:
-                if current_tip != tip_text:
-                    notebook_ref.SetToolTip(tip_text)
-            elif hasattr(notebook_ref, "UnsetToolTip"):
-                notebook_ref.UnsetToolTip()
-
-            event.Skip()
-
+        # Register event handlers for page changes, middle-click, and mouse motion on the notebook
         notebook.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, _on_notebook_page_changed)
         notebook.Bind(wx.EVT_MIDDLE_DOWN, _on_notebook_middle_click)
-        notebook.Bind(wx.EVT_MOTION, _on_notebook_mouse_move)
+        notebook.Bind(wx.EVT_MOTION, _on_notebook_motion)
 
+        # Apply common widget properties (position, size, tooltip, callback, …)
         self._set_commons(object_entry.name, **params)
+        # Insert the notebook into the current layout container
         self._add_to_container(object_entry.name)
 
     def add_nb_page(
