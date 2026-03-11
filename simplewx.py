@@ -3133,7 +3133,33 @@ class SimpleWx:
             widget.Reparent(target_container)
 
         # scale coordinates only when writing to wx widget
-        widget.SetPosition((self._scale(src_x), self._scale(src_y)))
+        scaled_x = self._scale(src_x)
+        scaled_y = self._scale(src_y)
+        widget.SetPosition((scaled_x, scaled_y))
+
+        # If the target container is scrollable (e.g. notebook page),
+        # expand virtual size so absolutely positioned children are reachable.
+        if isinstance(target_container, wx.ScrolledWindow):
+            child_size = widget.GetSize()
+            child_width = int(child_size.GetWidth())
+            child_height = int(child_size.GetHeight())
+
+            required_width = max(1, scaled_x + max(1, child_width) + self._scale(5))
+            required_height = max(1, scaled_y + max(1, child_height) + self._scale(5))
+
+            current_virtual = target_container.GetVirtualSize()
+            current_width = int(current_virtual.GetWidth())
+            current_height = int(current_virtual.GetHeight())
+
+            client_size = target_container.GetClientSize()
+            client_width = max(1, int(client_size.GetWidth()))
+            client_height = max(1, int(client_size.GetHeight()))
+
+            new_width = max(current_width, client_width, required_width)
+            new_height = max(current_height, client_height, required_height)
+
+            if new_width != current_width or new_height != current_height:
+                target_container.SetVirtualSize((new_width, new_height))
 
     def show_error(self, object_or_msg: Any, msg: Optional[str] = None) -> None:
         """
