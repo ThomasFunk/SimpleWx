@@ -33,7 +33,7 @@
 - [x] Menü-/Toolbar-Regressionen: Radio-Groups, Callback-Bindings.
 - [ ] NotebookPage-Sensitivity in wx sauber überarbeiten und integrieren.
 - [ ] NotebookPage aus-/einblenden (Show/Hide) sauber überarbeiten und integrieren.
-- [ ] Data-Widget-Tests: ListView/Grid/DataView Datenupdate, Zellzugriff, Sortierverhalten.
+- [x] Data-Widget-Tests: ListView/Grid/DataView Datenupdate, Zellzugriff, Sortierverhalten.
 - [ ] Dialog-Tests mit Mocking (`ShowModal`/Rückgabecodes) statt nativer Interaktion.
 
 ## Kurzfazit

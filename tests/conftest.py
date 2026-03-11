@@ -55,6 +55,8 @@ def gui_window(gui_runtime: SimpleWx) -> Generator[Callable[..., SimpleWx], None
     ) -> SimpleWx:
         existing_frame = getattr(gui_runtime, "main_window", None)
         if isinstance(existing_frame, wx.Frame):
+            if existing_frame.IsShown():
+                existing_frame.Hide()
             existing_frame.Destroy()
             gui_runtime.main_window = None
             gui_runtime.ref = None
@@ -69,6 +71,8 @@ def gui_window(gui_runtime: SimpleWx) -> Generator[Callable[..., SimpleWx], None
 
     frame = getattr(gui_runtime, "main_window", None)
     if isinstance(frame, wx.Frame):
+        if frame.IsShown():
+            frame.Hide()
         frame.Destroy()
         gui_runtime.main_window = None
         gui_runtime.ref = None

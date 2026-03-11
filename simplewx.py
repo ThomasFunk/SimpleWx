@@ -9871,15 +9871,23 @@ class SimpleWx:
             "data": rows,
         }
 
+        def _apply_listview_size(host: wx.ScrolledWindow, ctrl: wx.ListCtrl) -> None:
+            client_size = host.GetClientSize()
+            width = int(client_size.GetWidth())
+            height = int(client_size.GetHeight())
+            if width < 2 or height < 2:
+                return
+            ctrl.SetSize(wx.Size(width, height))
+
         def _on_listview_size(event: wx.Event, host: wx.ScrolledWindow = scrolled_window, ctrl: wx.ListCtrl = listview) -> None:
-            ctrl.SetSize(host.GetClientSize())
+            _apply_listview_size(host, ctrl)
             event.Skip()
 
         scrolled_window.Bind(wx.EVT_SIZE, _on_listview_size)
 
         self._set_commons(object_entry.name, **params)
         self._add_to_container(object_entry.name)
-        listview.SetSize(scrolled_window.GetClientSize())
+        _apply_listview_size(scrolled_window, listview)
 
     def add_grid(
         self,

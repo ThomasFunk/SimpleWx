@@ -203,6 +203,13 @@ For headless Linux environments (for example CI), run the GUI tests under Xvfb:
 
     xvfb-run -a pytest -q
 
+Note for Linux/GTK test runs: you may occasionally see non-fatal renderer log messages such as
+`Gtk-Message` (missing `appmenu-gtk-module`) or pixman warnings like
+`In pixman_region32_init_rect: Invalid rectangle passed`.
+If pytest still reports all tests as passed, these messages are environment/rendering noise and not test assertion failures.
+In current Data-Widget regression runs this pixman message can appear during sequential multi-widget teardown,
+while isolated single-widget runs may stay quiet; this further indicates backend-level rendering noise.
+
 
 DEPENDENCIES
 ------------
