@@ -14,6 +14,27 @@ The format is based on Keep a Changelog.
 
 ## [Unreleased]
 
+## [0.3.3] - 2026-03-11
+
+### Changed
+
+- Bumped library metadata in `simplewx.py` to `__version__ = "0.3.3"`.
+- Updated the README headline version from `0.3.2` to `0.3.3`.
+
+### Added
+
+- Added dialog tests with mocked `ShowModal`/return-code handling in `tests/test_dialog_mocking.py`.
+- Added data-widget regression tests for ListView/Grid/DataView in `tests/test_data_widget_regressions.py`.
+
+### Fixed
+
+- Improved ListView resize guard behavior for test stability in headless GTK runs.
+
+### Documentation
+
+- Documented known GTK/Pixman renderer log noise and sequential-run behavior in `README.md`.
+- Updated test output structure with ordered English section headers and matching separator lines.
+
 ## [0.3.2] - 2026-03-11
 
 ### Changed

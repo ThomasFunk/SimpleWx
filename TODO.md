@@ -39,4 +39,5 @@
 ## Kurzfazit
 
 - Feature-Abdeckung ist bereits sehr hoch.
+- Die Testsuite ist bis auf die beiden NotebookPage-Themen (Sensitivity, Show/Hide) weitgehend abgeschlossen.
 - Offene Arbeit ist vor allem bei den zwei großen Themen (`AuiManager`, `TaskBarIcon`).
