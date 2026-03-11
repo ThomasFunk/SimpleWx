@@ -30,7 +30,9 @@
 
 - [x] Widget-State Roundtrip-Tests (`set_value`/`get_value`) für: CheckButton, RadioButton, ComboBox, Slider, SpinButton, ProgressBar.
 - [x] Notebook-Regressionstests: Page add/remove, CurrentPage, Icon-Zuweisung, Event-Wiring.
-- [ ] Menü-/Toolbar-Regressionen: Sensitivity, Radio-Groups, Callback-Bindings.
+- [x] Menü-/Toolbar-Regressionen: Radio-Groups, Callback-Bindings.
+- [ ] NotebookPage-Sensitivity in wx sauber überarbeiten und integrieren.
+- [ ] NotebookPage aus-/einblenden (Show/Hide) sauber überarbeiten und integrieren.
 - [ ] Data-Widget-Tests: ListView/Grid/DataView Datenupdate, Zellzugriff, Sortierverhalten.
 - [ ] Dialog-Tests mit Mocking (`ShowModal`/Rückgabecodes) statt nativer Interaktion.
 

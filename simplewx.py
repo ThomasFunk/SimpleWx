@@ -2459,6 +2459,25 @@ class SimpleWx:
                             except Exception:
                                 pass
 
+        # menu-item values
+        if object_entry.type == "MenuItem":
+            if "active" in params:
+                active = 1 if int(params.pop("active")) else 0
+                if isinstance(widget, wx.MenuItem) and widget.IsCheckable():
+                    group_name = data.get("group") if isinstance(data, dict) else None
+                    item_type = str(data.get("type") or "") if isinstance(data, dict) else ""
+                    if active and item_type == "radio" and isinstance(group_name, str) and group_name in self.groups:
+                        for entry_name in self.groups[group_name]:
+                            if entry_name == object_entry.name:
+                                continue
+                            group_entry = self.get_object(entry_name)
+                            if isinstance(group_entry.ref, wx.MenuItem) and group_entry.ref.IsCheckable():
+                                group_entry.ref.Check(False)
+                            if isinstance(group_entry.data, dict):
+                                group_entry.data["active"] = 0
+                    widget.Check(bool(active))
+                    data["active"] = 1 if bool(widget.IsChecked()) else 0
+
         # toolbar values
         if object_entry.type == "ToolBar":
             if "orientation" in params:
@@ -2492,9 +2511,16 @@ class SimpleWx:
                     data["lasttool"] = int(selected_tool.get("id", -1))
                     tool_id = int(selected_tool.get("id", -1))
                     kind = str(selected_tool.get("kind", "normal"))
-                    if widget is not None and hasattr(widget, "ToggleTool") and tool_id >= 0 and kind in ("check", "toggle", "radio"):
+                    if widget is not None and hasattr(widget, "ToggleTool") and tool_id != -1 and kind in ("check", "toggle", "radio"):
                         widget.ToggleTool(tool_id, True)
-                        selected_tool["active"] = 1
+                        for tool in tools:
+                            if not isinstance(tool, dict):
+                                continue
+                            current_tool_id = int(tool.get("id", -1))
+                            if kind == "radio":
+                                tool["active"] = 1 if current_tool_id == tool_id else 0
+                            elif current_tool_id == tool_id:
+                                tool["active"] = 1 if bool(widget.GetToolState(tool_id)) else 0
 
         # message-dialog values
         if object_entry.type == "MessageDialog":
@@ -6553,8 +6579,9 @@ class SimpleWx:
                 normalized_kind = "normal"
 
             # add the tool and keep normalized metadata in object data map
-            tool_id = int(wx.NewIdRef())
-            toolbar.AddTool(tool_id, label, bitmap, shortHelp=tooltip, kind=wx_kind)
+            tool_id_ref = wx.NewIdRef()
+            toolbar.AddTool(tool_id_ref, label, bitmap, shortHelp=tooltip, kind=wx_kind)
+            tool_id = int(tool_id_ref)
             if wx_kind in (wx.ITEM_CHECK, wx.ITEM_RADIO):
                 toolbar.ToggleTool(tool_id, bool(active))
             normalized_tools.append(
