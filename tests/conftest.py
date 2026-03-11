@@ -1,3 +1,8 @@
+#!/usr/bin/env python3
+__author__ = 'Thomas Funk'
+__coauthors__ = 'Github Copilot'
+__date__ = "2026/03/11"
+
 import os
 import sys
 from collections.abc import Callable, Generator

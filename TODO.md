@@ -21,7 +21,7 @@
 
 ## P2 – Stabilisierung
 
-- [ ] Smoke-Tests für Kernbeispiele (Start + Grundinteraktionen).
+- [x] Smoke-Tests für Kernbeispiele (Start + Grundinteraktionen).
 - [ ] Dokumentation nachziehen, sobald `AuiManager`/`TaskBarIcon` umgesetzt sind.
 - [ ] Optional: Release-Checkliste für ersten stabilen Tag (`v0.1.x`) anlegen.
 

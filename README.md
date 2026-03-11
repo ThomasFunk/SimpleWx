@@ -1,4 +1,4 @@
-SimpleWx version 0.2.2
+SimpleWx version 0.3.0
 =======================
 
 SimpleWx is a Python wrapper around wxPython (the Python binding for wxWidgets)
@@ -178,26 +178,28 @@ Create and activate a Python virtual environment, then install dependencies:
     pip install wxPython
 
 
-  TESTING
-  -------
+TESTING
+-------
 
-  Basic smoke tests now live in `tests/` and cover:
+Basic smoke tests now live in `tests/` and cover:
 
-  - window creation,
-  - button creation,
-  - simulated button clicks,
-  - menubar/menu/menu item creation,
-  - simulated menu-item activation.
+- window creation,
+- button creation,
+- simulated button clicks,
+- menubar/menu/menu item creation,
+- simulated menu-item activation.
 
-  Install the test dependency:
+Install the test dependency:
 
     pip install -r requirements-dev.txt
 
-  Run the test suite:
+Run the test suite:
 
     pytest -q
 
-  For headless Linux environments (for example CI), run the GUI tests under Xvfb:
+The smoke tests print readable step output (for example `Main window: Creation [PASSED]`) so you can see what was executed.
+
+For headless Linux environments (for example CI), run the GUI tests under Xvfb:
 
     xvfb-run -a pytest -q
 

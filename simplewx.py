@@ -2,7 +2,7 @@
 __author__ = 'Thomas Funk'
 __coauthors__ = 'Github Copilot & Gemini'
 __date__ = "2026/03/11"
-__version__ = "0.2.2"
+__version__ = "0.3.0"
 
 from dataclasses import dataclass, field
 from typing import Optional, Any, Dict, Callable
@@ -15,6 +15,8 @@ import wx.adv
 import wx.dataview as wxdataview
 import wx.grid as wxgrid
 import wx.richtext as wxrichtext
+
+_WX_IMAGE_HANDLERS_INITIALIZED = False
 
 @dataclass
 class WidgetEntry:
@@ -229,8 +231,13 @@ class SimpleWx:
             self.app = wx.App()
 
         # ensure image handlers are available for bitmap/image widgets
+        global _WX_IMAGE_HANDLERS_INITIALIZED
         try:
-            wx.InitAllImageHandlers()
+            if not _WX_IMAGE_HANDLERS_INITIALIZED:
+                png_handler = wx.Image.FindHandler(wx.BITMAP_TYPE_PNG)
+                if png_handler is None:
+                    wx.InitAllImageHandlers()
+                _WX_IMAGE_HANDLERS_INITIALIZED = True
         except Exception:
             pass
 

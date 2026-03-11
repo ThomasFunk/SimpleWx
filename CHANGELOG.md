@@ -14,6 +14,30 @@ The format is based on Keep a Changelog.
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-03-11
+
+### Changed
+
+- Bumped library metadata in `simplewx.py` to `__version__ = "0.3.0"`.
+- Updated the README headline version from `0.2.2` to `0.3.0`.
+- Marked smoke tests as completed in `TODO.md`.
+
+### Added
+
+- Added pytest-based GUI smoke test infrastructure:
+	- `tests/conftest.py` shared GUI fixtures,
+	- `tests/test_smoke_gui.py` smoke scenarios for window/button/menu flows,
+	- `requirements-dev.txt` with test dependency setup,
+	- `pytest.ini` to show readable smoke test step output.
+
+### Fixed
+
+- Avoided repeated wx image-handler initialization by guarding `wx.InitAllImageHandlers()` with a runtime check, removing duplicate "Adding duplicate image handler" debug noise during test runs.
+
+### Documentation
+
+- Added/updated README testing instructions (`pytest -q`, headless `xvfb-run -a pytest -q`) and described the human-readable smoke test output format.
+
 ## [0.2.2] - 2026-03-11
 
 ### Changed
