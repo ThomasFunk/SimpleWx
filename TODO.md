@@ -28,7 +28,7 @@
 
 ## P3 – Weitere automatisierte Tests
 
-- [ ] Widget-State Roundtrip-Tests (`set_value`/`get_value`) für: CheckButton, RadioButton, ComboBox, Slider, SpinButton, ProgressBar.
+- [x] Widget-State Roundtrip-Tests (`set_value`/`get_value`) für: CheckButton, RadioButton, ComboBox, Slider, SpinButton, ProgressBar.
 - [ ] Notebook-Regressionstests: Page add/remove, CurrentPage, Icon-Zuweisung, Event-Wiring.
 - [ ] Menü-/Toolbar-Regressionen: Sensitivity, Radio-Groups, Callback-Bindings.
 - [ ] Data-Widget-Tests: ListView/Grid/DataView Datenupdate, Zellzugriff, Sortierverhalten.
