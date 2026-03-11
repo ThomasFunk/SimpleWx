@@ -14,6 +14,22 @@ The format is based on Keep a Changelog.
 
 ## [Unreleased]
 
+## [0.3.2] - 2026-03-11
+
+### Changed
+
+- Bumped library metadata in `simplewx.py` to `__version__ = "0.3.2"`.
+- Updated the README headline version from `0.3.1` to `0.3.2`.
+
+### Added
+
+- Added regression coverage for menu/toolbar behavior (`tests/test_menu_toolbar_regressions.py`) focused on radio groups and callback bindings.
+
+### Fixed
+
+- Fixed toolbar tool-id handling for wx so tool creation and state switching are stable during automated tests.
+- Added `MenuItem` `Active` handling in `set_value`/`set_values`, including radio-group synchronization.
+
 ## [0.3.1] - 2026-03-11
 
 ### Changed
