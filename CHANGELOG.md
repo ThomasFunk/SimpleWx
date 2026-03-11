@@ -14,6 +14,17 @@ The format is based on Keep a Changelog.
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-03-11
+
+### Changed
+
+- Bumped library metadata in `simplewx.py` to `__version__ = "0.2.0"` and updated release date.
+- Finalized notebook tab tooltip handling (name-based mapping + robust hover hit-testing) for stable behavior on tab reorder/remove.
+
+### Documentation
+
+- Updated README headline version from `0.1.0` to `0.2.0`.
+
 
 ### Added
 
