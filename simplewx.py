@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 __author__ = 'Thomas Funk'
 __coauthors__ = 'Github Copilot & Gemini'
-__date__ = "2026/03/09"
-__version__ = "0.1.0"
+__date__ = "2026/03/11"
+__version__ = "0.2.0"
 
 from dataclasses import dataclass, field
 from typing import Optional, Any, Dict, Callable

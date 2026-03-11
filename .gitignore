@@ -27,3 +27,8 @@ Thumbs.db
 
 # Generated localization binaries
 *.mo
+
+# Perl reference files
+references/
+*.pm
+*.pl
