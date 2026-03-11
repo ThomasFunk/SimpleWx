@@ -1,0 +1,197 @@
+#!/usr/bin/env python3
+__author__ = 'Thomas Funk'
+__coauthors__ = 'Github Copilot'
+__date__ = "2026/03/11"
+
+import wx
+
+
+_LAST_SCOPE: str | None = None
+_STATUS_COLUMN = 72
+
+
+def _passed(scope: str, check: str) -> None:
+    global _LAST_SCOPE
+    if _LAST_SCOPE is None:
+        print("", flush=True)
+    elif _LAST_SCOPE != scope:
+        print("", flush=True)
+    _LAST_SCOPE = scope
+    left = f"{scope}: {check}"
+    print(f"{left:<{_STATUS_COLUMN}} [PASSED]", flush=True)
+
+
+def test_show_dialog_uses_mocked_showmodal_return_code(gui_window, monkeypatch) -> None:
+    scope = "Dialog mock"
+    win = gui_window(name="dialog_modal")
+    win.add_dialog(Name="dlg_generic", Title="Generic", Modal=1)
+
+    monkeypatch.setattr(wx.Dialog, "ShowModal", lambda self: wx.ID_CANCEL)
+
+    result = win.show_dialog("dlg_generic")
+
+    assert result == wx.ID_CANCEL
+    _passed(scope, "Generic dialog returns mocked ShowModal code")
+
+
+def test_show_msg_dialog_uses_mocked_showmodal_return_code(gui_window, monkeypatch) -> None:
+    scope = "MessageDialog mock"
+    win = gui_window(name="msg_modal")
+    win.add_msg_dialog(Name="msg_yesno", Modal=1, DType="yesno", MType="question")
+
+    monkeypatch.setattr(wx.MessageDialog, "ShowModal", lambda self: wx.ID_YES)
+
+    result = win.show_msg_dialog("msg_yesno", "Proceed?")
+
+    assert result == wx.ID_YES
+    _passed(scope, "Message dialog returns mocked ShowModal code")
+
+
+def test_show_filechooser_dialog_with_mocked_showmodal_and_path(gui_window, monkeypatch) -> None:
+    scope = "FileDialog mock"
+    callback_state: dict[str, str | None] = {"path": None}
+
+    def on_file_selected(_dialog, selected_path) -> None:
+        callback_state["path"] = selected_path
+
+    win = gui_window(name="file_dialog")
+    win.add_filechooser_dialog(
+        Name="file_open",
+        Action="open",
+        Title="Open file",
+        RFunc=on_file_selected,
+    )
+
+    monkeypatch.setattr(wx.FileDialog, "ShowModal", lambda self: wx.ID_OK)
+    monkeypatch.setattr(wx.FileDialog, "GetPath", lambda self: "/tmp/mock-selected.txt")
+
+    result = win.show_filechooser_dialog("file_open")
+
+    assert result is None
+    _passed(scope, "File chooser uses callback mode for predefined dialog")
+    assert callback_state["path"] == "/tmp/mock-selected.txt"
+    _passed(scope, "Callback receives mocked selected path")
+
+
+def test_show_print_dialog_with_mocked_dialog_payload(gui_window, monkeypatch) -> None:
+    scope = "PrintDialog mock"
+    win = gui_window(name="print_dialog")
+    win.add_print_dialog(
+        Name="print_cfg",
+        MinPage=1,
+        MaxPage=12,
+        FromPage=2,
+        ToPage=5,
+        Copies=3,
+        Modal=1,
+    )
+
+    class _FakePrintDialogData:
+        def GetMinPage(self):
+            return 1
+
+        def GetMaxPage(self):
+            return 12
+
+        def GetFromPage(self):
+            return 2
+
+        def GetToPage(self):
+            return 5
+
+        def GetAllPages(self):
+            return False
+
+        def GetSelection(self):
+            return False
+
+        def GetPrintToFile(self):
+            return False
+
+        def GetNoCopies(self):
+            return 3
+
+    class _FakePrintDialog:
+        def __init__(self, _parent, _print_data):
+            self._title = ""
+
+        def SetTitle(self, title):
+            self._title = title
+
+        def ShowModal(self):
+            return wx.ID_OK
+
+        def GetPrintDialogData(self):
+            return _FakePrintDialogData()
+
+        def Destroy(self):
+            return None
+
+    monkeypatch.setattr(wx, "PrintDialog", _FakePrintDialog)
+
+    result = win.show_print_dialog("print_cfg")
+
+    assert isinstance(result, dict)
+    assert result["frompage"] == 2
+    _passed(scope, "Print dialog returns mocked payload")
+    assert result["topage"] == 5
+    _passed(scope, "Print dialog payload preserves page range")
+    assert result["copies"] == 3
+    _passed(scope, "Print dialog payload preserves copies")
+
+
+def test_show_pagesetup_dialog_with_mocked_dialog_payload(gui_window, monkeypatch) -> None:
+    scope = "PageSetupDialog mock"
+    win = gui_window(name="pagesetup_dialog")
+    win.add_pagesetup_dialog(
+        Name="pset_cfg",
+        Orientation="portrait",
+        MarginTopLeft=[10, 10],
+        MarginBottomRight=[20, 20],
+        Modal=1,
+    )
+
+    class _FakePrintData:
+        def GetPaperId(self):
+            return int(wx.PAPER_A4)
+
+        def GetOrientation(self):
+            return wx.LANDSCAPE
+
+    class _FakePageSetupData:
+        def GetPrintData(self):
+            return _FakePrintData()
+
+        def GetMarginTopLeft(self):
+            return wx.Point(15, 25)
+
+        def GetMarginBottomRight(self):
+            return wx.Point(35, 45)
+
+    class _FakePageSetupDialog:
+        def __init__(self, _parent, _page_setup_data):
+            self._title = ""
+
+        def SetTitle(self, title):
+            self._title = title
+
+        def ShowModal(self):
+            return wx.ID_OK
+
+        def GetPageSetupData(self):
+            return _FakePageSetupData()
+
+        def Destroy(self):
+            return None
+
+    monkeypatch.setattr(wx, "PageSetupDialog", _FakePageSetupDialog)
+
+    result = win.show_pagesetup_dialog("pset_cfg")
+
+    assert isinstance(result, dict)
+    assert result["orientation"] == "landscape"
+    _passed(scope, "Page setup dialog returns mocked orientation")
+    assert result["margintopleft"] == [15, 25]
+    _passed(scope, "Page setup dialog returns mocked top-left margin")
+    assert result["marginbottomright"] == [35, 45]
+    _passed(scope, "Page setup dialog returns mocked bottom-right margin")

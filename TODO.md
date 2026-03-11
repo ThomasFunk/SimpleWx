@@ -34,7 +34,7 @@
 - [ ] NotebookPage-Sensitivity in wx sauber überarbeiten und integrieren.
 - [ ] NotebookPage aus-/einblenden (Show/Hide) sauber überarbeiten und integrieren.
 - [x] Data-Widget-Tests: ListView/Grid/DataView Datenupdate, Zellzugriff, Sortierverhalten.
-- [ ] Dialog-Tests mit Mocking (`ShowModal`/Rückgabecodes) statt nativer Interaktion.
+- [x] Dialog-Tests mit Mocking (`ShowModal`/Rückgabecodes) statt nativer Interaktion.
 
 ## Kurzfazit
 
