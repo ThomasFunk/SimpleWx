@@ -6974,14 +6974,14 @@ class SimpleWx:
                         pass
                     menu_bitmap = bitmap
 
-        parent_menu.Append(menu_item)
-
-        # set bitmap after append for better wxGTK compatibility
+        # On wxGTK, SetBitmap MUST be called before Append, otherwise the icon is silently ignored.
         if isinstance(menu_bitmap, wx.Bitmap) and menu_bitmap.IsOk() and hasattr(menu_item, "SetBitmap"):
             try:
                 menu_item.SetBitmap(menu_bitmap)
             except Exception:
                 pass
+
+        parent_menu.Append(menu_item)
 
         menu_item.Enable(bool(int(Sensitive)))
 
