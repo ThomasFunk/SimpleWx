@@ -3384,6 +3384,13 @@ class SimpleWx:
         if object_entry.ref is None or font_spec is None:
             return
 
+        if object_entry.type == "NotebookPage":
+            self.show_error(
+                object_entry,
+                "set_font is not supported for NotebookPage tabs with wx.Notebook; tab font can only be controlled globally.",
+            )
+            return
+
         current = object_entry.ref.GetFont()
         if isinstance(font_spec, (list, tuple)) and len(font_spec) >= 2:
             family = str(font_spec[0])
@@ -3419,7 +3426,18 @@ class SimpleWx:
         object_entry = self.get_object(name)
         if object_entry.ref is None:
             return
-        object_entry.ref.SetForegroundColour(wx.Colour(color))
+        if object_entry.type == "NotebookPage":
+            self.show_error(
+                object_entry,
+                "set_font_color is not supported for NotebookPage tabs with wx.Notebook; tab text color is not available per page and global color is theme-dependent.",
+            )
+            return
+        colour = wx.Colour(color)
+        if not colour.IsOk():
+            self.show_error(object_entry, f'Unknown color "{color}".')
+            return
+
+        object_entry.ref.SetForegroundColour(colour)
 
     def get_color(self, Name: str) -> Any:
         """

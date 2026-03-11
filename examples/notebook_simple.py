@@ -53,19 +53,13 @@ win.set_title("NB_page2", "Two2One")
 
 win.add_nb_page(Name="NB_page3", PositionNumber=3, Title="Three", Notebook="NB1", Tooltip="Page 3 on 3")
 win.add_nb_page(Name="NB_page4", PositionNumber=2, Title="Four", Notebook="NB1", Tooltip="Page 4 on 2")
-
 win.add_nb_page(Name="NB_page5", PositionNumber=4, Title="Five", Notebook="NB1", Tooltip="Page 5 on 4")
-
-# Style one page
-win.set_font("NB_page5", ["Bernard MT Condensed", 10])
-win.set_font_color("NB_page5", "red")
-
 win.add_nb_page(Name="NB_page6", PositionNumber=5, Title="Six", Notebook="NB1", Tooltip="Page 6 on 5")
 win.add_nb_page(Name="NB_page7", PositionNumber=6, Title="Seven", Notebook="NB1", Tooltip="Page 7 on 6")
 
 win.add_button(
     Name="Button",
-    Position=[10, 300],
+    Position=[10, 30],
     Size=[80, 40],
     Title="_Jup",
     Tooltip="button to jump to page 4",
