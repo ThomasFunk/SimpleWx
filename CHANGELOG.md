@@ -14,6 +14,18 @@ The format is based on Keep a Changelog.
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-03-11
+
+### Changed
+
+- Bumped library metadata in `simplewx.py` to `__version__ = "0.3.1"`.
+- Updated the README headline version from `0.3.0` to `0.3.1`.
+- Added/updated local automated tests for core helper behavior in `tests/test_unit_core.py`.
+
+### Documentation
+
+- Extended `TODO.md` with next-step automated test areas for future coverage expansion.
+
 ## [0.3.0] - 2026-03-11
 
 ### Changed

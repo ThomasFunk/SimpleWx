@@ -2,7 +2,7 @@
 __author__ = 'Thomas Funk'
 __coauthors__ = 'Github Copilot & Gemini'
 __date__ = "2026/03/11"
-__version__ = "0.3.0"
+__version__ = "0.3.1"
 
 from dataclasses import dataclass, field
 from typing import Optional, Any, Dict, Callable
@@ -16,6 +16,7 @@ import wx.dataview as wxdataview
 import wx.grid as wxgrid
 import wx.richtext as wxrichtext
 
+# Global flag to track whether wx image handlers have been initialized
 _WX_IMAGE_HANDLERS_INITIALIZED = False
 
 @dataclass
@@ -65,6 +66,7 @@ class _SimpleTextPrintout(wx.Printout):
         show_date: int = 1,
         date_format: str = "%Y-%m-%d",
     ):
+        # store original unscaled text and parameters for pagination and template processing
         super().__init__(title)
         self._title = str(title or "Print")
         self._text = str(text or "")
@@ -75,20 +77,22 @@ class _SimpleTextPrintout(wx.Printout):
         self._show_date = 1 if int(show_date) else 0
         self._date_format = str(date_format or "%Y-%m-%d")
 
+    # Pagination and template processing logic
     def HasPage(self, page_num: int) -> bool:
         if page_num < 1:
             return False
         return page_num <= ((len(self._lines) - 1) // self._lines_per_page + 1)
-
+    # Returns pagination info: (min_page, max_page, page_from, page_to)
     def GetPageInfo(self) -> tuple[int, int, int, int]:
         page_count = max(1, (len(self._lines) - 1) // self._lines_per_page + 1)
         return (1, page_count, 1, page_count)
-
+    # Renders the specified page number with header and footer templates applied
     def OnPrintPage(self, page_num: int) -> bool:
         dc = self.GetDC()
         if dc is None:
             return False
 
+        # set a default font for consistent line height measurement
         dc.SetFont(wx.Font(10, wx.FONTFAMILY_MODERN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
         page_width, page_height = dc.GetSize()
         line_height = max(14, dc.GetCharHeight() + 2)
@@ -96,9 +100,11 @@ class _SimpleTextPrintout(wx.Printout):
         top_margin = 40
         bottom_margin = 40
 
+        # calculate total page count and prepare header/footer text with template placeholders
         page_count = max(1, (len(self._lines) - 1) // self._lines_per_page + 1)
         date_text = datetime.datetime.now().strftime(self._date_format) if self._show_date else ""
 
+        # helper function to replace template placeholders with actual values
         def _format_template(template: str) -> str:
             text = str(template or "")
             text = text.replace("{title}", self._title)
@@ -110,10 +116,12 @@ class _SimpleTextPrintout(wx.Printout):
         header_text = _format_template(self._header_template)
         footer_text = _format_template(self._footer_template)
 
+        # render header, body text for the current page, and footer
         if header_text:
             dc.DrawText(header_text, left_margin, top_margin)
             top_margin += line_height + 6
 
+        # calculate the line range for the current page and render each line of text
         start = (page_num - 1) * self._lines_per_page
         end = min(len(self._lines), start + self._lines_per_page)
         for idx in range(start, end):
@@ -122,6 +130,7 @@ class _SimpleTextPrintout(wx.Printout):
                 break
             dc.DrawText(self._lines[idx], left_margin, y)
 
+        # render footer at the bottom of the page
         if footer_text:
             dc.DrawText(footer_text, left_margin, page_height - bottom_margin)
         _ = page_width

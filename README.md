@@ -1,4 +1,4 @@
-SimpleWx version 0.3.0
+SimpleWx version 0.3.1
 =======================
 
 SimpleWx is a Python wrapper around wxPython (the Python binding for wxWidgets)
