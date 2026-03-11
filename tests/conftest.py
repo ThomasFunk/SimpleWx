@@ -1,0 +1,70 @@
+import os
+import sys
+from collections.abc import Callable, Generator
+from pathlib import Path
+
+import pytest
+import wx
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from simplewx import SimpleWx
+
+
+def _has_display() -> bool:
+    return sys.platform in ("win32", "darwin") or bool(
+        os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY")
+    )
+
+
+def pump_events() -> None:
+    app = wx.GetApp()
+    if isinstance(app, wx.App):
+        app.ProcessPendingEvents()
+    wx.YieldIfNeeded()
+
+
+@pytest.fixture(scope="session")
+def gui_runtime() -> Generator[SimpleWx, None, None]:
+    if not _has_display():
+        pytest.skip("GUI tests require a display server (use xvfb-run on Linux).")
+
+    runtime = SimpleWx()
+    yield runtime
+
+    frame = getattr(runtime, "main_window", None)
+    if isinstance(frame, wx.Frame):
+        frame.Destroy()
+        pump_events()
+
+
+@pytest.fixture()
+def gui_window(gui_runtime: SimpleWx) -> Generator[Callable[..., SimpleWx], None, None]:
+    def _create(
+        name: str = "main",
+        title: str = "SimpleWx Test",
+        size: tuple[int, int] = (320, 240),
+        fixed: int = 1,
+    ) -> SimpleWx:
+        existing_frame = getattr(gui_runtime, "main_window", None)
+        if isinstance(existing_frame, wx.Frame):
+            existing_frame.Destroy()
+            gui_runtime.main_window = None
+            gui_runtime.ref = None
+            pump_events()
+
+        gui_runtime.new_window(Name=name, Title=title, Size=list(size), Fixed=fixed)
+        gui_runtime.show()
+        pump_events()
+        return gui_runtime
+
+    yield _create
+
+    frame = getattr(gui_runtime, "main_window", None)
+    if isinstance(frame, wx.Frame):
+        frame.Destroy()
+        gui_runtime.main_window = None
+        gui_runtime.ref = None
+        pump_events()

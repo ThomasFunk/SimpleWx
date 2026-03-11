@@ -11,13 +11,10 @@ top of Python and the wx toolkit (wxPython).
 Most commonly used widgets are already implemented with convenience functions.
 At the same time, you can still use native wxPython functionality directly.
 
-<center><span style="color:red"><strong>This is a work in progress!</strong></span></center>
-
-<center><span style="color:red"><strong>Currently not usable because all is untested.</strong></span></center>
-
-<center><span style="color:red"><strong>The complete functionality of SimpleGtk2 is integrated plus missing WxWidget widgets with the help of GitHub Copilot (Auto).</strong></span></center>
-
-<center><span style="color:red"><strong>If all is tested this note will disappear ^^</strong></span></center>
+> [!CAUTION]
+> **This is a work in progress!**
+> Currently not usable because all is untested.
+> The complete functionality of SimpleGtk2 is integrated plus missing WxWidget widgets.
 
 Implemented widgets (current status)
 ------------------------------------
@@ -179,6 +176,30 @@ Create and activate a Python virtual environment, then install dependencies:
     source .venv/bin/activate
     pip install -U pip
     pip install wxPython
+
+
+  TESTING
+  -------
+
+  Basic smoke tests now live in `tests/` and cover:
+
+  - window creation,
+  - button creation,
+  - simulated button clicks,
+  - menubar/menu/menu item creation,
+  - simulated menu-item activation.
+
+  Install the test dependency:
+
+    pip install -r requirements-dev.txt
+
+  Run the test suite:
+
+    pytest -q
+
+  For headless Linux environments (for example CI), run the GUI tests under Xvfb:
+
+    xvfb-run -a pytest -q
 
 
 DEPENDENCIES
