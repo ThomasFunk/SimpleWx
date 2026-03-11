@@ -2,7 +2,7 @@
 __author__ = 'Thomas Funk'
 __coauthors__ = 'Github Copilot & Gemini'
 __date__ = "2026/03/11"
-__version__ = "0.2.0"
+__version__ = "0.2.1"
 
 from dataclasses import dataclass, field
 from typing import Optional, Any, Dict, Callable
