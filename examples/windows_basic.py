@@ -26,14 +26,14 @@ win.add_label(
 
 
 def on_click(_event):
-    # Simple handler to demonstrate button event wiring.
-    print("Window is running.")
+    # Write feedback into the statusbar instead of stdout.
+    win.set_sb_text("Window is running.")
 
 
 win.add_button(
     Name="infoButton",
     Position=[20, 60],
-    Title="Print Info",
+    Title="Show Status",
     Function=on_click,
 )
 

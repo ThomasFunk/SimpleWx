@@ -1,4 +1,4 @@
-SimpleWx version 0.3.3
+SimpleWx version 0.4.0
 =======================
 
 SimpleWx is a Python wrapper around wxPython (the Python binding for wxWidgets)
@@ -10,11 +10,6 @@ top of Python and the wx toolkit (wxPython).
 
 Most commonly used widgets are already implemented with convenience functions.
 At the same time, you can still use native wxPython functionality directly.
-
-> [!CAUTION]
-> **This is a work in progress!**
-> Currently not usable because all is untested.
-> The complete functionality of SimpleGtk2 is integrated plus missing WxWidget widgets.
 
 Implemented widgets (current status)
 ------------------------------------
@@ -70,7 +65,7 @@ Implemented widgets (current status)
 - FontSelectionDialog (normal + simple/one-shot)
 - ColorSelectionDialog (normal + simple/one-shot)
 
-**ayout Containers**
+**Layout Containers**
 - Notebook (Close-Tabs, Images, Events)
 - NotebookPage
 - SplitterWindow

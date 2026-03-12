@@ -14,6 +14,24 @@ The format is based on Keep a Changelog.
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-03-12
+
+### Changed
+
+- Bumped library metadata in `simplewx.py` to `__version__ = "0.4.0"`.
+- Updated the README headline version from `0.3.3` to `0.4.0`.
+- Updated `examples/windows_basic.py` so the button demonstrates statusbar output (`set_sb_text`) instead of stdout printing.
+
+### Added
+
+- Added one-shot modal override support for message dialogs via `show_msg_dialog(..., Modal=0|1)`.
+- Added standalone message dialog demo mode switch in `examples/standalone_msg_dialog_simple.py` to contrast modal (return value) vs non-modal (callback) flow.
+
+### Fixed
+
+- Changed one-shot message-dialog default behavior to non-modal when `Modal` is omitted (`Modal=None -> 0`).
+- Extended dialog regression coverage in `tests/test_dialog_mocking.py` for one-shot default non-modal mode and explicit modal override mode.
+
 ## [0.3.3] - 2026-03-11
 
 ### Changed
