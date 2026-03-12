@@ -14,6 +14,23 @@ The format is based on Keep a Changelog.
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-03-12
+
+### Changed
+
+- Bumped library metadata in `simplewx.py` to `__version__ = "0.4.1"`.
+- Updated the README headline version from `0.4.0` to `0.4.1`.
+- Added a practical project `Makefile` with targets for environment setup, dependency install, tests, headless tests, and running examples.
+
+### Added
+
+- Populated `requirements.txt` with runtime dependency declaration (`wxPython`).
+- Updated `requirements-dev.txt` to include runtime requirements plus pytest.
+
+### Documentation
+
+- Updated README installation instructions to use `requirements.txt` / `requirements-dev.txt`.
+
 ## [0.4.0] - 2026-03-12
 
 ### Changed
