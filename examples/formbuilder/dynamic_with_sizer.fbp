@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<wxFormBuilder_Project>
+  <object class="Project" name="App">
+    <object class="wxFrame" name="MainFrame">
+      <property name="title">DemoDynamic</property>
+      <object class="wxBoxSizer" name="bSizer1" />
+    </object>
+  </object>
+</wxFormBuilder_Project>

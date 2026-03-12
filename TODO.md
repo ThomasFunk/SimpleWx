@@ -7,6 +7,11 @@
 	- persistente Layout-Zustände,
 	- robuste Wayland/X11-Verträglichkeit.
 
+- [ ] wxFormBuilder-Import (`swx-builder.py`):
+	- `.fbp` (XML) parsen und SimpleWx-Grundgerüst erzeugen,
+	- nur reine statische Layouts akzeptieren,
+	- bei Sizer/dynamischen Elementen mit klarer Fehlermeldung abbrechen.
+
 - [ ] Tray/Status-Integration (`TaskBarIcon` / StatusIcon):
 	- Icon anzeigen/ändern,
 	- Kontextmenü,
