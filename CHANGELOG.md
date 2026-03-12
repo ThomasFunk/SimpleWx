@@ -37,12 +37,12 @@ The format is based on Keep a Changelog.
 
 - Bumped library metadata in `simplewx.py` to `__version__ = "0.4.0"`.
 - Updated the README headline version from `0.3.3` to `0.4.0`.
-- Updated `examples/windows_basic.py` so the button demonstrates statusbar output (`set_sb_text`) instead of stdout printing.
+- Updated `examples/samples/windows_basic.py` so the button demonstrates statusbar output (`set_sb_text`) instead of stdout printing.
 
 ### Added
 
 - Added one-shot modal override support for message dialogs via `show_msg_dialog(..., Modal=0|1)`.
-- Added standalone message dialog demo mode switch in `examples/standalone_msg_dialog_simple.py` to contrast modal (return value) vs non-modal (callback) flow.
+- Added standalone message dialog demo mode switch in `examples/samples/standalone_msg_dialog_simple.py` to contrast modal (return value) vs non-modal (callback) flow.
 
 ### Fixed
 
@@ -179,21 +179,21 @@ The format is based on Keep a Changelog.
 	- `use_gettext`
 	- `translate`
 - New example scripts:
-	- `examples/notebook_extensions.py`
-	- `examples/dirpicker_ctrl.py`
-	- `examples/date_time_picker.py`
-	- `examples/textview_richtext.py`
-	- `examples/print_pipeline.py`
-	- `examples/print_pipeline_template.py`
-	- `examples/grid_basic.py`
-	- `examples/dataview_basic.py`
-	- `examples/splitter_basic.py`
-	- `examples/windows_basic.py`
-	- `examples/buttons_toggles_basic.py`
-	- `examples/numeric_text_entries_basic.py`
-	- `examples/treeview_basic.py`
-	- `examples/listview_basic.py`
-	- `examples/i18n_basic.py`
+	- `examples/samples/notebook_extensions.py`
+	- `examples/samples/dirpicker_ctrl.py`
+	- `examples/samples/date_time_picker.py`
+	- `examples/samples/textview_richtext.py`
+	- `examples/samples/print_pipeline.py`
+	- `examples/samples/print_pipeline_template.py`
+	- `examples/samples/grid_basic.py`
+	- `examples/samples/dataview_basic.py`
+	- `examples/samples/splitter_basic.py`
+	- `examples/samples/windows_basic.py`
+	- `examples/samples/buttons_toggles_basic.py`
+	- `examples/samples/numeric_text_entries_basic.py`
+	- `examples/samples/treeview_basic.py`
+	- `examples/samples/listview_basic.py`
+	- `examples/samples/i18n_basic.py`
 	- `locale/de/LC_MESSAGES/simplewx_demo.po`
 	- `locale/de/LC_MESSAGES/simplewx_demo.mo`
 

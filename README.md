@@ -112,29 +112,29 @@ Minimal Hello-World example with SimpleWx (Python):
 
 Basic examples for a quick start:
 - **Windows:**
-  - examples/windows_basic.py
+  - examples/samples/windows_basic.py
 - **Buttons & Toggles:**
-  - examples/buttons_toggles_basic.py
+  - examples/samples/buttons_toggles_basic.py
 - **Numeric/Text Entries:**
-  - examples/numeric_text_entries_basic.py
+  - examples/samples/numeric_text_entries_basic.py
 - **TreeView:**
-  - examples/treeview_basic.py
+  - examples/samples/treeview_basic.py
 - **ListView:**
-  - examples/listview_basic.py
+  - examples/samples/listview_basic.py
 - **TextView with RichTextCtrl:**
-  - examples/textview_richtext.py
+  - examples/samples/textview_richtext.py
 - **SplitterWindow (2 panes, draggable split, collapse/expand):**
-  - examples/splitter_basic.py
+  - examples/samples/splitter_basic.py
 - **Notebook + extensions  (close tabs, images, events):**
-  - examples/notebook_extensions.py
+  - examples/samples/notebook_extensions.py
 - **DirPickerCtrl (directory selection):**
-  - examples/dirpicker_ctrl.py
+  - examples/samples/dirpicker_ctrl.py
 - **print pipeline  (PrintPreview + Printer + Printout):**
-  - examples/print_pipeline.py
+  - examples/samples/print_pipeline.py
 - **print pipeline with header/footer templates:**
-  - examples/print_pipeline_template.py
+  - examples/samples/print_pipeline_template.py
 - **Localization (gettext):**
-  - examples/i18n_basic.py.
+  - examples/samples/i18n_basic.py.
   - German translation:
     - locale/de/LC_MESSAGES/simplewx_demo.po.
   - Compiled runtime file: 
@@ -146,12 +146,12 @@ You can rebuild it with:
 
 Run the example in German:
 
-    LANGUAGE=de_DE ./venv/bin/python examples/i18n_basic.py
+  LANGUAGE=de_DE ./venv/bin/python examples/samples/i18n_basic.py
 
 Or with an activated venv:
 
     source venv/bin/activate
-    LANGUAGE=de_DE python examples/i18n_basic.py
+  LANGUAGE=de_DE python examples/samples/i18n_basic.py
 
 Short alias-style form:
 

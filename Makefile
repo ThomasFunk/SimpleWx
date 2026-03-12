@@ -13,7 +13,7 @@ help:
 	@echo "  make install-dev    - Install runtime + development dependencies"
 	@echo "  make test           - Run pytest test suite"
 	@echo "  make test-headless  - Run pytest test suite under Xvfb"
-	@echo "  make run-example EXAMPLE=examples/windows_basic.py"
+	@echo "  make run-example EXAMPLE=examples/samples/windows_basic.py"
 	@echo "  make clean          - Remove Python cache files"
 
 venv:
@@ -35,7 +35,7 @@ test-headless: install-dev
 
 run-example: install
 	@if [ -z "$(EXAMPLE)" ]; then \
-		echo "Please provide EXAMPLE=<path>, e.g. EXAMPLE=examples/windows_basic.py"; \
+		echo "Please provide EXAMPLE=<path>, e.g. EXAMPLE=examples/samples/windows_basic.py"; \
 		exit 1; \
 	fi
 	$(VENV_PYTHON) $(EXAMPLE)
