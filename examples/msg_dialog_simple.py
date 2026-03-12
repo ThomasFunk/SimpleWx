@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 author = 'Thomas Funk'
 coauthors = 'Github Copilot'
-date = "2026/03/10"
+date = "2026/03/12"
 # What this example demonstrates:
 # Modal and non-modal message dialogs with response callbacks.
 from simplewx import SimpleWx as simplewx
@@ -26,7 +26,7 @@ def modal(window):
 
 # Open one-shot dialog and print Yes/No result
 def simple(window):
-    response = window.show_msg_dialog("yesno", "warning", "This is a simple one")
+    response = window.show_msg_dialog("yesno", "warning", "This is a simple one", Modal=0)
     if response == 5103:  # wx.ID_YES
         print("Yes")
     else:

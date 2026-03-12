@@ -202,6 +202,7 @@ class SimpleWx:
         self.gettext_localedir = ""
         self._translator: Callable[[str], str] = lambda text: str(text)
         self._modeless_dialogs: list[wx.Dialog] = []
+        self._window_modal_parents: dict[int, dict[str, Any]] = {}
 
     def _register_modeless_dialog(self, dialog: wx.Dialog) -> None:
         """
@@ -214,6 +215,59 @@ class SimpleWx:
                 self._modeless_dialogs.remove(dialog)
             except ValueError:
                 pass
+            event.Skip()
+
+        dialog.Bind(wx.EVT_WINDOW_DESTROY, _on_destroy)
+
+    def _engage_window_modal_parent(self, dialog: wx.Window, parent: Optional[wx.Window]) -> None:
+        """
+        Disables the parent window until the modeless dialog is destroyed.
+
+        This keeps callback-based dialogs non-blocking for the caller while still
+        preventing interaction with the parent frame.
+        """
+        if not isinstance(parent, wx.Window):
+            return
+
+        parent_key = id(parent)
+        state = self._window_modal_parents.get(parent_key)
+        if state is None:
+            restore_enabled = False
+            try:
+                restore_enabled = bool(parent.IsEnabled())
+            except Exception:
+                restore_enabled = False
+
+            state = {
+                "window": parent,
+                "count": 0,
+                "restore_enabled": restore_enabled,
+            }
+            self._window_modal_parents[parent_key] = state
+
+            if restore_enabled:
+                try:
+                    parent.Enable(False)
+                except Exception:
+                    state["restore_enabled"] = False
+
+        state["count"] = int(state.get("count", 0)) + 1
+
+        def _on_destroy(event: wx.WindowDestroyEvent) -> None:
+            current_state = self._window_modal_parents.get(parent_key)
+            if isinstance(current_state, dict):
+                current_count = max(0, int(current_state.get("count", 0)) - 1)
+                current_state["count"] = current_count
+                if current_count == 0:
+                    restore_parent = current_state.get("window")
+                    should_restore = bool(current_state.get("restore_enabled", False))
+                    self._window_modal_parents.pop(parent_key, None)
+                    if isinstance(restore_parent, wx.Window) and should_restore:
+                        try:
+                            if not restore_parent.IsBeingDeleted():
+                                restore_parent.Enable(True)
+                        except Exception:
+                            pass
             event.Skip()
 
         dialog.Bind(wx.EVT_WINDOW_DESTROY, _on_destroy)
@@ -5035,6 +5089,7 @@ class SimpleWx:
         Name: str,
         MessageText1: Optional[str] = None,
         MessageText2: Optional[str] = None,
+        Modal: Optional[int] = None,
     ) -> Optional[int]:
         """
         Shows a predefined message dialog or a one-shot dialog.
@@ -5042,7 +5097,7 @@ class SimpleWx:
         Modes
         -----
         - Predefined: `show_msg_dialog(name, msg1, [msg2])`
-        - One-shot: `show_msg_dialog(dtype, mtype, message)`
+        - One-shot: `show_msg_dialog(dtype, mtype, message, Modal=0|1)`
 
         Returns
         -------
@@ -5063,7 +5118,7 @@ class SimpleWx:
             message_primary = str(MessageText1 or "")
             message_secondary = str(MessageText2 or "")
         else:
-            modal = 1
+            modal = 0 if Modal is None else (1 if int(Modal) else 0)
             dialog_type = str(Name or "ok").lower()
             message_type = str(MessageText1 or "info").lower()
             icon = None
@@ -5095,6 +5150,11 @@ class SimpleWx:
         parent = self.ref if isinstance(self.ref, wx.Window) else None
 
         dialog = wx.MessageDialog(parent, message_primary, title, style)
+        if parent is not None and hasattr(dialog, "SetTransientFor"):
+            try:
+                dialog.SetTransientFor(parent)
+            except Exception:
+                pass
         if message_secondary and hasattr(dialog, "SetExtendedMessage"):
             dialog.SetExtendedMessage(message_secondary)
 
@@ -5108,8 +5168,29 @@ class SimpleWx:
                 pass
 
         if modal:
-            result = int(dialog.ShowModal())
-            dialog.Destroy()
+            parent_was_enabled = False
+            if isinstance(parent, wx.Window):
+                try:
+                    parent_was_enabled = bool(parent.IsEnabled())
+                except Exception:
+                    parent_was_enabled = False
+
+            if parent_was_enabled:
+                try:
+                    parent.Enable(False)
+                except Exception:
+                    parent_was_enabled = False
+
+            try:
+                result = int(dialog.ShowModal())
+            finally:
+                dialog.Destroy()
+                if parent_was_enabled and isinstance(parent, wx.Window):
+                    try:
+                        if not parent.IsBeingDeleted():
+                            parent.Enable(True)
+                    except Exception:
+                        pass
             return result
 
         # wxGTK may not show modeless wx.MessageDialog reliably; use fallback
@@ -5154,6 +5235,11 @@ class SimpleWx:
         is not available/visible on the current platform.
         """
         dialog = wx.Dialog(parent, wx.ID_ANY, title, style=wx.DEFAULT_DIALOG_STYLE)
+        if parent is not None and hasattr(dialog, "SetTransientFor"):
+            try:
+                dialog.SetTransientFor(parent)
+            except Exception:
+                pass
 
         outer = wx.BoxSizer(wx.VERTICAL)
 

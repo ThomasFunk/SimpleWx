@@ -47,6 +47,191 @@ def test_show_msg_dialog_uses_mocked_showmodal_return_code(gui_window, monkeypat
     _passed(scope, "Message dialog returns mocked ShowModal code")
 
 
+def test_show_msg_dialog_callback_mode_keeps_parent_enabled(gui_window, monkeypatch) -> None:
+    scope = "MessageDialog mock"
+    callback_state: dict[str, int | None] = {"response": None}
+
+    def on_response(_dialog, response_id) -> None:
+        callback_state["response"] = int(response_id)
+
+    class _FakeDestroyEvent:
+        def Skip(self) -> None:
+            return None
+
+    class _FakeButtonEvent:
+        def __init__(self, button_id: int):
+            self._button_id = button_id
+
+        def GetId(self) -> int:
+            return self._button_id
+
+    class _FakeMessageDialog:
+        last_instance = None
+
+        def __init__(self, parent, _message, _title, _style):
+            self.parent = parent
+            self._bindings: list[tuple[object, object, int | None]] = []
+            self.destroyed = False
+            self.extended_message = ""
+            self.transient_parent = None
+            type(self).last_instance = self
+
+        def SetTransientFor(self, parent) -> None:
+            self.transient_parent = parent
+
+        def SetExtendedMessage(self, message: str) -> None:
+            self.extended_message = message
+
+        def Show(self) -> bool:
+            return True
+
+        def Bind(self, event, handler, id=None) -> None:
+            self._bindings.append((event, handler, id))
+
+        def Destroy(self) -> None:
+            if self.destroyed:
+                return None
+            self.destroyed = True
+            for event, handler, _bound_id in list(self._bindings):
+                if event == wx.EVT_WINDOW_DESTROY:
+                    handler(_FakeDestroyEvent())
+            return None
+
+        def click(self, button_id: int) -> None:
+            for event, handler, bound_id in list(self._bindings):
+                if event == wx.EVT_BUTTON and (bound_id is None or int(bound_id) == int(button_id)):
+                    handler(_FakeButtonEvent(button_id))
+
+    win = gui_window(name="msg_modeless_parent_lock")
+    win.add_msg_dialog(Name="msg_async", Modal=0, DType="yesno", MType="question", RFunc=on_response)
+
+    monkeypatch.setattr(wx, "MessageDialog", _FakeMessageDialog)
+
+    assert win.ref is not None
+    assert win.ref.IsEnabled()
+
+    result = win.show_msg_dialog("msg_async", "Proceed?", "Parent should stay disabled.")
+
+    assert result is None
+    _passed(scope, "Callback-based message dialog returns None")
+    assert win.ref.IsEnabled()
+    _passed(scope, "Callback-based message dialog keeps the parent window enabled")
+
+    dialog = _FakeMessageDialog.last_instance
+    assert dialog is not None
+    dialog.click(wx.ID_YES)
+
+    assert callback_state["response"] == wx.ID_YES
+    _passed(scope, "Callback-based message dialog forwards the response id")
+    assert win.ref.IsEnabled()
+    _passed(scope, "Parent window remains enabled after callback dialog closes")
+
+
+def test_show_msg_dialog_one_shot_modal_override_keeps_parent_enabled(gui_window, monkeypatch) -> None:
+    scope = "MessageDialog mock"
+
+    class _FakeMessageDialog:
+        show_modal_calls = 0
+
+        def __init__(self, _parent, _message, _title, _style):
+            return None
+
+        def ShowModal(self) -> int:
+            type(self).show_modal_calls += 1
+            return wx.ID_YES
+
+        def Show(self) -> bool:
+            return True
+
+        def Destroy(self) -> None:
+            return None
+
+        def Bind(self, _event, _handler, id=None) -> None:
+            return None
+
+    win = gui_window(name="msg_one_shot_non_modal")
+    monkeypatch.setattr(wx, "MessageDialog", _FakeMessageDialog)
+
+    assert win.ref is not None
+    assert win.ref.IsEnabled()
+
+    result = win.show_msg_dialog("yesno", "warning", "One-shot non-modal", Modal=0)
+
+    assert result is None
+    _passed(scope, "One-shot message dialog returns None when Modal=0")
+    assert win.ref.IsEnabled()
+    _passed(scope, "One-shot message dialog keeps parent enabled when Modal=0")
+
+
+def test_show_msg_dialog_one_shot_defaults_to_non_modal(gui_window, monkeypatch) -> None:
+    scope = "MessageDialog mock"
+
+    class _FakeMessageDialog:
+        show_modal_calls = 0
+
+        def __init__(self, _parent, _message, _title, _style):
+            return None
+
+        def ShowModal(self) -> int:
+            type(self).show_modal_calls += 1
+            return wx.ID_YES
+
+        def Show(self) -> bool:
+            return True
+
+        def Destroy(self) -> None:
+            return None
+
+        def Bind(self, _event, _handler, id=None) -> None:
+            return None
+
+    win = gui_window(name="msg_one_shot_default_non_modal")
+    monkeypatch.setattr(wx, "MessageDialog", _FakeMessageDialog)
+
+    assert win.ref is not None
+    assert win.ref.IsEnabled()
+
+    result = win.show_msg_dialog("yesno", "warning", "One-shot default non-modal")
+
+    assert result is None
+    _passed(scope, "One-shot message dialog defaults to non-modal return behavior")
+    assert _FakeMessageDialog.show_modal_calls == 0
+    _passed(scope, "One-shot message dialog default does not call ShowModal")
+
+
+def test_show_msg_dialog_one_shot_modal_override_still_supports_modal(gui_window, monkeypatch) -> None:
+    scope = "MessageDialog mock"
+
+    class _FakeMessageDialog:
+        show_modal_calls = 0
+
+        def __init__(self, _parent, _message, _title, _style):
+            return None
+
+        def ShowModal(self) -> int:
+            type(self).show_modal_calls += 1
+            return wx.ID_YES
+
+        def Show(self) -> bool:
+            return True
+
+        def Destroy(self) -> None:
+            return None
+
+        def Bind(self, _event, _handler, id=None) -> None:
+            return None
+
+    win = gui_window(name="msg_one_shot_force_modal")
+    monkeypatch.setattr(wx, "MessageDialog", _FakeMessageDialog)
+
+    result = win.show_msg_dialog("yesno", "warning", "One-shot forced modal", Modal=1)
+
+    assert result == wx.ID_YES
+    _passed(scope, "One-shot message dialog returns modal code when Modal=1")
+    assert _FakeMessageDialog.show_modal_calls == 1
+    _passed(scope, "One-shot message dialog calls ShowModal when Modal=1")
+
+
 def test_show_filechooser_dialog_with_mocked_showmodal_and_path(gui_window, monkeypatch) -> None:
     scope = "FileDialog mock"
     callback_state: dict[str, str | None] = {"path": None}
