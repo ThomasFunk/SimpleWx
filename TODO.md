@@ -1,48 +1,55 @@
-# TODO (Restarbeiten)
+# TODO (Open Work)
 
-## P0 – Große Brocken
+## P0 – Major Features
 
-- [ ] AUI/Docking (`AuiManager`):
-	- dockbare/andockbare Panels,
-	- persistente Layout-Zustände,
-	- robuste Wayland/X11-Verträglichkeit.
+- [ ] wxFormBuilder import (`swx-builder.py`):
+	- parse `.fbp` (XML) and generate a SimpleWx scaffold,
+	- accept only pure static layouts,
+	- abort with a clear error message when Sizer or dynamic elements are present.
 
-- [ ] wxFormBuilder-Import (`swx-builder.py`):
-	- `.fbp` (XML) parsen und SimpleWx-Grundgerüst erzeugen,
-	- nur reine statische Layouts akzeptieren,
-	- bei Sizer/dynamischen Elementen mit klarer Fehlermeldung abbrechen.
+- [ ] Tray / status integration (`TaskBarIcon` / StatusIcon):
+	- show and update the tray icon,
+	- context menu,
+	- left-click and double-click events,
+	- clean shutdown behaviour.
 
-- [ ] Tray/Status-Integration (`TaskBarIcon` / StatusIcon):
-	- Icon anzeigen/ändern,
-	- Kontextmenü,
-	- Klick-/Doppelklick-Events,
-	- sauberes Verhalten beim Beenden.
+- [ ] AUI / docking (`AuiManager`):
+	- dockable and floating panels,
+	- persistent layout state,
+	- robust Wayland / X11 compatibility.
 
-## P1 – API-Parität (kleiner Rest)
+## P1 – API Parity (small remainder)
 
-- [x] i18n-Helfer aus Referenz ergänzen:
+- [x] Add i18n helpers from reference:
 	- `use_gettext`
 	- `translate`
 
-## P2 – Stabilisierung
+## P2 – Stabilisation
 
-- [x] Smoke-Tests für Kernbeispiele (Start + Grundinteraktionen).
-- [x] Unit-Test-Basis für Core-Helper (Alias-Normalisierung, Filterbau, Art-ID-Mapping, Skalierungsberechnung).
-- [ ] Dokumentation nachziehen, sobald `AuiManager`/`TaskBarIcon` umgesetzt sind.
-- [ ] Optional: Release-Checkliste für ersten stabilen Tag (`v0.1.x`) anlegen.
+- [x] Smoke tests for core examples (startup + basic interactions).
+- [x] Unit test base for core helpers (alias normalisation, filter builder, art-ID mapping, scale factor calculation).
+- [ ] Update documentation once `AuiManager` / `TaskBarIcon` are implemented.
+- [ ] Optional: create a release checklist for the first stable tag (`v0.1.x`).
 
-## P3 – Weitere automatisierte Tests
+## P3 – Additional Automated Tests
 
-- [x] Widget-State Roundtrip-Tests (`set_value`/`get_value`) für: CheckButton, RadioButton, ComboBox, Slider, SpinButton, ProgressBar.
-- [x] Notebook-Regressionstests: Page add/remove, CurrentPage, Icon-Zuweisung, Event-Wiring.
-- [x] Menü-/Toolbar-Regressionen: Radio-Groups, Callback-Bindings.
-- [ ] NotebookPage-Sensitivity in wx sauber überarbeiten und integrieren.
-- [ ] NotebookPage aus-/einblenden (Show/Hide) sauber überarbeiten und integrieren.
-- [x] Data-Widget-Tests: ListView/Grid/DataView Datenupdate, Zellzugriff, Sortierverhalten.
-- [x] Dialog-Tests mit Mocking (`ShowModal`/Rückgabecodes) statt nativer Interaktion.
+- [x] Widget state round-trip tests (`set_value` / `get_value`) for: CheckButton, RadioButton, ComboBox, Slider, SpinButton, ProgressBar.
+- [x] Notebook regression tests: page add / remove, CurrentPage, icon assignment, event wiring.
+- [x] Menu / toolbar regressions: radio groups, callback bindings.
+- [ ] NotebookPage sensitivity: refactor and integrate cleanly in wx.
+- [ ] NotebookPage show / hide: refactor and integrate cleanly in wx.
+- [x] Data-widget tests: ListView / Grid / DataView data updates, cell access, sort behaviour.
+- [x] Dialog tests with mocking (`ShowModal` / return codes) instead of native interaction.
 
-## Kurzfazit
+## Parking Lot (later, low priority)
 
-- Feature-Abdeckung ist bereits sehr hoch.
-- Die Testsuite ist bis auf die beiden NotebookPage-Themen (Sensitivity, Show/Hide) weitgehend abgeschlossen.
-- Offene Arbeit ist vor allem bei den zwei großen Themen (`AuiManager`, `TaskBarIcon`).
+- [ ] labwc-nightshade use case:
+	- tray-first launch (open control centre via systray menu),
+	- optionally windowless / no title bar / no taskbar entry,
+	- only worth tackling after `AuiManager` + `TaskBarIcon` are in place.
+
+## Summary
+
+- Feature coverage is already very high.
+- The test suite is largely complete except for the two NotebookPage items (sensitivity, show/hide).
+- Remaining major work centres on `AuiManager` and `TaskBarIcon`.
