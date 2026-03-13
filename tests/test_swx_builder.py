@@ -15,7 +15,7 @@ def _unit_passed(check: str) -> None:
 
 def _load_builder_module():
     root = Path(__file__).resolve().parent.parent
-    module_path = root / "swx-builder.py"
+    module_path = root / "tools" / "swx-builder" / "swx-builder.py"
     spec = spec_from_file_location("swx_builder", module_path)
     assert spec is not None
     assert spec.loader is not None
