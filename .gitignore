@@ -20,6 +20,7 @@ htmlcov/
 build/
 dist/
 *.egg-info/
+docs/_build/
 
 # OS / editor noise
 .DS_Store

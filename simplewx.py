@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+from __future__ import annotations
+
 __author__ = 'Thomas Funk'
 __coauthors__ = 'Github Copilot & Gemini'
 __date__ = "2026/03/11"
@@ -4953,7 +4955,7 @@ class SimpleWx:
         self,
         Name: str,
         Title: Optional[str] = None,
-        PaperId: int = int(wx.PAPER_A4),
+        PaperId: Optional[int] = None,
         Orientation: str = "portrait",
         MarginTopLeft: Optional[list[int] | tuple[int, int]] = None,
         MarginBottomRight: Optional[list[int] | tuple[int, int]] = None,
@@ -5028,6 +5030,10 @@ class SimpleWx:
         orientation = str(params.get("orientation") or "portrait").lower()
         orientation = "landscape" if orientation.startswith("land") else "portrait"
 
+        # resolve default paper id lazily (keeps autodoc import stable with mocked wx)
+        raw_paper_id = params.get("paperid")
+        paper_id = int(raw_paper_id) if raw_paper_id is not None else int(wx.PAPER_A4)
+
         # create and store page-setup metadata
         object_entry = self._new_widget(**params)
         object_entry.type = "PageSetupDialog"
@@ -5035,7 +5041,7 @@ class SimpleWx:
         object_entry.ref = None
         object_entry.data = {
             "title": object_entry.title,
-            "paperid": int(params.get("paperid", int(wx.PAPER_A4))),
+            "paperid": paper_id,
             "orientation": orientation,
             "margintopleft": top_left,
             "marginbottomright": bottom_right,

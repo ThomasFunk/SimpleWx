@@ -224,6 +224,20 @@ In current Data-Widget regression runs this pixman message can appear during seq
 while isolated single-widget runs may stay quiet; this further indicates backend-level rendering noise.
 
 
+DOCUMENTATION
+-------------
+
+Sphinx documentation (HTML + manpage) can be built with:
+
+  make docs-html
+  make docs-man
+
+Generated output paths:
+
+- docs/_build/html
+- docs/_build/man
+
+
 DEPENDENCIES
 ------------
 
