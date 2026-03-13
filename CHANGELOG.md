@@ -16,6 +16,12 @@ The format is based on Keep a Changelog.
 
 ### Added
 
+- _Nothing yet._
+
+## [0.5.0] - 2026-03-13
+
+### Added
+
 - Added `-d` / `--dev` mode to `swx-builder.py`; in dev mode generated `new_window(...)` includes `Base=0` for pixel-accurate geometry debugging.
 - Added builder regression coverage in `tests/test_swx_builder.py` to validate dev-mode output includes `Base=0`.
 - Added Sphinx documentation with HTML and manpage output.
@@ -25,6 +31,8 @@ The format is based on Keep a Changelog.
 
 ### Changed
 
+- Bumped library metadata in `simplewx.py` to `__version__ = "0.5.0"`.
+- Updated the README headline version from `0.4.1` to `0.5.0`.
 - Refined geometry scaling in `simplewx.py` by switching `_calc_scalefactor(...)` to a font-metric-based approach using monospace text extents, with rounded fallback behavior.
 - Updated `README.md` Qt Designer import section with documented `--dev` usage and behavior.
 - Performed repository cleanup for the builder workflow: moved the converter to `tools/swx-builder/`, split builder docs into `tools/swx-builder/README.md`, and removed obsolete example/import artifacts.
