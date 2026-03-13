@@ -172,6 +172,14 @@ Important: only pure static layouts are supported.
 If the `.ui` contains `QLayout`/Sizer-style layout elements, the converter
 aborts with an error message.
 
+Supported widget mapping (current subset):
+
+- `QPushButton` -> `add_button`
+- `QLabel` -> `add_label`
+- `QLineEdit` -> `add_entry`
+- `QCheckBox` -> `add_check_button`
+- `QMenuBar` / `QMenu` / `QAction` -> `add_menu_bar` / `add_menu` / `add_menu_item`
+
 Convert a form:
 
   ./venv/bin/python swx-builder.py -i path/to/form.ui
@@ -189,6 +197,18 @@ Dev mode (pixel-accurate geometry debugging):
 
 With `-d` / `--dev`, the generated `new_window(...)` call includes `Base=0`.
 Without the flag, no `Base` argument is written and the SimpleWx default is used.
+
+Quick workflow:
+
+1. Start with default mode (no `-d`) for regular app behavior.
+2. If measured sizes/positions differ from Qt Designer, regenerate with `--dev`.
+3. Compare both outputs and keep the mode that matches your target runtime behavior.
+
+Geometry / scaling notes:
+
+- `--dev` (`Base=0`) disables geometry scaling from SimpleWx base-font logic.
+- Default mode uses SimpleWx defaults and can scale geometry depending on theme/font metrics.
+- This means the same `.ui` can look slightly different between environments unless `--dev` is used.
 
 
 INSTALLATION
