@@ -2,8 +2,9 @@
 
 ## P0 – Major Features
 
-- [ ] wxFormBuilder import (`swx-builder.py`):
-	- parse `.fbp` (XML) and generate a SimpleWx scaffold,
+
+- [ ] Qt Designer import (`swx-builder.py`):
+	- parse `.ui` (XML) and generate a SimpleWx scaffold,
 	- accept only pure static layouts,
 	- abort with a clear error message when Sizer or dynamic elements are present.
 

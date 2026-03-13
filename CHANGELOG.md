@@ -14,6 +14,21 @@ The format is based on Keep a Changelog.
 
 ## [Unreleased]
 
+### Added
+
+- Added `-d` / `--dev` mode to `swx-builder.py`; in dev mode generated `new_window(...)` includes `Base=0` for pixel-accurate geometry debugging.
+- Added builder regression coverage in `tests/test_swx_builder.py` to validate dev-mode output includes `Base=0`.
+
+### Changed
+
+- Refined geometry scaling in `simplewx.py` by switching `_calc_scalefactor(...)` to a font-metric-based approach using monospace text extents, with rounded fallback behavior.
+- Updated `README.md` Qt Designer import section with documented `--dev` usage and behavior.
+
+### Fixed
+
+- Fixed statusbar creation logic in `new_window(...)`: `Statusbar=0` no longer creates a statusbar.
+- Improved main content container synchronization for non-fixed windows so scrolled content sizing better tracks frame/client changes.
+
 ## [0.4.1] - 2026-03-12
 
 ### Changed

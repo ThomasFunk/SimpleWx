@@ -283,7 +283,6 @@ class SimpleWx:
 
         Examples
         --------
-
         win.init_app()
         """
         # reuse an existing global wx app when available
@@ -447,7 +446,34 @@ class SimpleWx:
         """
         if old_font_size <= 0 or current_font_size <= 0:
             return 1.0
-        return current_font_size / old_font_size
+
+        reference_size = max(1, int(old_font_size) - 1)
+        runtime_size = max(1, int(current_font_size) - 1)
+
+        try:
+            if isinstance(self.ref, wx.Window):
+                sample_text = "MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM"
+                old_font = wx.Font(
+                    reference_size,
+                    wx.FONTFAMILY_MODERN,
+                    wx.FONTSTYLE_NORMAL,
+                    wx.FONTWEIGHT_NORMAL,
+                )
+                new_font = wx.Font(
+                    runtime_size,
+                    wx.FONTFAMILY_MODERN,
+                    wx.FONTSTYLE_NORMAL,
+                    wx.FONTWEIGHT_NORMAL,
+                )
+
+                old_width, _ = self.ref.GetTextExtent(sample_text, old_font)
+                new_width, _ = self.ref.GetTextExtent(sample_text, new_font)
+                if old_width > 0 and new_width > 0:
+                    return round(new_width / old_width, 1)
+        except Exception:
+            pass
+
+        return round(runtime_size / reference_size, 1)
 
     def _scale(self, value: int | float) -> int:
         """
@@ -3240,8 +3266,8 @@ class SimpleWx:
             child_width = int(child_size.GetWidth())
             child_height = int(child_size.GetHeight())
 
-            required_width = max(1, scaled_x + max(1, child_width) + self._scale(5))
-            required_height = max(1, scaled_y + max(1, child_height) + self._scale(5))
+            required_width = max(1, scaled_x + max(1, child_width))
+            required_height = max(1, scaled_y + max(1, child_height))
 
             current_virtual = target_container.GetVirtualSize()
             current_width = int(current_virtual.GetWidth())
@@ -3251,11 +3277,34 @@ class SimpleWx:
             client_width = max(1, int(client_size.GetWidth()))
             client_height = max(1, int(client_size.GetHeight()))
 
-            new_width = max(current_width, client_width, required_width)
-            new_height = max(current_height, client_height, required_height)
+            new_width = max(current_width, required_width)
+            new_height = max(current_height, required_height)
 
             if new_width != current_width or new_height != current_height:
                 target_container.SetVirtualSize((new_width, new_height))
+
+    def _sync_main_content_container_size(self) -> None:
+        """Synchronizes main root/content container geometry with frame client size."""
+        if self.main_window is None:
+            return
+
+        root_panel = self.containers.get(self.default_container_name)
+        if not isinstance(root_panel, wx.Window):
+            return
+
+        root_panel.SetPosition((0, 0))
+        root_panel.SetSize(self.main_window.GetClientSize())
+
+        window_entry = self.widgets.get(self.name)
+        panel: Optional[wx.Window] = None
+        if window_entry is not None and isinstance(window_entry.data, dict):
+            candidate = window_entry.data.get("panel")
+            if isinstance(candidate, wx.Window):
+                panel = candidate
+
+        if panel is not None:
+            panel.SetPosition((0, 0))
+            panel.SetSize(root_panel.GetClientSize())
 
     def show_error(self, object_or_msg: Any, msg: Optional[str] = None) -> None:
         """
@@ -6870,6 +6919,8 @@ class SimpleWx:
         # Create the native menubar and attach it to the frame immediately.
         menubar = wx.MenuBar()
         self.ref.SetMenuBar(menubar)
+        self._sync_main_content_container_size()
+        wx.CallAfter(self._sync_main_content_container_size)
 
         # Register or reuse the widget entry; calling add_menu_bar twice on the same
         # name replaces the native wx.MenuBar but keeps the object registration intact.
@@ -7301,10 +7352,11 @@ class SimpleWx:
         # evaluate optional window flags
         fixed = bool(params.get("fixed", 0))
         statusbar = params.get("statusbar")
+        has_statusbar = bool(statusbar)
         sbar_timeout = int(statusbar) if isinstance(statusbar, int) and statusbar > 1 else 0
         object_entry.data = {
             "fixed": fixed,
-            "statusbar": statusbar,
+            "statusbar": has_statusbar,
             "sbar_timeout": sbar_timeout,
             "sbar_stack": [],
         }
@@ -7326,6 +7378,8 @@ class SimpleWx:
         # create default parent panel (wx needs a panel as immediate child for proper behavior)
         root_panel = wx.Panel(frame, wx.ID_ANY)
         root_panel.SetSizer(None)
+        root_panel.SetPosition((0, 0))
+        root_panel.SetSize(frame.GetClientSize())
         self.containers[self.default_container_name] = root_panel
         self.container = root_panel
 
@@ -7337,25 +7391,21 @@ class SimpleWx:
             # non-fixed window uses a scrolled content area
             scrolled = wx.ScrolledWindow(root_panel, wx.ID_ANY, style=wx.HSCROLL | wx.VSCROLL)
             scrolled.SetScrollRate(10, 10)
-
-            # set initial virtual size (scaled) for scroll area
-            initial_width = object_entry.width if object_entry.width is not None else 400
-            initial_height = object_entry.height if object_entry.height is not None else 300
-            scaled_initial_width, scaled_initial_height = self._scale_pair(initial_width, initial_height)
-            scrolled.SetVirtualSize((scaled_initial_width, scaled_initial_height))
+            scrolled.SetVirtualSize((1, 1))
 
             # anchor scrolled container into the root panel and track resize
             scrolled.SetPosition((0, 0))
             scrolled.SetSize(root_panel.GetClientSize())
-            root_panel.Bind(
+            frame.Bind(
                 wx.EVT_SIZE,
-                lambda event: (scrolled.SetSize(root_panel.GetClientSize()), event.Skip()),
+                lambda event: (self._sync_main_content_container_size(), event.Skip()),
             )
             content_container = scrolled
             self.containers["content"] = scrolled
 
         # keep content container reference in the main window object
         object_entry.data["panel"] = content_container
+        self.container = content_container
 
         # register window object in widget registry
         self.widgets[object_entry.name] = object_entry
@@ -7377,7 +7427,7 @@ class SimpleWx:
                 frame.SetIcon(icon)
 
         # if statusbar is requested, create and register it as internal object
-        if statusbar is not None:
+        if has_statusbar:
             bar = frame.CreateStatusBar()
             sb_entry = self._new_widget(type="Statusbar", name="win_sbar")
             sb_entry.ref = bar
@@ -7394,7 +7444,8 @@ class SimpleWx:
         # add geometry if defined (scale at wx boundary only)
         if object_entry.width is not None and object_entry.height is not None:
             scaled_width, scaled_height = self._scale_pair(object_entry.width, object_entry.height)
-            frame.SetSize(scaled_width, scaled_height)
+            frame.SetClientSize(scaled_width, scaled_height)
+            self._sync_main_content_container_size()
 
         # add default signal handlers: close + theme/font changes
         self.add_signal_handler(object_entry.name, wx.EVT_CLOSE, lambda event: self.main_quit())
@@ -12294,6 +12345,8 @@ class SimpleWx:
         """
         if self.main_window is not None:
             self.main_window.Show(True)
+            self._sync_main_content_container_size()
+            wx.CallAfter(self._sync_main_content_container_size)
 
     def show_and_run(self) -> None:
         """

@@ -25,26 +25,37 @@ def _load_builder_module():
     return module
 
 
-def test_convert_static_fbp_matches_expected_reference() -> None:
+def test_convert_static_ui_matches_expected_reference() -> None:
     root = Path(__file__).resolve().parent.parent
-    sample_path = root / "examples" / "formbuilder" / "static_minimal.fbp"
-    expected_path = root / "examples" / "formbuilder" / "static_minimal_expected.py"
+    sample_path = root / "examples" / "formbuilder" / "qt_minimal.ui"
+    expected_path = root / "examples" / "formbuilder" / "qt_minimal_expected.py"
 
     builder = _load_builder_module()
-    generated = builder.convert_fbp_to_simplewx(sample_path)
+    generated = builder.convert_ui_to_simplewx(sample_path)
     expected = expected_path.read_text(encoding="utf-8")
 
     assert generated == expected
-    _unit_passed("static fbp conversion matches expected output")
+    _unit_passed("static ui conversion matches expected output")
 
 
-def test_convert_dynamic_fbp_fails_on_sizer() -> None:
+def test_convert_dynamic_ui_fails_on_layout() -> None:
     root = Path(__file__).resolve().parent.parent
-    sample_path = root / "examples" / "formbuilder" / "dynamic_with_sizer.fbp"
+    sample_path = root / "examples" / "formbuilder" / "qt_with_layout.ui"
 
     builder = _load_builder_module()
 
     with pytest.raises(builder.BuilderError, match="dynamisches Layout-Element"):
-        builder.convert_fbp_to_simplewx(sample_path)
+        builder.convert_ui_to_simplewx(sample_path)
 
-    _unit_passed("dynamic/sizer layout rejected with clear error")
+    _unit_passed("dynamic/layout ui rejected with clear error")
+
+
+def test_convert_static_ui_dev_mode_sets_base_zero() -> None:
+    root = Path(__file__).resolve().parent.parent
+    sample_path = root / "examples" / "formbuilder" / "qt_minimal.ui"
+
+    builder = _load_builder_module()
+    generated = builder.convert_ui_to_simplewx(sample_path, dev_mode=True)
+
+    assert "Base=0" in generated
+    _unit_passed("dev mode emits Base=0 in new_window")

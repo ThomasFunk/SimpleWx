@@ -162,26 +162,33 @@ Short alias-style form:
     win.show_and_run()
 
 
-WXFORMBUILDER IMPORT (STATIC ONLY)
-----------------------------------
+QT DESIGNER IMPORT (STATIC ONLY)
+--------------------------------
 
-`swx-builder.py` converts a wxFormBuilder `.fbp` (XML) file into a SimpleWx
+`swx-builder.py` converts a Qt Designer `.ui` (XML) file into a SimpleWx
 starter script.
 
 Important: only pure static layouts are supported.
-If the `.fbp` contains Sizer or other dynamic layout elements, the converter
+If the `.ui` contains `QLayout`/Sizer-style layout elements, the converter
 aborts with an error message.
 
 Convert a form:
 
-    ./venv/bin/python swx-builder.py -i path/to/form.fbp
+  ./venv/bin/python swx-builder.py -i path/to/form.ui
 
 This creates `path/to/form_swx.py` by default (same directory as input).
 
 Or set an explicit output file or directory:
 
-    ./venv/bin/python swx-builder.py -i path/to/form.fbp -o path/to/generated_form.py
-    ./venv/bin/python swx-builder.py -i path/to/form.fbp -o path/to/output_dir
+  ./venv/bin/python swx-builder.py -i path/to/form.ui -o path/to/generated_form.py
+  ./venv/bin/python swx-builder.py -i path/to/form.ui -o path/to/output_dir
+
+Dev mode (pixel-accurate geometry debugging):
+
+  ./venv/bin/python swx-builder.py -d -i path/to/form.ui
+
+With `-d` / `--dev`, the generated `new_window(...)` call includes `Base=0`.
+Without the flag, no `Base` argument is written and the SimpleWx default is used.
 
 
 INSTALLATION
