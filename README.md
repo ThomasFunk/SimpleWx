@@ -165,6 +165,8 @@ Short alias-style form:
 QT DESIGNER IMPORT (STATIC ONLY)
 --------------------------------
 
+After extensive evaluation and testing of several GUI builders for SimpleWx (wxFormBuilder, Glade, wxSmith in Code::Blocks, and Qt Designer), only one remained suitable: Qt Designer. Why? Because only Qt Designer supports static layouts in the required way. The other tools rely on dynamic layouts and sizers. The goal was a GUI builder with straightforward WYSIWYG support that does not require additional layout planning first.
+
 The Qt Designer converter lives in `tools/swx-builder/`.
 
 Use:
@@ -261,4 +263,4 @@ See LICENSE for licensing information.
 BUGS
 ----
 
-Please send bug reports or suggestions for improvements to <t.funk@web.de>.
+Please send bug reports or suggestions for improvements to <t.funk@web.de> or over the project page under [ISSUES](https://github.com/ThomasFunk/SimpleWx/issues).

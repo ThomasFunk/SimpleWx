@@ -2,7 +2,8 @@
 
 `swx-builder.py` converts a Qt Designer `.ui` (XML) file into a SimpleWx starter script.
 
-Important: only pure static layouts are supported.
+**Important**: only pure static layouts are supported.
+
 If the `.ui` contains `QLayout`/Sizer-style layout elements, the converter aborts with an error message.
 
 Supported widget mapping (current subset):
@@ -38,6 +39,8 @@ Dev mode (pixel-accurate geometry debugging):
 
 With `-d` / `--dev`, the generated `new_window(...)` call includes `Base=0`.
 Without the flag, no `Base` argument is written and the SimpleWx default is used.
+
+SimpleWx normally scales the GUI and all its widgets based on the default font size. This ensures that a SimpleWx application appears at a usable size across different screen resolutions. `Base=0` disables this behaviour and should only be used to inspect original unscaled sizes when an irregularity is observed in normal mode.
 
 ## Quick workflow
 
