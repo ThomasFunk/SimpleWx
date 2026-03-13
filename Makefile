@@ -6,7 +6,7 @@ VENV_PIP := $(VENV)/bin/pip
 SPHINXBUILD := $(VENV)/bin/sphinx-build
 DOCS_DIR := docs
 
-.PHONY: help venv install install-dev test test-headless run-example docs-html docs-man docs-clean clean
+.PHONY: help venv install install-dev test test-headless run-example docs-html docs-man docs-deploy-html docs-deploy-man docs-clean clean
 
 help:
 	@echo "Available targets:"
@@ -16,9 +16,11 @@ help:
 	@echo "  make test           - Run pytest test suite"
 	@echo "  make test-headless  - Run pytest test suite under Xvfb"
 	@echo "  make run-example EXAMPLE=examples/samples/windows_basic.py"
-	@echo "  make docs-html      - Build HTML documentation via Sphinx"
-	@echo "  make docs-man       - Build manpage documentation via Sphinx"
-	@echo "  make docs-clean     - Remove generated Sphinx build output"
+	@echo "  make docs-html         - Build HTML documentation via Sphinx"
+	@echo "  make docs-man          - Build manpage documentation via Sphinx"
+	@echo "  make docs-deploy-html  - Copy built HTML docs to docs/html/"
+	@echo "  make docs-deploy-man   - Copy built manpage to doc/simplewx.1"
+	@echo "  make docs-clean        - Remove generated Sphinx build output"
 	@echo "  make clean          - Remove Python cache files"
 
 venv:
@@ -50,6 +52,14 @@ docs-html: install-dev
 
 docs-man: install-dev
 	$(SPHINXBUILD) -b man $(DOCS_DIR) $(DOCS_DIR)/_build/man
+
+docs-deploy-html:
+	rm -rf $(DOCS_DIR)/html
+	cp -r $(DOCS_DIR)/_build/html $(DOCS_DIR)/html
+
+docs-deploy-man:
+	mkdir -p doc
+	cp $(DOCS_DIR)/_build/man/simplewx.1 doc/simplewx.1
 
 docs-clean:
 	rm -rf $(DOCS_DIR)/_build

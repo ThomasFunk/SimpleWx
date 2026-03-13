@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.add\_entry
+============================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.add_entry

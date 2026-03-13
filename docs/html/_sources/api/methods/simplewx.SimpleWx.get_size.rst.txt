@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.get\_size
+===========================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.get_size

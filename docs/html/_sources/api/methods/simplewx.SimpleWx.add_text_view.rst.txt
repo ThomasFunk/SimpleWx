@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.add\_text\_view
+=================================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.add_text_view

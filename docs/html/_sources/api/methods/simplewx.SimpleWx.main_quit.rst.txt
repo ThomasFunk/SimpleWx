@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.main\_quit
+============================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.main_quit

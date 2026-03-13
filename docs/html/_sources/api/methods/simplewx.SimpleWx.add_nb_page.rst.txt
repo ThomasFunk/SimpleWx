@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.add\_nb\_page
+===============================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.add_nb_page

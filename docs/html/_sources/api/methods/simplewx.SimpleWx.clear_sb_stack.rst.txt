@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.clear\_sb\_stack
+==================================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.clear_sb_stack

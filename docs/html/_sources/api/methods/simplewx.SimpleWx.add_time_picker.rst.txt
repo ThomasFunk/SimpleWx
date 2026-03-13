@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.add\_time\_picker
+===================================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.add_time_picker

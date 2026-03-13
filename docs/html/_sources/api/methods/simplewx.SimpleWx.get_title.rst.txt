@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.get\_title
+============================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.get_title

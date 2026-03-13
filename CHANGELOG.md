@@ -18,6 +18,10 @@ The format is based on Keep a Changelog.
 
 - Added `-d` / `--dev` mode to `swx-builder.py`; in dev mode generated `new_window(...)` includes `Base=0` for pixel-accurate geometry debugging.
 - Added builder regression coverage in `tests/test_swx_builder.py` to validate dev-mode output includes `Base=0`.
+- Added Sphinx documentation with HTML and manpage output.
+- Added one page per public method under `docs/api/methods/`.
+- Added pre-built documentation to the repository (`docs/html/`, `doc/simplewx.1`).
+- Added Makefile targets `docs-html`, `docs-man`, `docs-deploy-html`, `docs-deploy-man`, `docs-clean`.
 
 ### Changed
 

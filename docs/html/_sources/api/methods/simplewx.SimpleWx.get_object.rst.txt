@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.get\_object
+=============================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.get_object

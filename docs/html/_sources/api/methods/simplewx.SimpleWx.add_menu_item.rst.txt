@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.add\_menu\_item
+=================================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.add_menu_item

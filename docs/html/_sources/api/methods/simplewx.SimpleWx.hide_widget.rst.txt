@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.hide\_widget
+==============================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.hide_widget

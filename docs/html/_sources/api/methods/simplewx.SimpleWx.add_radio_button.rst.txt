@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.add\_radio\_button
+====================================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.add_radio_button

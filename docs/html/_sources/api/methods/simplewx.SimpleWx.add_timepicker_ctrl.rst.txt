@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.add\_timepicker\_ctrl
+=======================================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.add_timepicker_ctrl

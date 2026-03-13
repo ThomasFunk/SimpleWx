@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.translate
+===========================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.translate

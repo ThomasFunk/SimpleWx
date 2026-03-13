@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.add\_listview
+===============================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.add_listview

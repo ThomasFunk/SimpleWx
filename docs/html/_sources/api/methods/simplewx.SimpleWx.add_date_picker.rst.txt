@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.add\_date\_picker
+===================================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.add_date_picker

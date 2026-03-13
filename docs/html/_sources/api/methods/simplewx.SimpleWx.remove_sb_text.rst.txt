@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.remove\_sb\_text
+==================================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.remove_sb_text

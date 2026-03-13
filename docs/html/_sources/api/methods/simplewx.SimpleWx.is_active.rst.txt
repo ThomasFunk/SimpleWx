@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.is\_active
+============================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.is_active

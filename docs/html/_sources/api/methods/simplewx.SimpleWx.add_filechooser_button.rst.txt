@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.add\_filechooser\_button
+==========================================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.add_filechooser_button

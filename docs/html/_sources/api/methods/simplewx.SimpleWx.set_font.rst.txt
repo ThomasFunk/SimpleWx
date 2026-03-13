@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.set\_font
+===========================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.set_font

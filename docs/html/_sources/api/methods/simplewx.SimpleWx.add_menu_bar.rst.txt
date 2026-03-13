@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.add\_menu\_bar
+================================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.add_menu_bar

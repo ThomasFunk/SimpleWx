@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.add\_slider
+=============================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.add_slider

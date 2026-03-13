@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.use\_gettext
+==============================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.use_gettext

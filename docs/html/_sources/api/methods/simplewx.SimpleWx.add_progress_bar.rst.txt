@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.add\_progress\_bar
+====================================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.add_progress_bar

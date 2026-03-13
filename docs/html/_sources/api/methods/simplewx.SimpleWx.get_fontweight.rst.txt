@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.get\_fontweight
+=================================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.get_fontweight

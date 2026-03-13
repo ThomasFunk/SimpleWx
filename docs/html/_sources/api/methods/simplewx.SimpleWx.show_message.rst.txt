@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.show\_message
+===============================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.show_message

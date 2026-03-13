@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.add\_check\_button
+====================================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.add_check_button

@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.add\_treeview
+===============================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.add_treeview

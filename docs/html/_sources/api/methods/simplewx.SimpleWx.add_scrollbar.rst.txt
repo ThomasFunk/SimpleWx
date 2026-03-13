@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.add\_scrollbar
+================================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.add_scrollbar

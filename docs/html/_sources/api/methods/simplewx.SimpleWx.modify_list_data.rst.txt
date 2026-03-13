@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.modify\_list\_data
+====================================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.modify_list_data

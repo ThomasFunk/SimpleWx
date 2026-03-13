@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.get\_font\_string
+===================================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.get_font_string

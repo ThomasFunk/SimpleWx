@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.add\_frame
+============================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.add_frame

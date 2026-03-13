@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.font\_string\_to\_array
+=========================================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.font_string_to_array

@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.expand\_splitter
+==================================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.expand_splitter

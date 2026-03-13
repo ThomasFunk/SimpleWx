@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.show\_widget
+==============================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.show_widget

@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.add\_label
+============================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.add_label

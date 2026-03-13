@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.get\_image
+============================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.get_image

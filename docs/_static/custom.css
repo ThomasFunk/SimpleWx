@@ -1,0 +1,31 @@
+/* Render autosummary as a plain list – hide table borders and backgrounds */
+table.autosummary {
+    border: none !important;
+    border-collapse: collapse !important;
+    background: transparent !important;
+    width: 100%;
+}
+
+table.autosummary thead {
+    display: none !important;
+}
+
+table.autosummary td,
+table.autosummary th {
+    border: none !important;
+    background: transparent !important;
+    padding: 1px 0.5em 1px 0 !important;
+    vertical-align: baseline !important;
+}
+
+table.autosummary tr:nth-child(even),
+table.autosummary tr:nth-child(odd) {
+    background: transparent !important;
+}
+
+/* Function name column: look like a link */
+table.autosummary td:first-child a,
+table.autosummary td:first-child a code {
+    color: #0066cc !important;
+    text-decoration: underline !important;
+}

@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.add\_spin\_button
+===================================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.add_spin_button

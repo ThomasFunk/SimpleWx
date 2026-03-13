@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.internal\_die
+===============================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.internal_die

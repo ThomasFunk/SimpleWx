@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.add\_dir\_picker
+==================================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.add_dir_picker

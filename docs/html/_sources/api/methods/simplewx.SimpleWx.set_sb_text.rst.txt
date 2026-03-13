@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.set\_sb\_text
+===============================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.set_sb_text

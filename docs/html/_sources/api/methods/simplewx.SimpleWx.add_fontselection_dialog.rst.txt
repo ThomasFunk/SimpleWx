@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.add\_fontselection\_dialog
+============================================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.add_fontselection_dialog

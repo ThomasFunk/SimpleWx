@@ -1,7 +1,8 @@
 API reference
 =============
 
-The API documentation is split into one page per public method.
+The API documentation shows all public methods
+of the SimpleWx library.
 
 .. toctree::
    :maxdepth: 1

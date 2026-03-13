@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.add\_image
+============================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.add_image

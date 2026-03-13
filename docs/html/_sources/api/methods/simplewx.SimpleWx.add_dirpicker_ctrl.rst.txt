@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.add\_dirpicker\_ctrl
+======================================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.add_dirpicker_ctrl

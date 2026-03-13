@@ -1,0 +1,3007 @@
+.\" Man page generated from reStructuredText.
+.
+.
+.nr rst2man-indent-level 0
+.
+.de1 rstReportMargin
+\\$1 \\n[an-margin]
+level \\n[rst2man-indent-level]
+level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
+-
+\\n[rst2man-indent0]
+\\n[rst2man-indent1]
+\\n[rst2man-indent2]
+..
+.de1 INDENT
+.\" .rstReportMargin pre:
+. RS \\$1
+. nr rst2man-indent\\n[rst2man-indent-level] \\n[an-margin]
+. nr rst2man-indent-level +1
+.\" .rstReportMargin post:
+..
+.de UNINDENT
+. RE
+.\" indent \\n[an-margin]
+.\" old: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.nr rst2man-indent-level -1
+.\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
+.in \\n[rst2man-indent\\n[rst2man-indent-level]]u
+..
+.TH "SIMPLEWX" "1" "Mar 13, 2026" "" "SimpleWx"
+.SH NAME
+simplewx \- SimpleWx Documentation
+.sp
+SimpleWx is a Python wrapper around wxPython focused on rapid GUI development
+with an API that mirrors the original SimpleGtk2/SimpleWx style.
+.SH QUICKSTART
+.SS Installation
+.sp
+Create a virtual environment and install dependencies:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+python3 \-m venv venv
+source venv/bin/activate
+pip install \-U pip
+pip install \-r requirements\-dev.txt
+.EE
+.UNINDENT
+.UNINDENT
+.SS Run an example
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+\&./venv/bin/python examples/samples/windows_basic.py
+.EE
+.UNINDENT
+.UNINDENT
+.SS Build documentation
+.sp
+HTML output:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+make docs\-html
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Manpage output:
+.INDENT 0.0
+.INDENT 3.5
+.sp
+.EX
+make docs\-man
+.EE
+.UNINDENT
+.UNINDENT
+.sp
+Generated files are written to:
+.INDENT 0.0
+.IP \(bu 2
+\fBdocs/_build/html\fP
+.IP \(bu 2
+\fBdocs/_build/man\fP
+.UNINDENT
+.SH API REFERENCE
+.sp
+The API documentation shows all public methods
+of the SimpleWx library.
+.SS API methods
+.sp
+Below all public SimpleWx methods listed.
+.SS add_about_dialog()
+.INDENT 0.0
+.TP
+.B SimpleWx.add_about_dialog(Name: str, Title: str | None = None, ProgramName: str | None = None, Version: str | None = None, Copyright: str | None = None, Comments: str | None = None, Website: str | None = None, Authors: list[Any] | tuple[Any, \&...] | None = None, License: str | None = None, Icon: Any | None = None, Modal: int = 1, RFunc: Callable[[\&...], Any] | None = None) -> None
+Registers an about\-dialog definition for later display.
+.INDENT 7.0
+.TP
+.B Parameters
+.INDENT 7.0
+.IP \(bu 2
+\fBName\fP (\fIstr\fP) \-\- Name of the about\-dialog object. Must be unique.
+.IP \(bu 2
+\fBTitle\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional dialog title.
+.IP \(bu 2
+\fBProgramName\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Program/application name.
+.IP \(bu 2
+\fBVersion\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Program version text.
+.IP \(bu 2
+\fBCopyright\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Copyright information.
+.IP \(bu 2
+\fBComments\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Additional about text.
+.IP \(bu 2
+\fBWebsite\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Project website URL.
+.IP \(bu 2
+\fBAuthors\fP (\fIlist\fP\fI[\fP\fIAny\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIAny\fP\fI, \fP\fI\&...\fP\fI] \fP\fI| \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Author names.
+.IP \(bu 2
+\fBLicense\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- License text.
+.IP \(bu 2
+\fBIcon\fP (\fIAny\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional icon path, \fIwx.Icon\fP, or \fIwx.Bitmap\fP\&.
+.IP \(bu 2
+\fBModal\fP (\fIint\fP\fI, \fP\fIoptional\fP) \-\- Modal metadata flag (\fI1\fP modal, \fI0\fP modeless compatibility).
+.IP \(bu 2
+\fBRFunc\fP (\fICallable\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional callback executed after dialog closes.
+.UNINDENT
+.TP
+.B Return type
+None.
+.UNINDENT
+.sp
+Examples
+.sp
+win.add_about_dialog(Name=\(dqabout1\(dq, ProgramName=\(dqSimpleWx\(dq, Version=\(dq0.1.0\(dq)
+.UNINDENT
+.SS add_button()
+.INDENT 0.0
+.TP
+.B SimpleWx.add_button(Name: str, Position: list[int] | tuple[int, int], Title: str, Frame: str | None = None, Font: list[Any] | tuple[Any, \&...] | None = None, Color: list[Any] | tuple[Any, \&...] | None = None, Size: list[int] | tuple[int, int] | None = None, Tooltip: str | None = None, Function: Callable[[\&...], Any] | list[Any] | tuple[Any, \&...] | None = None, Signal: Any | None = None, Sensitive: int = 1) -> None
+Creates and registers a button with absolute positioning.
+.INDENT 7.0
+.TP
+.B Parameters
+.INDENT 7.0
+.IP \(bu 2
+\fBName\fP (\fIstr\fP) \-\- Name of the button object. Must be unique.
+.IP \(bu 2
+\fBPosition\fP (\fIlist\fP\fI[\fP\fIint\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIint\fP\fI, \fP\fIint\fP\fI]\fP) \-\- Unscaled absolute position \fI[x, y]\fP\&.
+.IP \(bu 2
+\fBTitle\fP (\fIstr\fP) \-\- Button label.
+.IP \(bu 2
+\fBFrame\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional parent container name.
+.IP \(bu 2
+\fBFont\fP (\fIlist\fP\fI[\fP\fIAny\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIAny\fP\fI, \fP\fI\&...\fP\fI] \fP\fI| \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional font definition.
+.IP \(bu 2
+\fBColor\fP (\fIlist\fP\fI[\fP\fIAny\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIAny\fP\fI, \fP\fI\&...\fP\fI] \fP\fI| \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional foreground color definition.
+.IP \(bu 2
+\fBSize\fP (\fIlist\fP\fI[\fP\fIint\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIint\fP\fI, \fP\fIint\fP\fI] \fP\fI| \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional unscaled width/height.
+.IP \(bu 2
+\fBTooltip\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional tooltip text.
+.IP \(bu 2
+\fBFunction\fP (\fICallable\fP\fI | \fP\fIlist\fP\fI[\fP\fIAny\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIAny\fP\fI, \fP\fI\&...\fP\fI] \fP\fI| \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional callback or callback/data pair.
+.IP \(bu 2
+\fBSignal\fP (\fIAny\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional native wx event binder.
+.IP \(bu 2
+\fBSensitive\fP (\fIint\fP\fI, \fP\fIoptional\fP) \-\- Sensitivity state (0/1), default is 1.
+.UNINDENT
+.TP
+.B Return type
+None.
+.UNINDENT
+.sp
+Examples
+.INDENT 7.0
+.TP
+.B win.add_button(
+Name=\(dqcloseButton\(dq,
+Position=[10, 45],
+Title=\(dq_Close\(dq,
+Tooltip=\(dqCloses the application\(dq,
+.UNINDENT
+.sp
+)
+win.add_signal_handler(\(dqcloseButton\(dq, wx.EVT_BUTTON, lambda event: win.main_quit())
+.UNINDENT
+.SS add_check_button()
+.INDENT 0.0
+.TP
+.B SimpleWx.add_check_button(Name: str, Position: list[int] | tuple[int, int], Title: str, Frame: str | None = None, Active: int = 0, Font: list[Any] | tuple[Any, \&...] | None = None, Color: list[Any] | tuple[Any, \&...] | None = None, Tooltip: str | None = None, Function: Callable[[\&...], Any] | list[Any] | tuple[Any, \&...] | None = None, Signal: Any | None = None, Sensitive: int = 1) -> None
+Creates a new check button widget.
+.INDENT 7.0
+.TP
+.B Parameters
+.INDENT 7.0
+.IP \(bu 2
+\fBName\fP (\fIstr\fP) \-\- Name of the check button object. Must be unique.
+.IP \(bu 2
+\fBPosition\fP (\fIlist\fP\fI[\fP\fIint\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIint\fP\fI, \fP\fIint\fP\fI]\fP) \-\- Unscaled absolute position \fI[x, y]\fP\&.
+.IP \(bu 2
+\fBTitle\fP (\fIstr\fP) \-\- Check button label.
+.IP \(bu 2
+\fBFrame\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional parent container name.
+.IP \(bu 2
+\fBActive\fP (\fIint\fP\fI, \fP\fIoptional\fP) \-\- Initial active state (\fI0\fP or \fI1\fP).
+.IP \(bu 2
+\fBFont\fP (\fIlist\fP\fI[\fP\fIAny\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIAny\fP\fI, \fP\fI\&...\fP\fI] \fP\fI| \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional font definition.
+.IP \(bu 2
+\fBColor\fP (\fIlist\fP\fI[\fP\fIAny\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIAny\fP\fI, \fP\fI\&...\fP\fI] \fP\fI| \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional foreground color definition.
+.IP \(bu 2
+\fBTooltip\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional tooltip text.
+.IP \(bu 2
+\fBFunction\fP (\fICallable\fP\fI | \fP\fIlist\fP\fI[\fP\fIAny\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIAny\fP\fI, \fP\fI\&...\fP\fI] \fP\fI| \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional callback or callback/data pair.
+.IP \(bu 2
+\fBSignal\fP (\fIAny\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional native wx event binder.
+.IP \(bu 2
+\fBSensitive\fP (\fIint\fP\fI, \fP\fIoptional\fP) \-\- Sensitivity state (0/1), default is 1.
+.UNINDENT
+.TP
+.B Return type
+None.
+.UNINDENT
+.sp
+Examples
+.INDENT 7.0
+.TP
+.B win.add_check_button(
+Name=\(dqcheckEnabled\(dq,
+Position=[10, 20],
+Title=\(dq_Enabled\(dq,
+Active=1,
+.UNINDENT
+.sp
+)
+.UNINDENT
+.SS add_colorselection_dialog()
+.INDENT 0.0
+.TP
+.B SimpleWx.add_colorselection_dialog(Name: str, Title: str | None = None, Color: Any | None = None, RFunc: Callable[[\&...], Any] | None = None) -> None
+Registers a color\-selection dialog definition for later display.
+.INDENT 7.0
+.TP
+.B Parameters
+.INDENT 7.0
+.IP \(bu 2
+\fBName\fP (\fIstr\fP) \-\- Name of the color\-selection dialog object. Must be unique.
+.IP \(bu 2
+\fBTitle\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Dialog title.
+.IP \(bu 2
+\fBColor\fP (\fIAny\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Initial color as color name, \fIwx.Colour\fP, or \fI[r, g, b]\fP tuple/list.
+.IP \(bu 2
+\fBRFunc\fP (\fICallable\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional response callback.
+.UNINDENT
+.TP
+.B Return type
+None.
+.UNINDENT
+.sp
+Examples
+.sp
+win.add_colorselection_dialog(Name=\(dqcolorDialog\(dq, Title=\(dqChoose color\(dq)
+.UNINDENT
+.SS add_combo_box()
+.INDENT 0.0
+.TP
+.B SimpleWx.add_combo_box(Name: str, Position: list[int] | tuple[int, int], Data: list[Any] | tuple[Any, \&...], Start: int = 0, Size: list[int] | tuple[int, int] | None = None, Frame: str | None = None, Columns: int | None = None, Tooltip: str | None = None, Function: Callable[[\&...], Any] | list[Any] | tuple[Any, \&...] | None = None, Signal: Any | None = None, Sensitive: int = 1) -> None
+Creates a new combo box widget.
+.INDENT 7.0
+.TP
+.B Parameters
+.INDENT 7.0
+.IP \(bu 2
+\fBName\fP (\fIstr\fP) \-\- Name of the combo box object. Must be unique.
+.IP \(bu 2
+\fBPosition\fP (\fIlist\fP\fI[\fP\fIint\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIint\fP\fI, \fP\fIint\fP\fI]\fP) \-\- Unscaled absolute position \fI[x, y]\fP\&.
+.IP \(bu 2
+\fBData\fP (\fIlist\fP\fI[\fP\fIAny\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIAny\fP\fI, \fP\fI\&...\fP\fI]\fP) \-\- Sequence of combo entries.
+.IP \(bu 2
+\fBStart\fP (\fIint\fP\fI, \fP\fIoptional\fP) \-\- Initial selected index, default is 0.
+.IP \(bu 2
+\fBSize\fP (\fIlist\fP\fI[\fP\fIint\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIint\fP\fI, \fP\fIint\fP\fI] \fP\fI| \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional unscaled width/height.
+.IP \(bu 2
+\fBFrame\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional parent container name.
+.IP \(bu 2
+\fBColumns\fP (\fIint\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional wrap column count (compatibility metadata).
+.IP \(bu 2
+\fBTooltip\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional tooltip text.
+.IP \(bu 2
+\fBFunction\fP (\fICallable\fP\fI | \fP\fIlist\fP\fI[\fP\fIAny\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIAny\fP\fI, \fP\fI\&...\fP\fI] \fP\fI| \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional callback or callback/data pair.
+.IP \(bu 2
+\fBSignal\fP (\fIAny\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional native wx event binder.
+.IP \(bu 2
+\fBSensitive\fP (\fIint\fP\fI, \fP\fIoptional\fP) \-\- Sensitivity state (0/1), default is 1.
+.UNINDENT
+.TP
+.B Return type
+None.
+.UNINDENT
+.sp
+Examples
+.INDENT 7.0
+.TP
+.B win.add_combo_box(
+Name=\(dqcombo_res\(dq,
+Position=[10, 70],
+Data=[\(dq800x600\(dq, \(dq1280x720\(dq, \(dq1920x1080\(dq],
+Start=1,
+.UNINDENT
+.sp
+)
+.UNINDENT
+.SS add_dataview()
+.INDENT 0.0
+.TP
+.B SimpleWx.add_dataview(Name: str, Position: list[int] | tuple[int, int], Size: list[int] | tuple[int, int], Headers: list[Any] | tuple[Any, \&...] | None = None, Data: list[Any] | tuple[Any, \&...] | None = None, Editable: int = 1, Sortable: int = 1, Frame: str | None = None, Tooltip: str | None = None, Function: Callable[[\&...], Any] | list[Any] | tuple[Any, \&...] | None = None, Signal: Any | None = None, Sensitive: int = 1) -> None
+Creates a DataViewCtrl widget for tabular data.
+.UNINDENT
+.SS add_dataview_ctrl()
+.INDENT 0.0
+.TP
+.B SimpleWx.add_dataview_ctrl(Name: str, Position: list[int] | tuple[int, int], Size: list[int] | tuple[int, int], Headers: list[Any] | tuple[Any, \&...] | None = None, Data: list[Any] | tuple[Any, \&...] | None = None, Editable: int = 1, Sortable: int = 1, Frame: str | None = None, Tooltip: str | None = None, Function: Callable[[\&...], Any] | list[Any] | tuple[Any, \&...] | None = None, Signal: Any | None = None, Sensitive: int = 1) -> None
+Compatibility alias for add_dataview.
+.UNINDENT
+.SS add_date_picker()
+.INDENT 0.0
+.TP
+.B SimpleWx.add_date_picker(Name: str, Position: list[int] | tuple[int, int], Date: str | None = None, Title: str | None = None, Size: list[int] | tuple[int, int] | None = None, Frame: str | None = None, Tooltip: str | None = None, Function: Callable[[\&...], Any] | list[Any] | tuple[Any, \&...] | None = None, Signal: Any | None = None, Sensitive: int = 1) -> None
+Compatibility alias for add_datepicker_ctrl.
+.UNINDENT
+.SS add_datepicker_ctrl()
+.INDENT 0.0
+.TP
+.B SimpleWx.add_datepicker_ctrl(Name: str, Position: list[int] | tuple[int, int], Date: str | None = None, Title: str | None = None, Size: list[int] | tuple[int, int] | None = None, Frame: str | None = None, Tooltip: str | None = None, Function: Callable[[\&...], Any] | list[Any] | tuple[Any, \&...] | None = None, Signal: Any | None = None, Sensitive: int = 1) -> None
+Creates a date picker control (DatePickerCtrl).
+.UNINDENT
+.SS add_dialog()
+.INDENT 0.0
+.TP
+.B SimpleWx.add_dialog(Name: str, Title: str | None = None, Position: list[int] | tuple[int, int] | None = None, Size: list[int] | tuple[int, int] | None = None, Modal: int = 1, Frame: str | None = None, RFunc: Callable[[\&...], Any] | None = None) -> None
+Registers a generic dialog definition for later display.
+.INDENT 7.0
+.TP
+.B Parameters
+.INDENT 7.0
+.IP \(bu 2
+\fBName\fP (\fIstr\fP) \-\- Name of the dialog object. Must be unique.
+.IP \(bu 2
+\fBTitle\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Dialog title text.
+.IP \(bu 2
+\fBPosition\fP (\fIlist\fP\fI[\fP\fIint\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIint\fP\fI, \fP\fIint\fP\fI] \fP\fI| \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional unscaled dialog position \fI[x, y]\fP\&.
+.IP \(bu 2
+\fBSize\fP (\fIlist\fP\fI[\fP\fIint\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIint\fP\fI, \fP\fIint\fP\fI] \fP\fI| \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional unscaled dialog size \fI[width, height]\fP\&.
+.IP \(bu 2
+\fBModal\fP (\fIint\fP\fI, \fP\fIoptional\fP) \-\- Modal flag (\fI1\fP modal, \fI0\fP modeless).
+.IP \(bu 2
+\fBFrame\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional parent frame name.
+.IP \(bu 2
+\fBRFunc\fP (\fICallable\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional response callback in modeless mode.
+.UNINDENT
+.TP
+.B Return type
+None.
+.UNINDENT
+.sp
+Examples
+.sp
+win.add_dialog(Name=\(dqdialog1\(dq, Title=\(dqOptionen\(dq, Modal=1)
+.UNINDENT
+.SS add_dir_picker()
+.INDENT 0.0
+.TP
+.B SimpleWx.add_dir_picker(Name: str, Position: list[int] | tuple[int, int], Title: str | None = None, Folder: str | None = None, Size: list[int] | tuple[int, int] | None = None, Frame: str | None = None, Tooltip: str | None = None, Function: Callable[[\&...], Any] | list[Any] | tuple[Any, \&...] | None = None, Signal: Any | None = None, Sensitive: int = 1) -> None
+Compatibility alias for add_dirpicker_ctrl.
+.UNINDENT
+.SS add_dirpicker_ctrl()
+.INDENT 0.0
+.TP
+.B SimpleWx.add_dirpicker_ctrl(Name: str, Position: list[int] | tuple[int, int], Title: str | None = None, Folder: str | None = None, Size: list[int] | tuple[int, int] | None = None, Frame: str | None = None, Tooltip: str | None = None, Function: Callable[[\&...], Any] | list[Any] | tuple[Any, \&...] | None = None, Signal: Any | None = None, Sensitive: int = 1) -> None
+Creates a directory picker control (DirPickerCtrl).
+.UNINDENT
+.SS add_drawing_area()
+.INDENT 0.0
+.TP
+.B SimpleWx.add_drawing_area(Name: str, Position: list[int] | tuple[int, int], Size: list[int] | tuple[int, int], Frame: str | None = None, Function: Callable[[\&...], Any] | list[Any] | tuple[Any, \&...] | None = None, Signal: Any | None = None, Sensitive: int = 1) -> None
+Creates a new drawing area widget.
+.INDENT 7.0
+.TP
+.B Parameters
+.INDENT 7.0
+.IP \(bu 2
+\fBName\fP (\fIstr\fP) \-\- Name of the drawing area. Must be unique.
+.IP \(bu 2
+\fBPosition\fP (\fIlist\fP\fI[\fP\fIint\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIint\fP\fI, \fP\fIint\fP\fI]\fP) \-\- Unscaled absolute position \fI[x, y]\fP\&.
+.IP \(bu 2
+\fBSize\fP (\fIlist\fP\fI[\fP\fIint\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIint\fP\fI, \fP\fIint\fP\fI]\fP) \-\- Unscaled drawing area size \fI[width, height]\fP\&.
+.IP \(bu 2
+\fBFrame\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional parent container name.
+.IP \(bu 2
+\fBFunction\fP (\fICallable\fP\fI | \fP\fIlist\fP\fI[\fP\fIAny\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIAny\fP\fI, \fP\fI\&...\fP\fI] \fP\fI| \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional event callback or callback/data pair.
+.IP \(bu 2
+\fBSignal\fP (\fIAny\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional native wx event binder.
+.IP \(bu 2
+\fBSensitive\fP (\fIint\fP\fI, \fP\fIoptional\fP) \-\- Sensitivity state (0/1), default is 1.
+.UNINDENT
+.TP
+.B Return type
+None.
+.UNINDENT
+.sp
+Examples
+.INDENT 7.0
+.TP
+.B win.add_drawing_area(
+Name=\(dqdrawArea\(dq,
+Position=[20, 20],
+Size=[400, 250],
+.UNINDENT
+.sp
+)
+win.add_signal_handler(\(dqdrawArea\(dq, wx.EVT_LEFT_DOWN, lambda event: print(\(dqclick\(dq))
+.UNINDENT
+.SS add_entry()
+.INDENT 0.0
+.TP
+.B SimpleWx.add_entry(Name: str, Position: list[int] | tuple[int, int], Size: list[int] | tuple[int, int], Title: str | None = None, Frame: str | None = None, Font: list[Any] | tuple[Any, \&...] | None = None, Align: str | None = None, Tooltip: str | None = None, Function: Callable[[\&...], Any] | list[Any] | tuple[Any, \&...] | None = None, Signal: Any | None = None, Sensitive: int = 1) -> None
+Creates a new single\-line text entry widget.
+.INDENT 7.0
+.TP
+.B Parameters
+.INDENT 7.0
+.IP \(bu 2
+\fBName\fP (\fIstr\fP) \-\- Name of the text entry object. Must be unique.
+.IP \(bu 2
+\fBPosition\fP (\fIlist\fP\fI[\fP\fIint\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIint\fP\fI, \fP\fIint\fP\fI]\fP) \-\- Unscaled absolute position \fI[x, y]\fP\&.
+.IP \(bu 2
+\fBSize\fP (\fIlist\fP\fI[\fP\fIint\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIint\fP\fI, \fP\fIint\fP\fI]\fP) \-\- Unscaled entry size \fI[width, height]\fP\&.
+.IP \(bu 2
+\fBTitle\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Initial text value.
+.IP \(bu 2
+\fBFrame\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional parent container name.
+.IP \(bu 2
+\fBFont\fP (\fIlist\fP\fI[\fP\fIAny\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIAny\fP\fI, \fP\fI\&...\fP\fI] \fP\fI| \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional font definition.
+.IP \(bu 2
+\fBAlign\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Text alignment (\fIleft\fP, \fIcenter\fP, \fIright\fP).
+.IP \(bu 2
+\fBTooltip\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional tooltip text.
+.IP \(bu 2
+\fBFunction\fP (\fICallable\fP\fI | \fP\fIlist\fP\fI[\fP\fIAny\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIAny\fP\fI, \fP\fI\&...\fP\fI] \fP\fI| \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional callback or callback/data pair.
+.IP \(bu 2
+\fBSignal\fP (\fIAny\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional native wx event binder.
+.IP \(bu 2
+\fBSensitive\fP (\fIint\fP\fI, \fP\fIoptional\fP) \-\- Sensitivity state (0/1), default is 1.
+.UNINDENT
+.TP
+.B Return type
+None.
+.UNINDENT
+.sp
+Examples
+.INDENT 7.0
+.TP
+.B win.add_entry(
+Name=\(dqentry1\(dq,
+Position=[200, 20],
+Size=[100, 20],
+Title=\(dqA text entry field\(dq,
+Align=\(dqright\(dq,
+.UNINDENT
+.sp
+)
+.UNINDENT
+.SS add_filechooser_button()
+.INDENT 0.0
+.TP
+.B SimpleWx.add_filechooser_button(Name: str, Position: list[int] | tuple[int, int], Title: str | None = None, Action: str = \(aqopen\(aq, Frame: str | None = None, File: str | None = None, Filter: Any | None = None, Folder: str | None = None, Size: list[int] | tuple[int, int] | None = None, Function: Callable[[\&...], Any] | list[Any] | tuple[Any, \&...] | None = None, Signal: Any | None = None, Sensitive: int = 1) -> None
+Creates a file chooser button widget with path display and browse action.
+.UNINDENT
+.SS add_filechooser_dialog()
+.INDENT 0.0
+.TP
+.B SimpleWx.add_filechooser_dialog(Name: str, Action: str = \(aqopen\(aq, Title: str | None = None, FName: str | None = None, Filter: Any | None = None, Folder: str | None = None, RFunc: Callable[[\&...], Any] | None = None) -> None
+Registers a file chooser dialog definition for later display.
+.UNINDENT
+.SS add_font_button()
+.INDENT 0.0
+.TP
+.B SimpleWx.add_font_button(Name: str, Position: list[int] | tuple[int, int], Title: str | None = None, Action: str | None = None, Frame: str | None = None, Font: list[Any] | tuple[Any, \&...] | None = None, Size: list[int] | tuple[int, int] | None = None, Function: Callable[[\&...], Any] | list[Any] | tuple[Any, \&...] | None = None, Signal: Any | None = None, Sensitive: int = 1) -> None
+Creates a button that opens a font chooser dialog.
+.UNINDENT
+.SS add_fontselection_dialog()
+.INDENT 0.0
+.TP
+.B SimpleWx.add_fontselection_dialog(Name: str, Title: str | None = None, Font: list[Any] | tuple[Any, \&...] | None = None, Preview: str | None = None, RFunc: Callable[[\&...], Any] | None = None) -> None
+Registers a font\-selection dialog definition for later display.
+.UNINDENT
+.SS add_frame()
+.INDENT 0.0
+.TP
+.B SimpleWx.add_frame(Name: str, Position: list[int] | tuple[int, int], Size: list[int] | tuple[int, int], Title: str | None = None, Frame: str | None = None, Font: list[Any] | tuple[Any, \&...] | None = None, Tooltip: str | None = None, Sensitive: int = 1) -> None
+Creates a new frame\-like container widget.
+.INDENT 7.0
+.TP
+.B Parameters
+.INDENT 7.0
+.IP \(bu 2
+\fBName\fP (\fIstr\fP) \-\- Name of the frame. Must be unique.
+.IP \(bu 2
+\fBPosition\fP (\fIlist\fP\fI[\fP\fIint\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIint\fP\fI, \fP\fIint\fP\fI]\fP) \-\- Unscaled absolute position \fI[x, y]\fP\&.
+.IP \(bu 2
+\fBSize\fP (\fIlist\fP\fI[\fP\fIint\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIint\fP\fI, \fP\fIint\fP\fI]\fP) \-\- Unscaled frame size \fI[width, height]\fP\&.
+.IP \(bu 2
+\fBTitle\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional frame title.
+.IP \(bu 2
+\fBFrame\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional parent container name.
+.IP \(bu 2
+\fBFont\fP (\fIlist\fP\fI[\fP\fIAny\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIAny\fP\fI, \fP\fI\&...\fP\fI] \fP\fI| \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional font definition for title text.
+.IP \(bu 2
+\fBTooltip\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional tooltip text.
+.IP \(bu 2
+\fBSensitive\fP (\fIint\fP\fI, \fP\fIoptional\fP) \-\- Sensitivity state (0/1), default is 1.
+.UNINDENT
+.TP
+.B Return type
+None.
+.UNINDENT
+.sp
+Examples
+.INDENT 7.0
+.TP
+.B win.add_frame(
+Name=\(dqframe1\(dq,
+Position=[5, 5],
+Size=[390, 190],
+Title=\(dq A Frame around \(dq,
+.UNINDENT
+.sp
+)
+.UNINDENT
+.SS add_grid()
+.INDENT 0.0
+.TP
+.B SimpleWx.add_grid(Name: str, Position: list[int] | tuple[int, int], Size: list[int] | tuple[int, int], Headers: list[Any] | tuple[Any, \&...] | None = None, Data: list[Any] | tuple[Any, \&...] | None = None, Editable: int = 1, Sortable: int = 1, Frame: str | None = None, Tooltip: str | None = None, Function: Callable[[\&...], Any] | list[Any] | tuple[Any, \&...] | None = None, Signal: Any | None = None, Sensitive: int = 1) -> None
+Creates a grid widget with optional editing and column sorting.
+.UNINDENT
+.SS add_image()
+.INDENT 0.0
+.TP
+.B SimpleWx.add_image(Name: str, Position: list[int] | tuple[int, int], Size: list[int] | tuple[int, int], Path: str | None = None, Pixbuffer: Any | None = None, Stock: list[Any] | tuple[Any, \&...] | None = None, Frame: str | None = None, Tooltip: str | None = None, Function: Callable[[\&...], Any] | list[Any] | tuple[Any, \&...] | None = None, Signal: Any | None = None, Sensitive: int = 1) -> None
+Creates a new image widget.
+.INDENT 7.0
+.TP
+.B Parameters
+.INDENT 7.0
+.IP \(bu 2
+\fBName\fP (\fIstr\fP) \-\- Name of the image object. Must be unique.
+.IP \(bu 2
+\fBPosition\fP (\fIlist\fP\fI[\fP\fIint\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIint\fP\fI, \fP\fIint\fP\fI]\fP) \-\- Unscaled absolute position \fI[x, y]\fP\&.
+.IP \(bu 2
+\fBSize\fP (\fIlist\fP\fI[\fP\fIint\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIint\fP\fI, \fP\fIint\fP\fI]\fP) \-\- Unscaled image size \fI[width, height]\fP\&.
+.IP \(bu 2
+\fBPath\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional image file path source.
+.IP \(bu 2
+\fBPixbuffer\fP (\fIAny\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional wx bitmap/image source.
+.IP \(bu 2
+\fBStock\fP (\fIlist\fP\fI[\fP\fIAny\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIAny\fP\fI, \fP\fI\&...\fP\fI] \fP\fI| \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional stock/art source (\fI[stock_name, stock_size]\fP).
+.IP \(bu 2
+\fBFrame\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional parent container name.
+.IP \(bu 2
+\fBTooltip\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional tooltip text.
+.IP \(bu 2
+\fBFunction\fP (\fICallable\fP\fI | \fP\fIlist\fP\fI[\fP\fIAny\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIAny\fP\fI, \fP\fI\&...\fP\fI] \fP\fI| \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional callback or callback/data pair.
+.IP \(bu 2
+\fBSignal\fP (\fIAny\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional native wx event binder.
+.IP \(bu 2
+\fBSensitive\fP (\fIint\fP\fI, \fP\fIoptional\fP) \-\- Sensitivity state (0/1), default is 1.
+.UNINDENT
+.TP
+.B Return type
+None.
+.UNINDENT
+.sp
+Examples
+.INDENT 7.0
+.TP
+.B win.add_image(
+Name=\(dqimage1\(dq,
+Path=\(dq./icon.png\(dq,
+Size=[64, 64],
+Position=[10, 10],
+.UNINDENT
+.sp
+)
+.UNINDENT
+.SS add_label()
+.INDENT 0.0
+.TP
+.B SimpleWx.add_label(Name: str, Position: list[int] | tuple[int, int], Title: str, Frame: str | None = None, Font: list[Any] | tuple[Any, \&...] | None = None, Widget: str | None = None, Justify: str | None = None, Wrapped: int = 0, Tooltip: str | None = None, Sensitive: int = 1) -> None
+Creates a new label widget.
+.INDENT 7.0
+.TP
+.B Parameters
+.INDENT 7.0
+.IP \(bu 2
+\fBName\fP (\fIstr\fP) \-\- Name of the label object. Must be unique.
+.IP \(bu 2
+\fBPosition\fP (\fIlist\fP\fI[\fP\fIint\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIint\fP\fI, \fP\fIint\fP\fI]\fP) \-\- Unscaled absolute position \fI[x, y]\fP\&.
+.IP \(bu 2
+\fBTitle\fP (\fIstr\fP) \-\- Label text.
+.IP \(bu 2
+\fBFrame\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional parent container name.
+.IP \(bu 2
+\fBFont\fP (\fIlist\fP\fI[\fP\fIAny\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIAny\fP\fI, \fP\fI\&...\fP\fI] \fP\fI| \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional font definition.
+.IP \(bu 2
+\fBWidget\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional linked target widget for mnemonic focus.
+.IP \(bu 2
+\fBJustify\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Text justification (\fIleft\fP, \fIcenter\fP, \fIright\fP, \fIfill\fP).
+.IP \(bu 2
+\fBWrapped\fP (\fIint\fP\fI, \fP\fIoptional\fP) \-\- Wrap mode (\fI0\fP disabled, \fI1\fP enabled).
+.IP \(bu 2
+\fBTooltip\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional tooltip text.
+.IP \(bu 2
+\fBSensitive\fP (\fIint\fP\fI, \fP\fIoptional\fP) \-\- Sensitivity state (0/1), default is 1.
+.UNINDENT
+.TP
+.B Return type
+None.
+.UNINDENT
+.sp
+Examples
+.INDENT 7.0
+.TP
+.B win.add_label(
+Name=\(dqlabel1\(dq,
+Position=[10, 20],
+Title=\(dqA Label\(dq,
+Justify=\(dqleft\(dq,
+.UNINDENT
+.sp
+)
+.UNINDENT
+.SS add_link_button()
+.INDENT 0.0
+.TP
+.B SimpleWx.add_link_button(Name: str, Position: list[int] | tuple[int, int], Title: str, Uri: str, Frame: str | None = None, Font: list[Any] | tuple[Any, \&...] | None = None, Color: list[Any] | tuple[Any, \&...] | None = None, Size: list[int] | tuple[int, int] | None = None, Function: Callable[[\&...], Any] | list[Any] | tuple[Any, \&...] | None = None, Signal: Any | None = None, Sensitive: int = 1) -> None
+Creates a new hyperlink button widget.
+.INDENT 7.0
+.TP
+.B Parameters
+.INDENT 7.0
+.IP \(bu 2
+\fBName\fP (\fIstr\fP) \-\- Name of the link button object. Must be unique.
+.IP \(bu 2
+\fBPosition\fP (\fIlist\fP\fI[\fP\fIint\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIint\fP\fI, \fP\fIint\fP\fI]\fP) \-\- Unscaled absolute position \fI[x, y]\fP\&.
+.IP \(bu 2
+\fBTitle\fP (\fIstr\fP) \-\- Hyperlink label text.
+.IP \(bu 2
+\fBUri\fP (\fIstr\fP) \-\- Hyperlink target URI.
+.IP \(bu 2
+\fBFrame\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional parent container name.
+.IP \(bu 2
+\fBFont\fP (\fIlist\fP\fI[\fP\fIAny\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIAny\fP\fI, \fP\fI\&...\fP\fI] \fP\fI| \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional font definition.
+.IP \(bu 2
+\fBColor\fP (\fIlist\fP\fI[\fP\fIAny\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIAny\fP\fI, \fP\fI\&...\fP\fI] \fP\fI| \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional color definition (\fI[color, state]\fP).
+.IP \(bu 2
+\fBSize\fP (\fIlist\fP\fI[\fP\fIint\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIint\fP\fI, \fP\fIint\fP\fI] \fP\fI| \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional unscaled width/height.
+.IP \(bu 2
+\fBFunction\fP (\fICallable\fP\fI | \fP\fIlist\fP\fI[\fP\fIAny\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIAny\fP\fI, \fP\fI\&...\fP\fI] \fP\fI| \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional callback or callback/data pair.
+.IP \(bu 2
+\fBSignal\fP (\fIAny\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional native wx event binder.
+.IP \(bu 2
+\fBSensitive\fP (\fIint\fP\fI, \fP\fIoptional\fP) \-\- Sensitivity state (0/1), default is 1.
+.UNINDENT
+.TP
+.B Return type
+None.
+.UNINDENT
+.sp
+Examples
+.INDENT 7.0
+.TP
+.B win.add_link_button(
+Name=\(dqlinkButton\(dq,
+Position=[15, 30],
+Title=\(dqsimplewx repository\(dq,
+Uri=\(dq\X'tty: link https://github.com/ThomasFunk/SimpleWx'\fI\%https://github.com/ThomasFunk/SimpleWx\fP\X'tty: link'\(dq,
+.UNINDENT
+.sp
+)
+.UNINDENT
+.SS add_listview()
+.INDENT 0.0
+.TP
+.B SimpleWx.add_listview(Name: str, Position: list[int] | tuple[int, int], Size: list[int] | tuple[int, int], Headers: list[Any] | tuple[Any, \&...], Data: list[Any] | tuple[Any, \&...] | None = None, Frame: str | None = None, Tooltip: str | None = None, Function: Callable[[\&...], Any] | list[Any] | tuple[Any, \&...] | None = None, Signal: Any | None = None, Sensitive: int = 1) -> None
+Creates a new list\-view widget.
+.INDENT 7.0
+.TP
+.B Parameters
+.INDENT 7.0
+.IP \(bu 2
+\fBName\fP (\fIstr\fP) \-\- Name of the list view object. Must be unique.
+.IP \(bu 2
+\fBPosition\fP (\fIlist\fP\fI[\fP\fIint\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIint\fP\fI, \fP\fIint\fP\fI]\fP) \-\- Unscaled absolute position \fI[x, y]\fP\&.
+.IP \(bu 2
+\fBSize\fP (\fIlist\fP\fI[\fP\fIint\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIint\fP\fI, \fP\fIint\fP\fI]\fP) \-\- Unscaled list\-view size \fI[width, height]\fP\&.
+.IP \(bu 2
+\fBHeaders\fP (\fIlist\fP\fI[\fP\fIAny\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIAny\fP\fI, \fP\fI\&...\fP\fI]\fP) \-\- Sequence of column titles.
+.IP \(bu 2
+\fBData\fP (\fIlist\fP\fI[\fP\fIAny\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIAny\fP\fI, \fP\fI\&...\fP\fI] \fP\fI| \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional initial row matrix.
+.IP \(bu 2
+\fBFrame\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional parent container name.
+.IP \(bu 2
+\fBTooltip\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional tooltip text.
+.IP \(bu 2
+\fBFunction\fP (\fICallable\fP\fI | \fP\fIlist\fP\fI[\fP\fIAny\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIAny\fP\fI, \fP\fI\&...\fP\fI] \fP\fI| \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional callback or callback/data pair.
+.IP \(bu 2
+\fBSignal\fP (\fIAny\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional native wx event binder.
+.IP \(bu 2
+\fBSensitive\fP (\fIint\fP\fI, \fP\fIoptional\fP) \-\- Sensitivity state (0/1), default is 1.
+.UNINDENT
+.TP
+.B Return type
+None.
+.UNINDENT
+.UNINDENT
+.SS add_menu()
+.INDENT 0.0
+.TP
+.B SimpleWx.add_menu(Name: str, Menubar: str, Title: str, Justify: str = \(aqleft\(aq, Sensitive: int = 1) -> None
+Creates and registers a dropdown menu on a menu bar.
+.INDENT 7.0
+.TP
+.B Parameters
+.INDENT 7.0
+.IP \(bu 2
+\fBName\fP (\fIstr\fP) \-\- Name of the menu object. Must be unique.
+.IP \(bu 2
+\fBMenubar\fP (\fIstr\fP) \-\- Name of the menu bar object.
+.IP \(bu 2
+\fBTitle\fP (\fIstr\fP) \-\- Menu title text.
+.IP \(bu 2
+\fBJustify\fP (\fIstr\fP\fI, \fP\fIoptional\fP) \-\- Menu alignment hint (\fIleft\fP or \fIright\fP).
+.IP \(bu 2
+\fBSensitive\fP (\fIint\fP\fI, \fP\fIoptional\fP) \-\- Sensitivity state (0/1), default is 1.
+.UNINDENT
+.TP
+.B Return type
+None.
+.UNINDENT
+.sp
+Examples
+.sp
+win.add_menu(Name=\(dqmenu_file\(dq, Menubar=\(dqmenubar1\(dq, Title=\(dq_File\(dq)
+.UNINDENT
+.SS add_menu_bar()
+.INDENT 0.0
+.TP
+.B SimpleWx.add_menu_bar(Name: str, Position: list[int] | tuple[int, int] | None = None, Size: list[int] | tuple[int, int] | None = None) -> None
+Creates and attaches a menu bar to the main window.
+.INDENT 7.0
+.TP
+.B Parameters
+.INDENT 7.0
+.IP \(bu 2
+\fBName\fP (\fIstr\fP) \-\- Name of the menubar object. Must be unique.
+.IP \(bu 2
+\fBPosition\fP (\fIlist\fP\fI[\fP\fIint\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIint\fP\fI, \fP\fIint\fP\fI] \fP\fI| \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional position placeholder for API compatibility.
+.IP \(bu 2
+\fBSize\fP (\fIlist\fP\fI[\fP\fIint\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIint\fP\fI, \fP\fIint\fP\fI] \fP\fI| \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional unscaled size placeholder for API compatibility.
+.UNINDENT
+.TP
+.B Return type
+None.
+.UNINDENT
+.sp
+Examples
+.sp
+win.add_menu_bar(Name=\(dqmenubar1\(dq)
+.UNINDENT
+.SS add_menu_item()
+.INDENT 0.0
+.TP
+.B SimpleWx.add_menu_item(Name: str, Menu: str, Type: str = \(aqitem\(aq, Title: str | None = None, Tooltip: str | None = None, Icon: str | None = None, Group: str | None = None, Active: int = 0, Function: Callable[[\&...], Any] | list[Any] | tuple[Any, \&...] | None = None, Signal: Any | None = None, Sensitive: int = 1) -> None
+Creates and appends a menu item to an existing menu.
+.INDENT 7.0
+.TP
+.B Parameters
+.INDENT 7.0
+.IP \(bu 2
+\fBName\fP (\fIstr\fP) \-\- Name of the menu item object. Must be unique.
+.IP \(bu 2
+\fBMenu\fP (\fIstr\fP) \-\- Parent menu object name.
+.IP \(bu 2
+\fBType\fP (\fIstr\fP\fI, \fP\fIoptional\fP) \-\- Menu item type (\fIitem\fP, \fIseparator\fP, \fIcheck\fP, \fIradio\fP, \fItearoff\fP).
+.IP \(bu 2
+\fBTitle\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Menu item label.
+.IP \(bu 2
+\fBTooltip\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional help/tooltip text.
+.IP \(bu 2
+\fBIcon\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional icon path or stock/icon name.
+.IP \(bu 2
+\fBGroup\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional radio group name.
+.IP \(bu 2
+\fBActive\fP (\fIint\fP\fI, \fP\fIoptional\fP) \-\- Initial active state for check/radio items.
+.IP \(bu 2
+\fBFunction\fP (\fICallable\fP\fI | \fP\fIlist\fP\fI[\fP\fIAny\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIAny\fP\fI, \fP\fI\&...\fP\fI] \fP\fI| \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional callback or callback/data pair.
+.IP \(bu 2
+\fBSignal\fP (\fIAny\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional event binder hint.
+.IP \(bu 2
+\fBSensitive\fP (\fIint\fP\fI, \fP\fIoptional\fP) \-\- Sensitivity state (0/1), default is 1.
+.UNINDENT
+.TP
+.B Return type
+None.
+.UNINDENT
+.sp
+Examples
+.sp
+win.add_menu_item(Name=\(dqmenu_item_quit\(dq, Menu=\(dqmenu_file\(dq, Title=\(dq_Quit\(dq)
+.UNINDENT
+.SS add_msg_dialog()
+.INDENT 0.0
+.TP
+.B SimpleWx.add_msg_dialog(Name: str, Modal: int = 1, DType: str = \(aqok\(aq, MType: str = \(aqinfo\(aq, Icon: str | None = None, RFunc: Callable[[\&...], Any] | None = None) -> None
+Registers a message\-dialog definition for later display.
+.INDENT 7.0
+.TP
+.B Parameters
+.INDENT 7.0
+.IP \(bu 2
+\fBName\fP (\fIstr\fP) \-\- Name of the message\-dialog object. Must be unique.
+.IP \(bu 2
+\fBModal\fP (\fIint\fP\fI, \fP\fIoptional\fP) \-\- Modal flag (\fI1\fP modal, \fI0\fP modeless).
+.IP \(bu 2
+\fBDType\fP (\fIstr\fP\fI, \fP\fIoptional\fP) \-\- Dialog button type (\fIok\fP, \fIyesno\fP, \fIokcancel\fP, \fIyesnocancel\fP).
+.IP \(bu 2
+\fBMType\fP (\fIstr\fP\fI, \fP\fIoptional\fP) \-\- Message type (\fIinfo\fP, \fIwarning\fP, \fIerror\fP, \fIquestion\fP).
+.IP \(bu 2
+\fBIcon\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional icon path or stock/icon name.
+.IP \(bu 2
+\fBRFunc\fP (\fICallable\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional response callback (primarily for modeless mode).
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS add_nb_page()
+.INDENT 0.0
+.TP
+.B SimpleWx.add_nb_page(Name: str, Notebook: str, Title: str | None = None, Image: Any | None = None, Font: list[Any] | tuple[Any, \&...] | None = None, Color: list[Any] | tuple[Any, \&...] | None = None, PositionNumber: int | None = None, Tooltip: str | None = None, Sensitive: int = 1) -> None
+Creates and inserts a notebook page.
+.INDENT 7.0
+.TP
+.B Parameters
+.INDENT 7.0
+.IP \(bu 2
+\fBName\fP (\fIstr\fP) \-\- Name of the notebook page object. Must be unique.
+.IP \(bu 2
+\fBNotebook\fP (\fIstr\fP) \-\- Parent notebook object name.
+.IP \(bu 2
+\fBTitle\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Page tab title.
+.IP \(bu 2
+\fBImage\fP (\fIAny\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional tab image path or stock icon name.
+.IP \(bu 2
+\fBFont\fP (\fIlist\fP\fI[\fP\fIAny\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIAny\fP\fI, \fP\fI\&...\fP\fI] \fP\fI| \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional font definition for the page container.
+.IP \(bu 2
+\fBColor\fP (\fIlist\fP\fI[\fP\fIAny\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIAny\fP\fI, \fP\fI\&...\fP\fI] \fP\fI| \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional font color definition \fI[color, state]\fP\&.
+.IP \(bu 2
+\fBPositionNumber\fP (\fIint\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional target page index for insertion.
+.IP \(bu 2
+\fBTooltip\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional tooltip text.
+.IP \(bu 2
+\fBSensitive\fP (\fIint\fP\fI, \fP\fIoptional\fP) \-\- Sensitivity state (0/1), default is 1.
+.UNINDENT
+.TP
+.B Return type
+None.
+.UNINDENT
+.UNINDENT
+.SS add_notebook()
+.INDENT 0.0
+.TP
+.B SimpleWx.add_notebook(Name: str, Position: list[int] | tuple[int, int], Size: list[int] | tuple[int, int], Tabs: str = \(aqtop\(aq, Scrollable: int = 1, Popup: int = 0, CloseTabs: int = 0, Frame: str | None = None, Tooltip: str | None = None, Function: Callable[[\&...], Any] | list[Any] | tuple[Any, \&...] | None = None, Signal: Any | None = None, Sensitive: int = 1) -> None
+Creates a new notebook widget.
+.INDENT 7.0
+.TP
+.B Parameters
+.INDENT 7.0
+.IP \(bu 2
+\fBName\fP (\fIstr\fP) \-\- Name of the notebook object. Must be unique.
+.IP \(bu 2
+\fBPosition\fP (\fIlist\fP\fI[\fP\fIint\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIint\fP\fI, \fP\fIint\fP\fI]\fP) \-\- Unscaled absolute position \fI[x, y]\fP\&.
+.IP \(bu 2
+\fBSize\fP (\fIlist\fP\fI[\fP\fIint\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIint\fP\fI, \fP\fIint\fP\fI]\fP) \-\- Unscaled notebook size \fI[width, height]\fP\&.
+.IP \(bu 2
+\fBTabs\fP (\fIstr\fP\fI, \fP\fIoptional\fP) \-\- Tab position (\fItop\fP, \fIbottom\fP, \fIleft\fP, \fIright\fP, \fInone\fP).
+.IP \(bu 2
+\fBScrollable\fP (\fIint\fP\fI, \fP\fIoptional\fP) \-\- If non\-zero, enables multiline tab layout.
+.IP \(bu 2
+\fBPopup\fP (\fIint\fP\fI, \fP\fIoptional\fP) \-\- Compatibility metadata for tab popup support.
+.IP \(bu 2
+\fBCloseTabs\fP (\fIint\fP\fI, \fP\fIoptional\fP) \-\- If non\-zero, middle\-click on a tab closes that page.
+.IP \(bu 2
+\fBFrame\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional parent container name.
+.IP \(bu 2
+\fBTooltip\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional tooltip text.
+.IP \(bu 2
+\fBFunction\fP (\fICallable\fP\fI | \fP\fIlist\fP\fI[\fP\fIAny\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIAny\fP\fI, \fP\fI\&...\fP\fI] \fP\fI| \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional callback or callback/data pair.
+.IP \(bu 2
+\fBSignal\fP (\fIAny\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional native wx event binder.
+.IP \(bu 2
+\fBSensitive\fP (\fIint\fP\fI, \fP\fIoptional\fP) \-\- Sensitivity state (0/1), default is 1.
+.UNINDENT
+.TP
+.B Return type
+None.
+.UNINDENT
+.UNINDENT
+.SS add_pagesetup_dialog()
+.INDENT 0.0
+.TP
+.B SimpleWx.add_pagesetup_dialog(Name: str, Title: str | None = None, PaperId: int | None = None, Orientation: str = \(aqportrait\(aq, MarginTopLeft: list[int] | tuple[int, int] | None = None, MarginBottomRight: list[int] | tuple[int, int] | None = None, Modal: int = 1, RFunc: Callable[[\&...], Any] | None = None) -> None
+Registers a page\-setup dialog definition for later display.
+.INDENT 7.0
+.TP
+.B Parameters
+.INDENT 7.0
+.IP \(bu 2
+\fBName\fP (\fIstr\fP) \-\- Name of the page\-setup dialog object. Must be unique.
+.IP \(bu 2
+\fBTitle\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional dialog title.
+.IP \(bu 2
+\fBPaperId\fP (\fIint\fP\fI, \fP\fIoptional\fP) \-\- wx paper id value.
+.IP \(bu 2
+\fBOrientation\fP (\fIstr\fP\fI, \fP\fIoptional\fP) \-\- Page orientation (\fIportrait\fP or \fIlandscape\fP).
+.IP \(bu 2
+\fBMarginTopLeft\fP (\fIlist\fP\fI[\fP\fIint\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIint\fP\fI, \fP\fIint\fP\fI] \fP\fI| \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Top\-left page margin \fI[x, y]\fP\&.
+.IP \(bu 2
+\fBMarginBottomRight\fP (\fIlist\fP\fI[\fP\fIint\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIint\fP\fI, \fP\fIint\fP\fI] \fP\fI| \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Bottom\-right page margin \fI[x, y]\fP\&.
+.IP \(bu 2
+\fBModal\fP (\fIint\fP\fI, \fP\fIoptional\fP) \-\- Modal metadata flag (\fI1\fP modal, \fI0\fP modeless compatibility).
+.IP \(bu 2
+\fBRFunc\fP (\fICallable\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional response callback.
+.UNINDENT
+.TP
+.B Return type
+None.
+.UNINDENT
+.sp
+Examples
+.sp
+win.add_pagesetup_dialog(Name=\(dqpset1\(dq, Orientation=\(dqlandscape\(dq)
+.UNINDENT
+.SS add_print_dialog()
+.INDENT 0.0
+.TP
+.B SimpleWx.add_print_dialog(Name: str, Title: str | None = None, MinPage: int = 1, MaxPage: int = 1, FromPage: int = 1, ToPage: int = 1, AllPages: int = 1, Selection: int = 0, PrintToFile: int = 0, Copies: int = 1, Modal: int = 1, RFunc: Callable[[\&...], Any] | None = None) -> None
+Registers a print\-dialog definition for later display.
+.INDENT 7.0
+.TP
+.B Parameters
+.INDENT 7.0
+.IP \(bu 2
+\fBName\fP (\fIstr\fP) \-\- Name of the print\-dialog object. Must be unique.
+.IP \(bu 2
+\fBTitle\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional dialog title.
+.IP \(bu 2
+\fBMinPage\fP (\fIint\fP\fI, \fP\fIoptional\fP) \-\- Minimum page number.
+.IP \(bu 2
+\fBMaxPage\fP (\fIint\fP\fI, \fP\fIoptional\fP) \-\- Maximum page number.
+.IP \(bu 2
+\fBFromPage\fP (\fIint\fP\fI, \fP\fIoptional\fP) \-\- Start page number.
+.IP \(bu 2
+\fBToPage\fP (\fIint\fP\fI, \fP\fIoptional\fP) \-\- End page number.
+.IP \(bu 2
+\fBAllPages\fP (\fIint\fP\fI, \fP\fIoptional\fP) \-\- All\-pages selection flag (\fI0\fP/\fI1\fP).
+.IP \(bu 2
+\fBSelection\fP (\fIint\fP\fI, \fP\fIoptional\fP) \-\- Selection\-only flag (\fI0\fP/\fI1\fP).
+.IP \(bu 2
+\fBPrintToFile\fP (\fIint\fP\fI, \fP\fIoptional\fP) \-\- Print\-to\-file flag (\fI0\fP/\fI1\fP).
+.IP \(bu 2
+\fBCopies\fP (\fIint\fP\fI, \fP\fIoptional\fP) \-\- Number of copies.
+.IP \(bu 2
+\fBModal\fP (\fIint\fP\fI, \fP\fIoptional\fP) \-\- Modal metadata flag (\fI1\fP modal, \fI0\fP modeless compatibility).
+.IP \(bu 2
+\fBRFunc\fP (\fICallable\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional response callback.
+.UNINDENT
+.TP
+.B Return type
+None.
+.UNINDENT
+.sp
+Examples
+.sp
+win.add_print_dialog(Name=\(dqprint1\(dq, MinPage=1, MaxPage=10, FromPage=1, ToPage=2)
+.UNINDENT
+.SS add_printout()
+.INDENT 0.0
+.TP
+.B SimpleWx.add_printout(Name: str, Title: str | None = None, Text: str | None = None, Path: str | None = None, LinesPerPage: int = 60, Header: str | None = None, Footer: str | None = None, ShowDate: int = 1, DateFormat: str = \(aq%Y\-%m\-%d\(aq) -> None
+Registers a printout definition used by preview/printing pipeline.
+.UNINDENT
+.SS add_progress_bar()
+.INDENT 0.0
+.TP
+.B SimpleWx.add_progress_bar(Name: str, Position: list[int] | tuple[int, int], Size: list[int] | tuple[int, int] | None = None, Mode: str = \(aqpercent\(aq, Steps: int = 100, Orient: str = \(aqhorizontal\(aq, Timer: int = 100, Align: str = \(aqleft\(aq, Frame: str | None = None, Tooltip: str | None = None, Function: Callable[[\&...], Any] | list[Any] | tuple[Any, \&...] | None = None, Signal: Any | None = None, Sensitive: int = 1) -> None
+Creates a new progress bar widget.
+.INDENT 7.0
+.TP
+.B Parameters
+.INDENT 7.0
+.IP \(bu 2
+\fBName\fP (\fIstr\fP) \-\- Name of the progress\-bar object. Must be unique.
+.IP \(bu 2
+\fBPosition\fP (\fIlist\fP\fI[\fP\fIint\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIint\fP\fI, \fP\fIint\fP\fI]\fP) \-\- Unscaled absolute position \fI[x, y]\fP\&.
+.IP \(bu 2
+\fBSize\fP (\fIlist\fP\fI[\fP\fIint\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIint\fP\fI, \fP\fIint\fP\fI] \fP\fI| \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional unscaled width/height.
+.IP \(bu 2
+\fBMode\fP (\fIstr\fP\fI, \fP\fIoptional\fP) \-\- Progress mode (\fIpercent\fP or \fIpulse\fP).
+.IP \(bu 2
+\fBSteps\fP (\fIint\fP\fI, \fP\fIoptional\fP) \-\- Logical progress range maximum.
+.IP \(bu 2
+\fBOrient\fP (\fIstr\fP\fI, \fP\fIoptional\fP) \-\- Orientation (\fIhorizontal\fP or \fIvertical\fP).
+.IP \(bu 2
+\fBTimer\fP (\fIint\fP\fI, \fP\fIoptional\fP) \-\- Compatibility timer metadata in milliseconds.
+.IP \(bu 2
+\fBAlign\fP (\fIstr\fP\fI, \fP\fIoptional\fP) \-\- Compatibility alignment metadata (\fIleft\fP or \fIright\fP).
+.IP \(bu 2
+\fBFrame\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional parent container name.
+.IP \(bu 2
+\fBTooltip\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional tooltip text.
+.IP \(bu 2
+\fBFunction\fP (\fICallable\fP\fI | \fP\fIlist\fP\fI[\fP\fIAny\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIAny\fP\fI, \fP\fI\&...\fP\fI] \fP\fI| \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional callback or callback/data pair.
+.IP \(bu 2
+\fBSignal\fP (\fIAny\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional native wx event binder.
+.IP \(bu 2
+\fBSensitive\fP (\fIint\fP\fI, \fP\fIoptional\fP) \-\- Sensitivity state (0/1), default is 1.
+.UNINDENT
+.TP
+.B Return type
+None.
+.UNINDENT
+.sp
+Examples
+.sp
+win.add_progress_bar(Name=\(dqprog1\(dq, Position=[20, 20], Size=[200, 18], Mode=\(dqpercent\(dq, Steps=100)
+.UNINDENT
+.SS add_progressbar()
+.INDENT 0.0
+.TP
+.B SimpleWx.add_progressbar(Name: str, Position: list[int] | tuple[int, int], Size: list[int] | tuple[int, int] | None = None, Mode: str = \(aqpercent\(aq, Steps: int = 100, Orient: str = \(aqhorizontal\(aq, Timer: int = 100, Align: str = \(aqleft\(aq, Frame: str | None = None, Tooltip: str | None = None, Function: Callable[[\&...], Any] | list[Any] | tuple[Any, \&...] | None = None, Signal: Any | None = None, Sensitive: int = 1) -> None
+Compatibility alias for \fIadd_progress_bar\fP\&.
+.INDENT 7.0
+.TP
+.B Parameters
+.INDENT 7.0
+.IP \(bu 2
+\fBName\fP (\fIstr\fP) \-\- Name of the progress\-bar object. Must be unique.
+.IP \(bu 2
+\fBPosition\fP (\fIlist\fP\fI[\fP\fIint\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIint\fP\fI, \fP\fIint\fP\fI]\fP) \-\- Unscaled absolute position \fI[x, y]\fP\&.
+.IP \(bu 2
+\fBSize\fP (\fIlist\fP\fI[\fP\fIint\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIint\fP\fI, \fP\fIint\fP\fI] \fP\fI| \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional unscaled width/height.
+.IP \(bu 2
+\fBMode\fP (\fIstr\fP\fI, \fP\fIoptional\fP) \-\- Progress mode (\fIpercent\fP or \fIpulse\fP).
+.IP \(bu 2
+\fBSteps\fP (\fIint\fP\fI, \fP\fIoptional\fP) \-\- Logical progress range maximum.
+.IP \(bu 2
+\fBOrient\fP (\fIstr\fP\fI, \fP\fIoptional\fP) \-\- Orientation (\fIhorizontal\fP or \fIvertical\fP).
+.IP \(bu 2
+\fBTimer\fP (\fIint\fP\fI, \fP\fIoptional\fP) \-\- Compatibility timer metadata in milliseconds.
+.IP \(bu 2
+\fBAlign\fP (\fIstr\fP\fI, \fP\fIoptional\fP) \-\- Compatibility alignment metadata (\fIleft\fP or \fIright\fP).
+.IP \(bu 2
+\fBFrame\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional parent container name.
+.IP \(bu 2
+\fBTooltip\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional tooltip text.
+.IP \(bu 2
+\fBFunction\fP (\fICallable\fP\fI | \fP\fIlist\fP\fI[\fP\fIAny\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIAny\fP\fI, \fP\fI\&...\fP\fI] \fP\fI| \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional callback or callback/data pair.
+.IP \(bu 2
+\fBSignal\fP (\fIAny\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional native wx event binder.
+.IP \(bu 2
+\fBSensitive\fP (\fIint\fP\fI, \fP\fIoptional\fP) \-\- Sensitivity state (0/1), default is 1.
+.UNINDENT
+.TP
+.B Return type
+None.
+.UNINDENT
+.sp
+Examples
+.sp
+win.add_progressbar(Name=\(dqprog1\(dq, Position=[20, 20], Size=[200, 18], Mode=\(dqpercent\(dq, Steps=100)
+.UNINDENT
+.SS add_radio_button()
+.INDENT 0.0
+.TP
+.B SimpleWx.add_radio_button(Name: str, Position: list[int] | tuple[int, int], Title: str, Group: str, Frame: str | None = None, Active: int = 0, Font: list[Any] | tuple[Any, \&...] | None = None, Color: list[Any] | tuple[Any, \&...] | None = None, Tooltip: str | None = None, Function: Callable[[\&...], Any] | list[Any] | tuple[Any, \&...] | None = None, Signal: Any | None = None, Sensitive: int = 1) -> None
+Creates a new radio button widget.
+.INDENT 7.0
+.TP
+.B Parameters
+.INDENT 7.0
+.IP \(bu 2
+\fBName\fP (\fIstr\fP) \-\- Name of the radio button object. Must be unique.
+.IP \(bu 2
+\fBPosition\fP (\fIlist\fP\fI[\fP\fIint\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIint\fP\fI, \fP\fIint\fP\fI]\fP) \-\- Unscaled absolute position \fI[x, y]\fP\&.
+.IP \(bu 2
+\fBTitle\fP (\fIstr\fP) \-\- Radio button label.
+.IP \(bu 2
+\fBGroup\fP (\fIstr\fP) \-\- Name of the radio group. Must be unique in scope.
+.IP \(bu 2
+\fBFrame\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional parent container name.
+.IP \(bu 2
+\fBActive\fP (\fIint\fP\fI, \fP\fIoptional\fP) \-\- Initial active state (\fI0\fP or \fI1\fP).
+.IP \(bu 2
+\fBFont\fP (\fIlist\fP\fI[\fP\fIAny\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIAny\fP\fI, \fP\fI\&...\fP\fI] \fP\fI| \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional font definition.
+.IP \(bu 2
+\fBColor\fP (\fIlist\fP\fI[\fP\fIAny\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIAny\fP\fI, \fP\fI\&...\fP\fI] \fP\fI| \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional foreground color definition.
+.IP \(bu 2
+\fBTooltip\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional tooltip text.
+.IP \(bu 2
+\fBFunction\fP (\fICallable\fP\fI | \fP\fIlist\fP\fI[\fP\fIAny\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIAny\fP\fI, \fP\fI\&...\fP\fI] \fP\fI| \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional callback or callback/data pair.
+.IP \(bu 2
+\fBSignal\fP (\fIAny\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional native wx event binder.
+.IP \(bu 2
+\fBSensitive\fP (\fIint\fP\fI, \fP\fIoptional\fP) \-\- Sensitivity state (0/1), default is 1.
+.UNINDENT
+.TP
+.B Return type
+None.
+.UNINDENT
+.sp
+Examples
+.INDENT 7.0
+.TP
+.B win.add_radio_button(
+Name=\(dqradioLow\(dq,
+Position=[10, 50],
+Title=\(dq_Low\(dq,
+Group=\(dqpriority\(dq,
+Active=1,
+.UNINDENT
+.sp
+)
+.UNINDENT
+.SS add_scrollbar()
+.INDENT 0.0
+.TP
+.B SimpleWx.add_scrollbar(Name: str, Position: list[int] | tuple[int, int], Orientation: str, Size: list[int] | tuple[int, int] | None = None, Start: float = 0, Minimum: float = 0, Maximum: float = 100, Step: float = 1, Digits: int = 0, Frame: str | None = None, Tooltip: str | None = None, Function: Callable[[\&...], Any] | list[Any] | tuple[Any, \&...] | None = None, Signal: Any | None = None, Sensitive: int = 1) -> None
+Creates a new horizontal or vertical scrollbar widget.
+.INDENT 7.0
+.TP
+.B Parameters
+.INDENT 7.0
+.IP \(bu 2
+\fBName\fP (\fIstr\fP) \-\- Name of the scrollbar object. Must be unique.
+.IP \(bu 2
+\fBPosition\fP (\fIlist\fP\fI[\fP\fIint\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIint\fP\fI, \fP\fIint\fP\fI]\fP) \-\- Unscaled absolute position \fI[x, y]\fP\&.
+.IP \(bu 2
+\fBOrientation\fP (\fIstr\fP) \-\- Scrollbar orientation (\fIhorizontal\fP or \fIvertical\fP).
+.IP \(bu 2
+\fBSize\fP (\fIlist\fP\fI[\fP\fIint\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIint\fP\fI, \fP\fIint\fP\fI] \fP\fI| \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional unscaled width/height.
+.IP \(bu 2
+\fBStart\fP (\fIfloat\fP\fI, \fP\fIoptional\fP) \-\- Initial active value.
+.IP \(bu 2
+\fBMinimum\fP (\fIfloat\fP\fI, \fP\fIoptional\fP) \-\- Minimum allowed value.
+.IP \(bu 2
+\fBMaximum\fP (\fIfloat\fP\fI, \fP\fIoptional\fP) \-\- Maximum allowed value.
+.IP \(bu 2
+\fBStep\fP (\fIfloat\fP\fI, \fP\fIoptional\fP) \-\- Step increment.
+.IP \(bu 2
+\fBDigits\fP (\fIint\fP\fI, \fP\fIoptional\fP) \-\- Decimal precision metadata for compatibility.
+.IP \(bu 2
+\fBFrame\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional parent container name.
+.IP \(bu 2
+\fBTooltip\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional tooltip text.
+.IP \(bu 2
+\fBFunction\fP (\fICallable\fP\fI | \fP\fIlist\fP\fI[\fP\fIAny\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIAny\fP\fI, \fP\fI\&...\fP\fI] \fP\fI| \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional callback or callback/data pair.
+.IP \(bu 2
+\fBSignal\fP (\fIAny\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional native wx event binder.
+.IP \(bu 2
+\fBSensitive\fP (\fIint\fP\fI, \fP\fIoptional\fP) \-\- Sensitivity state (0/1), default is 1.
+.UNINDENT
+.TP
+.B Return type
+None.
+.UNINDENT
+.sp
+Examples
+.INDENT 7.0
+.TP
+.B win.add_scrollbar(
+Name=\(dqhscroll\(dq,
+Position=[10, 220],
+Size=[200, \-1],
+Orientation=\(dqhorizontal\(dq,
+Start=5,
+Minimum=0,
+Maximum=100,
+Step=1,
+Digits=1,
+Tooltip=\(dqFrom left to right\(dq,
+Frame=\(dqframe2\(dq,
+.UNINDENT
+.sp
+)
+.UNINDENT
+.SS add_separator()
+.INDENT 0.0
+.TP
+.B SimpleWx.add_separator(Name: str, Orientation: str, Position: list[int] | tuple[int, int], Size: list[int] | tuple[int, int] | None = None, Frame: str | None = None, Sensitive: int = 1) -> None
+Creates a horizontal or vertical separator widget.
+.INDENT 7.0
+.TP
+.B Parameters
+.INDENT 7.0
+.IP \(bu 2
+\fBName\fP (\fIstr\fP) \-\- Name of the separator. Must be unique.
+.IP \(bu 2
+\fBOrientation\fP (\fIstr\fP) \-\- Orientation (\fIhorizontal\fP or \fIvertical\fP).
+.IP \(bu 2
+\fBPosition\fP (\fIlist\fP\fI[\fP\fIint\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIint\fP\fI, \fP\fIint\fP\fI]\fP) \-\- Unscaled absolute position \fI[x, y]\fP\&.
+.IP \(bu 2
+\fBSize\fP (\fIlist\fP\fI[\fP\fIint\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIint\fP\fI, \fP\fIint\fP\fI] \fP\fI| \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional unscaled width/height.
+.IP \(bu 2
+\fBFrame\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional parent container name.
+.IP \(bu 2
+\fBSensitive\fP (\fIint\fP\fI, \fP\fIoptional\fP) \-\- Sensitivity state (0/1), default is 1.
+.UNINDENT
+.TP
+.B Return type
+None.
+.UNINDENT
+.sp
+Examples
+.INDENT 7.0
+.TP
+.B win.add_separator(
+Name=\(dqsepMain\(dq,
+Orientation=\(dqhorizontal\(dq,
+Position=[10, 120],
+Size=[220, 2],
+.UNINDENT
+.sp
+)
+.sp
+Notes
+.sp
+Menu separators are not created with this function; in Gtk/SimpleGtk2
+they are created via \fIadd_menu_item(..., Type=\(dqseparator\(dq)\fP\&.
+.UNINDENT
+.SS add_signal_handler()
+.INDENT 0.0
+.TP
+.B SimpleWx.add_signal_handler(name: str, event_type: Any, callback: Callable[[wx.Event], None]) -> None
+Binds a native wx event handler and stores callback metadata.
+.INDENT 7.0
+.TP
+.B Parameters
+.INDENT 7.0
+.IP \(bu 2
+\fBname\fP (\fIstr\fP) \-\- Widget name key.
+.IP \(bu 2
+\fBevent_type\fP (\fIAny\fP) \-\- Native wx event binder (e.g. \fIwx.EVT_BUTTON\fP).
+.IP \(bu 2
+\fBcallback\fP (\fICallable\fP\fI[\fP\fI[\fP\fIwx.Event\fP\fI]\fP\fI, \fP\fINone\fP\fI]\fP) \-\- Event callback function.
+.UNINDENT
+.UNINDENT
+.sp
+Examples
+.sp
+win.add_signal_handler(\(dqcloseButton\(dq, wx.EVT_BUTTON, lambda event: win.main_quit())
+.UNINDENT
+.SS add_slider()
+.INDENT 0.0
+.TP
+.B SimpleWx.add_slider(Name: str, Position: list[int] | tuple[int, int], Orientation: str, Size: list[int] | tuple[int, int] | None = None, Start: float = 0, Minimum: float = 0, Maximum: float = 100, Step: float = 1, DrawValue: int = 1, ValuePosition: str = \(aqtop\(aq, Digits: int = 0, Frame: str | None = None, Tooltip: str | None = None, Function: Callable[[\&...], Any] | list[Any] | tuple[Any, \&...] | None = None, Signal: Any | None = None, Sensitive: int = 1) -> None
+Creates a new horizontal or vertical slider widget.
+.INDENT 7.0
+.TP
+.B Parameters
+.INDENT 7.0
+.IP \(bu 2
+\fBName\fP (\fIstr\fP) \-\- Name of the slider object. Must be unique.
+.IP \(bu 2
+\fBPosition\fP (\fIlist\fP\fI[\fP\fIint\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIint\fP\fI, \fP\fIint\fP\fI]\fP) \-\- Unscaled absolute position \fI[x, y]\fP\&.
+.IP \(bu 2
+\fBOrientation\fP (\fIstr\fP) \-\- Slider orientation (\fIhorizontal\fP or \fIvertical\fP).
+.IP \(bu 2
+\fBSize\fP (\fIlist\fP\fI[\fP\fIint\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIint\fP\fI, \fP\fIint\fP\fI] \fP\fI| \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional unscaled width/height.
+.IP \(bu 2
+\fBStart\fP (\fIfloat\fP\fI, \fP\fIoptional\fP) \-\- Initial slider value.
+.IP \(bu 2
+\fBMinimum\fP (\fIfloat\fP\fI, \fP\fIoptional\fP) \-\- Minimum allowed value.
+.IP \(bu 2
+\fBMaximum\fP (\fIfloat\fP\fI, \fP\fIoptional\fP) \-\- Maximum allowed value.
+.IP \(bu 2
+\fBStep\fP (\fIfloat\fP\fI, \fP\fIoptional\fP) \-\- Step increment.
+.IP \(bu 2
+\fBDrawValue\fP (\fIint\fP\fI, \fP\fIoptional\fP) \-\- Value\-display flag for compatibility metadata.
+.IP \(bu 2
+\fBValuePosition\fP (\fIstr\fP\fI, \fP\fIoptional\fP) \-\- Value\-display position metadata (\fItop\fP, \fIleft\fP, \fIright\fP, \fIbottom\fP).
+.IP \(bu 2
+\fBDigits\fP (\fIint\fP\fI, \fP\fIoptional\fP) \-\- Decimal precision metadata for value formatting.
+.IP \(bu 2
+\fBFrame\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional parent container name.
+.IP \(bu 2
+\fBTooltip\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional tooltip text.
+.IP \(bu 2
+\fBFunction\fP (\fICallable\fP\fI | \fP\fIlist\fP\fI[\fP\fIAny\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIAny\fP\fI, \fP\fI\&...\fP\fI] \fP\fI| \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional callback or callback/data pair.
+.IP \(bu 2
+\fBSignal\fP (\fIAny\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional native wx event binder.
+.IP \(bu 2
+\fBSensitive\fP (\fIint\fP\fI, \fP\fIoptional\fP) \-\- Sensitivity state (0/1), default is 1.
+.UNINDENT
+.TP
+.B Return type
+None.
+.UNINDENT
+.sp
+Examples
+.INDENT 7.0
+.TP
+.B win.add_slider(
+Name=\(dqhslider\(dq,
+Position=[10, 220],
+Size=[200, \-1],
+Orientation=\(dqhorizontal\(dq,
+Start=5,
+Minimum=0,
+Maximum=100,
+Step=1,
+Digits=1,
+Tooltip=\(dqRound and round we go\(dq,
+.UNINDENT
+.sp
+)
+.UNINDENT
+.SS add_spin_button()
+.INDENT 0.0
+.TP
+.B SimpleWx.add_spin_button(Name: str, Position: list[int] | tuple[int, int], Size: list[int] | tuple[int, int] | None = None, Start: float = 0, Minimum: float = 0, Maximum: float = 0, Step: float = 0, Page: float = 0, Snap: int = 0, Align: str | None = None, Rate: float = 0.0, Digits: int = 0, Frame: str | None = None, Tooltip: str | None = None, Function: Callable[[\&...], Any] | list[Any] | tuple[Any, \&...] | None = None, Signal: Any | None = None, Sensitive: int = 1) -> None
+Creates a new spin button for integer or floating\-point input.
+.INDENT 7.0
+.TP
+.B Parameters
+.INDENT 7.0
+.IP \(bu 2
+\fBName\fP (\fIstr\fP) \-\- Name of the spin button object. Must be unique.
+.IP \(bu 2
+\fBPosition\fP (\fIlist\fP\fI[\fP\fIint\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIint\fP\fI, \fP\fIint\fP\fI]\fP) \-\- Unscaled absolute position \fI[x, y]\fP\&.
+.IP \(bu 2
+\fBSize\fP (\fIlist\fP\fI[\fP\fIint\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIint\fP\fI, \fP\fIint\fP\fI] \fP\fI| \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional unscaled width/height.
+.IP \(bu 2
+\fBStart\fP (\fIfloat\fP\fI, \fP\fIoptional\fP) \-\- Initial value.
+.IP \(bu 2
+\fBMinimum\fP (\fIfloat\fP\fI, \fP\fIoptional\fP) \-\- Minimum allowed value.
+.IP \(bu 2
+\fBMaximum\fP (\fIfloat\fP\fI, \fP\fIoptional\fP) \-\- Maximum allowed value.
+.IP \(bu 2
+\fBStep\fP (\fIfloat\fP\fI, \fP\fIoptional\fP) \-\- Step increment.
+.IP \(bu 2
+\fBPage\fP (\fIfloat\fP\fI, \fP\fIoptional\fP) \-\- Page increment used for PageUp/PageDown emulation.
+.IP \(bu 2
+\fBSnap\fP (\fIint\fP\fI, \fP\fIoptional\fP) \-\- Snap\-to\-step flag (\fI0\fP or \fI1\fP).
+.IP \(bu 2
+\fBAlign\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Content alignment (\fIleft\fP, \fIcenter\fP, \fIright\fP).
+.IP \(bu 2
+\fBRate\fP (\fIfloat\fP\fI, \fP\fIoptional\fP) \-\- Compatibility metadata for climb\-rate style behavior.
+.IP \(bu 2
+\fBDigits\fP (\fIint\fP\fI, \fP\fIoptional\fP) \-\- Number of decimal places. Values \fI> 0\fP use a floating spin control.
+.IP \(bu 2
+\fBFrame\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional parent container name.
+.IP \(bu 2
+\fBTooltip\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional tooltip text.
+.IP \(bu 2
+\fBFunction\fP (\fICallable\fP\fI | \fP\fIlist\fP\fI[\fP\fIAny\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIAny\fP\fI, \fP\fI\&...\fP\fI] \fP\fI| \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional callback or callback/data pair.
+.IP \(bu 2
+\fBSignal\fP (\fIAny\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional native wx event binder.
+.IP \(bu 2
+\fBSensitive\fP (\fIint\fP\fI, \fP\fIoptional\fP) \-\- Sensitivity state (0/1), default is 1.
+.UNINDENT
+.TP
+.B Return type
+None.
+.UNINDENT
+.sp
+Examples
+.INDENT 7.0
+.TP
+.B win.add_spin_button(
+Name=\(dqspin1\(dq,
+Position=[10, 60],
+Start=5,
+Minimum=0,
+Maximum=10,
+Step=1,
+Tooltip=\(dqThat\(aqs a spin button\(dq,
+Align=\(dqright\(dq,
+Frame=\(dqframe1\(dq,
+.UNINDENT
+.sp
+)
+.UNINDENT
+.SS add_splitter()
+.INDENT 0.0
+.TP
+.B SimpleWx.add_splitter(Name: str, Position: list[int] | tuple[int, int], Size: list[int] | tuple[int, int], Orient: str = \(aqvertical\(aq, Split: int = 200, MinSize: int = 60, Frame: str | None = None, Tooltip: str | None = None, Function: Callable[[\&...], Any] | list[Any] | tuple[Any, \&...] | None = None, Signal: Any | None = None, Sensitive: int = 1) -> None
+Compatibility alias for add_splitter_window.
+.UNINDENT
+.SS add_splitter_pane()
+.INDENT 0.0
+.TP
+.B SimpleWx.add_splitter_pane(Name: str, Splitter: str, Side: str = \(aqfirst\(aq, Tooltip: str | None = None, Sensitive: int = 1) -> None
+Creates one pane panel inside a splitter window.
+.UNINDENT
+.SS add_splitter_window()
+.INDENT 0.0
+.TP
+.B SimpleWx.add_splitter_window(Name: str, Position: list[int] | tuple[int, int], Size: list[int] | tuple[int, int], Orient: str = \(aqvertical\(aq, Split: int = 200, MinSize: int = 60, Frame: str | None = None, Tooltip: str | None = None, Function: Callable[[\&...], Any] | list[Any] | tuple[Any, \&...] | None = None, Signal: Any | None = None, Sensitive: int = 1) -> None
+Creates a splitter\-window container with two configurable panes.
+.UNINDENT
+.SS add_statusbar()
+.INDENT 0.0
+.TP
+.B SimpleWx.add_statusbar(Name: str, Position: list[int] | tuple[int, int] | None = None, Size: list[int] | tuple[int, int] | None = None, Frame: str | None = None, Timeout: int = 0, Fields: int = 1, Sensitive: int = 1) -> None
+Creates or configures a status bar attached to the main window.
+.INDENT 7.0
+.TP
+.B Parameters
+.INDENT 7.0
+.IP \(bu 2
+\fBName\fP (\fIstr\fP) \-\- Name of the statusbar object. Must be unique.
+.IP \(bu 2
+\fBPosition\fP (\fIlist\fP\fI[\fP\fIint\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIint\fP\fI, \fP\fIint\fP\fI] \fP\fI| \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional position placeholder for API compatibility.
+.IP \(bu 2
+\fBSize\fP (\fIlist\fP\fI[\fP\fIint\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIint\fP\fI, \fP\fIint\fP\fI] \fP\fI| \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional unscaled width/height.
+.IP \(bu 2
+\fBFrame\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional frame name. Currently only main window is supported.
+.IP \(bu 2
+\fBTimeout\fP (\fIint\fP\fI, \fP\fIoptional\fP) \-\- Default auto\-remove timeout in seconds.
+.IP \(bu 2
+\fBFields\fP (\fIint\fP\fI, \fP\fIoptional\fP) \-\- Number of status fields. Defaults to 1.
+.IP \(bu 2
+\fBSensitive\fP (\fIint\fP\fI, \fP\fIoptional\fP) \-\- Sensitivity state (0/1), default is 1.
+.UNINDENT
+.TP
+.B Return type
+None.
+.UNINDENT
+.sp
+Examples
+.sp
+win.add_statusbar(Name=\(dqwin_sbar\(dq, Fields=2, Timeout=5)
+.UNINDENT
+.SS add_text_view()
+.INDENT 0.0
+.TP
+.B SimpleWx.add_text_view(Name: str, Position: list[int] | tuple[int, int], Size: list[int] | tuple[int, int], Path: str | None = None, Textbuffer: str | None = None, Text: str | None = None, LeftMargin: int = 0, RightMargin: int = 0, Wrapped: str = \(aqnone\(aq, Justify: str = \(aqleft\(aq, Rich: int = 0, Frame: str | None = None, Tooltip: str | None = None, Function: Callable[[\&...], Any] | list[Any] | tuple[Any, \&...] | None = None, Signal: Any | None = None, Sensitive: int = 1) -> None
+Creates a multiline text\-view widget.
+.INDENT 7.0
+.TP
+.B Parameters
+.INDENT 7.0
+.IP \(bu 2
+\fBName\fP (\fIstr\fP) \-\- Name of the text\-view object. Must be unique.
+.IP \(bu 2
+\fBPosition\fP (\fIlist\fP\fI[\fP\fIint\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIint\fP\fI, \fP\fIint\fP\fI]\fP) \-\- Unscaled absolute position \fI[x, y]\fP\&.
+.IP \(bu 2
+\fBSize\fP (\fIlist\fP\fI[\fP\fIint\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIint\fP\fI, \fP\fIint\fP\fI]\fP) \-\- Unscaled widget size \fI[width, height]\fP\&.
+.IP \(bu 2
+\fBPath\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional file path used as text source.
+.IP \(bu 2
+\fBTextbuffer\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional text\-buffer content.
+.IP \(bu 2
+\fBText\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional direct text content.
+.IP \(bu 2
+\fBLeftMargin\fP (\fIint\fP\fI, \fP\fIoptional\fP) \-\- Left inner margin in pixels.
+.IP \(bu 2
+\fBRightMargin\fP (\fIint\fP\fI, \fP\fIoptional\fP) \-\- Right inner margin in pixels.
+.IP \(bu 2
+\fBWrapped\fP (\fIstr\fP\fI, \fP\fIoptional\fP) \-\- Wrap mode (\fInone\fP, \fIchar\fP, \fIword\fP, \fIword\-char\fP).
+.IP \(bu 2
+\fBJustify\fP (\fIstr\fP\fI, \fP\fIoptional\fP) \-\- Text justification (\fIleft\fP, \fIcenter\fP, \fIright\fP, \fIfill\fP).
+.IP \(bu 2
+\fBRich\fP (\fIint\fP\fI, \fP\fIoptional\fP) \-\- If non\-zero, uses \fIwx.richtext.RichTextCtrl\fP instead of plain
+\fIwx.TextCtrl\fP\&.
+.IP \(bu 2
+\fBFrame\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional parent container name.
+.IP \(bu 2
+\fBTooltip\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional tooltip text.
+.IP \(bu 2
+\fBFunction\fP (\fICallable\fP\fI | \fP\fIlist\fP\fI[\fP\fIAny\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIAny\fP\fI, \fP\fI\&...\fP\fI] \fP\fI| \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional callback or callback/data pair.
+.IP \(bu 2
+\fBSignal\fP (\fIAny\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional native wx event binder.
+.IP \(bu 2
+\fBSensitive\fP (\fIint\fP\fI, \fP\fIoptional\fP) \-\- Sensitivity state (0/1), default is 1.
+.UNINDENT
+.TP
+.B Return type
+None.
+.UNINDENT
+.sp
+Examples
+.INDENT 7.0
+.TP
+.B win.add_text_view(
+Name=\(dqtview1\(dq,
+Position=[40, 260],
+Size=[200, 120],
+Tooltip=\(dqA text\(dq,
+Frame=\(dqframe2\(dq,
+Path=\(dq./testem.txt\(dq,
+Wrapped=\(dqchar\(dq,
+LeftMargin=10,
+RightMargin=10,
+.UNINDENT
+.sp
+)
+.UNINDENT
+.SS add_time_picker()
+.INDENT 0.0
+.TP
+.B SimpleWx.add_time_picker(Name: str, Position: list[int] | tuple[int, int], Time: str | None = None, Title: str | None = None, Size: list[int] | tuple[int, int] | None = None, Frame: str | None = None, Tooltip: str | None = None, Function: Callable[[\&...], Any] | list[Any] | tuple[Any, \&...] | None = None, Signal: Any | None = None, Sensitive: int = 1) -> None
+Compatibility alias for add_timepicker_ctrl.
+.UNINDENT
+.SS add_timepicker_ctrl()
+.INDENT 0.0
+.TP
+.B SimpleWx.add_timepicker_ctrl(Name: str, Position: list[int] | tuple[int, int], Time: str | None = None, Title: str | None = None, Size: list[int] | tuple[int, int] | None = None, Frame: str | None = None, Tooltip: str | None = None, Function: Callable[[\&...], Any] | list[Any] | tuple[Any, \&...] | None = None, Signal: Any | None = None, Sensitive: int = 1) -> None
+Creates a time picker control (TimePickerCtrl).
+.UNINDENT
+.SS add_toolbar()
+.INDENT 0.0
+.TP
+.B SimpleWx.add_toolbar(Name: str, Position: list[int] | tuple[int, int], Data: list[Any] | tuple[Any, \&...] | None = None, Size: list[int] | tuple[int, int] | None = None, Orient: str = \(aqhorizontal\(aq, Frame: str | None = None, Tooltip: str | None = None, Function: Callable[[\&...], Any] | list[Any] | tuple[Any, \&...] | None = None, Signal: Any | None = None, Sensitive: int = 1) -> None
+Creates a toolbar widget and optional initial tool set.
+.INDENT 7.0
+.TP
+.B Parameters
+.INDENT 7.0
+.IP \(bu 2
+\fBName\fP (\fIstr\fP) \-\- Name of the toolbar object. Must be unique.
+.IP \(bu 2
+\fBPosition\fP (\fIlist\fP\fI[\fP\fIint\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIint\fP\fI, \fP\fIint\fP\fI]\fP) \-\- Unscaled absolute position \fI[x, y]\fP\&.
+.IP \(bu 2
+\fBData\fP (\fIlist\fP\fI[\fP\fIAny\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIAny\fP\fI, \fP\fI\&...\fP\fI] \fP\fI| \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional initial tool descriptors.
+.IP \(bu 2
+\fBSize\fP (\fIlist\fP\fI[\fP\fIint\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIint\fP\fI, \fP\fIint\fP\fI] \fP\fI| \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional unscaled width/height.
+.IP \(bu 2
+\fBOrient\fP (\fIstr\fP\fI, \fP\fIoptional\fP) \-\- Toolbar orientation (\fIhorizontal\fP or \fIvertical\fP).
+.IP \(bu 2
+\fBFrame\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional parent container name.
+.IP \(bu 2
+\fBTooltip\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional tooltip text.
+.IP \(bu 2
+\fBFunction\fP (\fICallable\fP\fI | \fP\fIlist\fP\fI[\fP\fIAny\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIAny\fP\fI, \fP\fI\&...\fP\fI] \fP\fI| \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional callback or callback/data pair.
+.IP \(bu 2
+\fBSignal\fP (\fIAny\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional native wx event binder.
+.IP \(bu 2
+\fBSensitive\fP (\fIint\fP\fI, \fP\fIoptional\fP) \-\- Sensitivity state (0/1), default is 1.
+.UNINDENT
+.TP
+.B Return type
+None.
+.UNINDENT
+.sp
+Examples
+.sp
+win.add_toolbar(Name=\(dqtb1\(dq, Position=[0, 0], Data=[[\(dqOpen\(dq, \(dqgtk\-open\(dq], [\(dqSave\(dq, \(dqgtk\-save\(dq]])
+.UNINDENT
+.SS add_tooltip()
+.INDENT 0.0
+.TP
+.B SimpleWx.add_tooltip(name: str, text: str | None = None) -> None
+Stores and applies tooltip text for a supported widget.
+.INDENT 7.0
+.TP
+.B Parameters
+.INDENT 7.0
+.IP \(bu 2
+\fBname\fP (\fIstr\fP) \-\- Widget name key.
+.IP \(bu 2
+\fBtext\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Tooltip text to set. If omitted, the stored tooltip is reused.
+.UNINDENT
+.UNINDENT
+.sp
+Examples
+.sp
+win.add_tooltip(\(dqcloseButton\(dq, \(dqCloses the application\(dq)
+.UNINDENT
+.SS add_treeview()
+.INDENT 0.0
+.TP
+.B SimpleWx.add_treeview(Name: str, Type: str, Position: list[int] | tuple[int, int], Size: list[int] | tuple[int, int], Headers: list[Any] | tuple[Any, \&...], Data: list[Any] | tuple[Any, \&...] | None = None, Treeview: wx.TreeCtrl | None = None, Mode: str | None = None, Frame: str | None = None, Tooltip: str | None = None, Function: Callable[[\&...], Any] | list[Any] | tuple[Any, \&...] | None = None, Signal: Any | None = None, Sensitive: int = 1) -> None
+Creates a new tree\-view widget.
+.INDENT 7.0
+.TP
+.B Parameters
+.INDENT 7.0
+.IP \(bu 2
+\fBName\fP (\fIstr\fP) \-\- Name of the tree\-view object. Must be unique.
+.IP \(bu 2
+\fBType\fP (\fIstr\fP) \-\- Tree\-view mode (\fIList\fP or \fITree\fP).
+.IP \(bu 2
+\fBPosition\fP (\fIlist\fP\fI[\fP\fIint\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIint\fP\fI, \fP\fIint\fP\fI]\fP) \-\- Unscaled absolute position \fI[x, y]\fP\&.
+.IP \(bu 2
+\fBSize\fP (\fIlist\fP\fI[\fP\fIint\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIint\fP\fI, \fP\fIint\fP\fI]\fP) \-\- Unscaled tree\-view size \fI[width, height]\fP\&.
+.IP \(bu 2
+\fBHeaders\fP (\fIlist\fP\fI[\fP\fIAny\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIAny\fP\fI, \fP\fI\&...\fP\fI]\fP) \-\- Header/column definitions. First entry is used as root label.
+.IP \(bu 2
+\fBData\fP (\fIlist\fP\fI[\fP\fIAny\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIAny\fP\fI, \fP\fI\&...\fP\fI] \fP\fI| \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional nested tree data.
+.IP \(bu 2
+\fBTreeview\fP (\fIwx.TreeCtrl\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional existing tree control to reuse.
+.IP \(bu 2
+\fBMode\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Selection mode compatibility hint (\fIsingle\fP, \fImultiple\fP, ...).
+.IP \(bu 2
+\fBFrame\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional parent container name.
+.IP \(bu 2
+\fBTooltip\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional tooltip text.
+.IP \(bu 2
+\fBFunction\fP (\fICallable\fP\fI | \fP\fIlist\fP\fI[\fP\fIAny\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIAny\fP\fI, \fP\fI\&...\fP\fI] \fP\fI| \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional callback or callback/data pair.
+.IP \(bu 2
+\fBSignal\fP (\fIAny\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional native wx event binder.
+.IP \(bu 2
+\fBSensitive\fP (\fIint\fP\fI, \fP\fIoptional\fP) \-\- Sensitivity state (0/1), default is 1.
+.UNINDENT
+.TP
+.B Return type
+None.
+.UNINDENT
+.UNINDENT
+.SS clear_sb_stack()
+.INDENT 0.0
+.TP
+.B SimpleWx.clear_sb_stack(Name: str | None = None) -> None
+Clears the complete message stack of a status bar.
+.INDENT 7.0
+.TP
+.B Parameters
+\fBName\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Statusbar name. Defaults to \fIwin_sbar\fP\&.
+.TP
+.B Return type
+None.
+.UNINDENT
+.sp
+Examples
+.sp
+win.clear_sb_stack(\(dqwin_sbar\(dq)
+.UNINDENT
+.SS collapse_splitter()
+.INDENT 0.0
+.TP
+.B SimpleWx.collapse_splitter(Name: str, Side: str = \(aqsecond\(aq) -> None
+Collapses one pane of a splitter window.
+.UNINDENT
+.SS exist_object()
+.INDENT 0.0
+.TP
+.B SimpleWx.exist_object(identifier: Any) -> int
+Checks whether an object exists by name or widget reference.
+.INDENT 7.0
+.TP
+.B Parameters
+\fBidentifier\fP (\fIAny\fP) \-\- Object name (str) or native widget reference.
+.TP
+.B Returns
+\fI1\fP if object exists, else \fI0\fP\&.
+.TP
+.B Return type
+int
+.UNINDENT
+.sp
+Examples
+.sp
+exists = win.exist_object(\(dqentrySplashPath\(dq)
+.UNINDENT
+.SS expand_splitter()
+.INDENT 0.0
+.TP
+.B SimpleWx.expand_splitter(Name: str) -> None
+Expands (re\-splits) a collapsed splitter window.
+.UNINDENT
+.SS font_array_to_string()
+.INDENT 0.0
+.TP
+.B SimpleWx.font_array_to_string(family: str, size: int, weight: str = \(aq\(aq) -> str
+Converts a font array\-like tuple to a canonical string.
+.INDENT 7.0
+.TP
+.B Parameters
+.INDENT 7.0
+.IP \(bu 2
+\fBfamily\fP (\fIstr\fP) \-\- Font family name.
+.IP \(bu 2
+\fBsize\fP (\fIint\fP) \-\- Font size in points.
+.IP \(bu 2
+\fBweight\fP (\fIstr\fP\fI, \fP\fIoptional\fP) \-\- Optional weight label.
+.UNINDENT
+.TP
+.B Returns
+Concatenated font string.
+.TP
+.B Return type
+str
+.UNINDENT
+.sp
+Examples
+.sp
+font_str = win.font_array_to_string(\(dqSans\(dq, 10, \(dqbold\(dq)
+.UNINDENT
+.SS font_string_to_array()
+.INDENT 0.0
+.TP
+.B SimpleWx.font_string_to_array(font_string: str) -> list[Any]
+Converts a font string into a normalized font array.
+.INDENT 7.0
+.TP
+.B Parameters
+\fBfont_string\fP (\fIstr\fP) \-\- Font string containing family and size, optionally weight/style.
+.TP
+.B Returns
+Parsed \fI[family, size, weight, style, under]\fP values.
+.TP
+.B Return type
+list[Any]
+.UNINDENT
+.sp
+Examples
+.sp
+font_array = win.font_string_to_array(\(dqArial Bold Italic 12\(dq)
+.UNINDENT
+.SS get_color()
+.INDENT 0.0
+.TP
+.B SimpleWx.get_color(Name: str) -> Any
+Returns a color object by name or widget context.
+.INDENT 7.0
+.TP
+.B Parameters
+\fBName\fP (\fIstr\fP) \-\- Color name/code or widget name.
+.TP
+.B Returns
+Cached \fIwx.Colour\fP for color strings, or \fI(r, g, b)\fP tuple for
+drawing\-area widgets.
+.TP
+.B Return type
+Any
+.UNINDENT
+.sp
+Examples
+.sp
+red = win.get_color(\(dqred\(dq)
+rgb = win.get_color(\(dqdraw_area\(dq)
+.UNINDENT
+.SS get_font_array()
+.INDENT 0.0
+.TP
+.B SimpleWx.get_font_array(name: str) -> list[str | int]
+Returns widget font as \fI[family, size, weight]\fP list.
+.INDENT 7.0
+.TP
+.B Parameters
+\fBname\fP (\fIstr\fP) \-\- Widget name key.
+.TP
+.B Returns
+Font family, size and weight tuple\-like list.
+.TP
+.B Return type
+list[str | int]
+.UNINDENT
+.sp
+Examples
+.sp
+font_data = win.get_font_array(\(dqlabelTitle\(dq)
+.UNINDENT
+.SS get_font_string()
+.INDENT 0.0
+.TP
+.B SimpleWx.get_font_string(name: str) -> str
+Returns widget font in serialized string format.
+.INDENT 7.0
+.TP
+.B Parameters
+\fBname\fP (\fIstr\fP) \-\- Widget name key.
+.TP
+.B Returns
+Serialized font description.
+.TP
+.B Return type
+str
+.UNINDENT
+.sp
+Examples
+.sp
+font_str = win.get_font_string(\(dqmainWindow\(dq)
+.UNINDENT
+.SS get_fontfamily()
+.INDENT 0.0
+.TP
+.B SimpleWx.get_fontfamily(name_or_widget: str | wx.Window | None = None) -> str
+Returns font family name for a widget.
+.INDENT 7.0
+.TP
+.B Parameters
+\fBname_or_widget\fP (\fIstr\fP\fI | \fP\fIwx.Window\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Widget name, widget reference, or None for main window.
+.TP
+.B Returns
+Font face name.
+.TP
+.B Return type
+str
+.UNINDENT
+.sp
+Examples
+.sp
+family = win.get_fontfamily(\(dqmainWindow\(dq)
+.UNINDENT
+.SS get_fontsize()
+.INDENT 0.0
+.TP
+.B SimpleWx.get_fontsize(name_or_widget: str | wx.Window | None = None) -> int
+Returns effective font point size for a widget.
+.INDENT 7.0
+.TP
+.B Parameters
+\fBname_or_widget\fP (\fIstr\fP\fI | \fP\fIwx.Window\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Widget name, widget reference, or None for main window.
+.TP
+.B Returns
+Font point size.
+.TP
+.B Return type
+int
+.UNINDENT
+.sp
+Examples
+.sp
+size = win.get_fontsize(\(dqmainWindow\(dq)
+.UNINDENT
+.SS get_fontweight()
+.INDENT 0.0
+.TP
+.B SimpleWx.get_fontweight(name_or_widget: str | wx.Window | None = None) -> str
+Returns normalized font weight label for a widget.
+.INDENT 7.0
+.TP
+.B Parameters
+\fBname_or_widget\fP (\fIstr\fP\fI | \fP\fIwx.Window\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Widget name, widget reference, or None for main window.
+.TP
+.B Returns
+Weight label (\fInormal\fP, \fIbold\fP, or \fIlight\fP).
+.TP
+.B Return type
+str
+.UNINDENT
+.sp
+Examples
+.sp
+weight = win.get_fontweight(\(dqmainWindow\(dq)
+.UNINDENT
+.SS get_image()
+.INDENT 0.0
+.TP
+.B SimpleWx.get_image(Name: str, Keyname: str | None = None) -> Any
+Returns image reference, bitmap/pixbuffer, or file path.
+.INDENT 7.0
+.TP
+.B Parameters
+.INDENT 7.0
+.IP \(bu 2
+\fBName\fP (\fIstr\fP) \-\- Name of the image object. Must be unique.
+.IP \(bu 2
+\fBKeyname\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional selector (\fIPath\fP, \fIImage\fP, \fIPixbuf\fP/\fIPixbuffer\fP).
+.UNINDENT
+.TP
+.B Returns
+Selected image data/reference.
+.TP
+.B Return type
+Any
+.UNINDENT
+.UNINDENT
+.SS get_listview()
+.INDENT 0.0
+.TP
+.B SimpleWx.get_listview(Name: str, Keyname: str | None = None) -> wx.ListCtrl
+Returns the underlying wx.ListCtrl of a ListView object.
+.INDENT 7.0
+.TP
+.B Parameters
+.INDENT 7.0
+.IP \(bu 2
+\fBName\fP (\fIstr\fP) \-\- Name of the list\-view widget. Must be unique.
+.IP \(bu 2
+\fBKeyname\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional compatibility key. Accepted values: \fIlist\fP\&.
+.UNINDENT
+.TP
+.B Returns
+Native list\-control reference.
+.TP
+.B Return type
+wx.ListCtrl
+.UNINDENT
+.UNINDENT
+.SS get_object()
+.INDENT 0.0
+.TP
+.B SimpleWx.get_object(name: str) -> WidgetEntry
+Retrieves a widget entry by its unique name.
+.INDENT 7.0
+.TP
+.B Parameters
+\fBname\fP (\fIstr\fP) \-\- Widget name key.
+.TP
+.B Returns
+Stored widget entry.
+.TP
+.B Return type
+WidgetEntry
+.UNINDENT
+.sp
+Examples
+.sp
+obj = win.get_object(\(dqmainWindow\(dq)
+title = obj.title
+.UNINDENT
+.SS get_pos()
+.INDENT 0.0
+.TP
+.B SimpleWx.get_pos(Name: str) -> tuple[int, int] | None
+Returns current unscaled \fI(x, y)\fP position of a widget.
+.INDENT 7.0
+.TP
+.B Parameters
+\fBName\fP (\fIstr\fP) \-\- Name of the widget. Must be unique.
+.TP
+.B Returns
+Unscaled x and y position or None if unsupported.
+.TP
+.B Return type
+tuple[int, int] | None
+.UNINDENT
+.sp
+Examples
+.sp
+x, y = win.get_pos(\(dqcbox1\(dq)
+.UNINDENT
+.SS get_size()
+.INDENT 0.0
+.TP
+.B SimpleWx.get_size(Name: str) -> tuple[int, int] | None
+Returns current unscaled width/height of a widget.
+.INDENT 7.0
+.TP
+.B Parameters
+\fBName\fP (\fIstr\fP) \-\- Name of the widget. Must be unique.
+.TP
+.B Returns
+Unscaled width and height or None if unsupported.
+.TP
+.B Return type
+tuple[int, int] | None
+.UNINDENT
+.sp
+Examples
+.sp
+width, height = win.get_size(\(dqimage1\(dq)
+.UNINDENT
+.SS get_textview()
+.INDENT 0.0
+.TP
+.B SimpleWx.get_textview(Name: str, Keyname: str | None = None) -> Any
+Returns text\-view reference, text buffer content, or source path.
+.INDENT 7.0
+.TP
+.B Parameters
+.INDENT 7.0
+.IP \(bu 2
+\fBName\fP (\fIstr\fP) \-\- Name of the text\-view object. Must be unique.
+.IP \(bu 2
+\fBKeyname\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional selector (\fIPath\fP, \fITextview\fP, \fITextbuf\fP/\fITextbuffer\fP).
+.UNINDENT
+.TP
+.B Returns
+Text view reference, text buffer string, or path string.
+.TP
+.B Return type
+Any
+.UNINDENT
+.sp
+Examples
+.sp
+text_widget = win.get_textview(\(dqtview1\(dq)
+current_text = win.get_textview(\(dqtview1\(dq, \(dqTextbuffer\(dq)
+source_path = win.get_textview(\(dqtview1\(dq, \(dqPath\(dq)
+.UNINDENT
+.SS get_title()
+.INDENT 0.0
+.TP
+.B SimpleWx.get_title(Name: str) -> str | None
+Returns title/label text for a supported widget.
+.INDENT 7.0
+.TP
+.B Parameters
+\fBName\fP (\fIstr\fP) \-\- Name of the widget. Must be unique.
+.TP
+.B Returns
+Current title/label text or None if unsupported.
+.TP
+.B Return type
+str | None
+.UNINDENT
+.sp
+Examples
+.sp
+title = win.get_title(\(dqmainWindow\(dq)
+.UNINDENT
+.SS get_tooltip()
+.INDENT 0.0
+.TP
+.B SimpleWx.get_tooltip(Name: str) -> str | None
+Returns current tooltip text of a widget.
+.INDENT 7.0
+.TP
+.B Parameters
+\fBName\fP (\fIstr\fP) \-\- Name of the widget.
+.TP
+.B Returns
+Tooltip text or None if unsupported.
+.TP
+.B Return type
+str | None
+.UNINDENT
+.sp
+Examples
+.sp
+text = win.get_tooltip(\(dqimage1\(dq)
+.UNINDENT
+.SS get_treeview()
+.INDENT 0.0
+.TP
+.B SimpleWx.get_treeview(Name: str, Keyname: str | None = None) -> wx.TreeCtrl
+Returns the underlying wx.TreeCtrl of a TreeView object.
+.INDENT 7.0
+.TP
+.B Parameters
+.INDENT 7.0
+.IP \(bu 2
+\fBName\fP (\fIstr\fP) \-\- Name of the tree\-view widget. Must be unique.
+.IP \(bu 2
+\fBKeyname\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional compatibility key. Accepted values: \fIlist\fP, \fItree\fP\&.
+.UNINDENT
+.TP
+.B Returns
+Native tree\-control reference.
+.TP
+.B Return type
+wx.TreeCtrl
+.UNINDENT
+.UNINDENT
+.SS get_value()
+.INDENT 0.0
+.TP
+.B SimpleWx.get_value(Name: str, Keyname: str, Value: Any | None = None) -> Any
+Returns a widget\-specific value addressed by key.
+.INDENT 7.0
+.TP
+.B Parameters
+.INDENT 7.0
+.IP \(bu 2
+\fBName\fP (\fIstr\fP) \-\- Name of the widget. Must be unique.
+.IP \(bu 2
+\fBKeyname\fP (\fIstr\fP) \-\- Value key (e.g. \fIActive\fP, \fIAlign\fP, \fIMinimum\fP, \fIMaximum\fP).
+.IP \(bu 2
+\fBValue\fP (\fIAny\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional compatibility argument used by some key styles.
+.UNINDENT
+.TP
+.B Returns
+Value resolved for the given widget/key pair.
+.TP
+.B Return type
+Any
+.UNINDENT
+.sp
+Examples
+.sp
+active = win.get_value(\(dqcheckEnabled\(dq, \(dqActive\(dq)
+.UNINDENT
+.SS get_widget()
+.INDENT 0.0
+.TP
+.B SimpleWx.get_widget(name: str) -> wx.Window
+Retrieves the native wx widget reference for a named entry.
+.INDENT 7.0
+.TP
+.B Parameters
+\fBname\fP (\fIstr\fP) \-\- Widget name key.
+.TP
+.B Returns
+Native wx widget object. For \fIDrawingArea\fP, returns the inner
+drawing panel (not the scroll host container).
+.TP
+.B Return type
+wx.Window
+.UNINDENT
+.sp
+Examples
+.sp
+button_ref = win.get_widget(\(dqcloseButton\(dq)
+button_ref.Enable(False)
+.UNINDENT
+.SS hide_widget()
+.INDENT 0.0
+.TP
+.B SimpleWx.hide_widget(Name: str) -> None
+Hides a currently visible widget.
+.INDENT 7.0
+.TP
+.B Parameters
+\fBName\fP (\fIstr\fP) \-\- Name of the widget. Must be unique.
+.TP
+.B Return type
+None.
+.UNINDENT
+.sp
+Examples
+.sp
+win.hide_widget(\(dqframe1\(dq)
+.UNINDENT
+.SS init_app()
+.INDENT 0.0
+.TP
+.B SimpleWx.init_app() -> None
+Initializes the wx application context if required.
+.INDENT 7.0
+.TP
+.B Return type
+None.
+.UNINDENT
+.sp
+Examples
+.sp
+win.init_app()
+.UNINDENT
+.SS initial_draw()
+.INDENT 0.0
+.TP
+.B SimpleWx.initial_draw(Name: str, Function: Callable[[\&...], Any], Data: Any | None = None) -> None
+Registers a base draw function for a drawing area and triggers refresh.
+.INDENT 7.0
+.TP
+.B Parameters
+.INDENT 7.0
+.IP \(bu 2
+\fBName\fP (\fIstr\fP) \-\- Name of the drawing area. Must be unique.
+.IP \(bu 2
+\fBFunction\fP (\fICallable\fP\fI[\fP\fI\&...\fP\fI, \fP\fIAny\fP\fI]\fP) \-\- Drawing callback function.
+.IP \(bu 2
+\fBData\fP (\fIAny\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional payload passed to the draw function.
+.UNINDENT
+.TP
+.B Return type
+None.
+.UNINDENT
+.sp
+Examples
+.sp
+win.initial_draw(\(dqdrawArea\(dq, lambda dc, data: dc.Clear())
+.UNINDENT
+.SS internal_die()
+.INDENT 0.0
+.TP
+.B SimpleWx.internal_die(object_name: str, msg: str) -> None
+Raises a standardized fatal runtime error.
+.INDENT 7.0
+.TP
+.B Parameters
+.INDENT 7.0
+.IP \(bu 2
+\fBobject_name\fP (\fIstr\fP) \-\- Name of the involved object.
+.IP \(bu 2
+\fBmsg\fP (\fIstr\fP) \-\- Human\-readable error message.
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS is_active()
+.INDENT 0.0
+.TP
+.B SimpleWx.is_active(Name: str, Value: Any | None = None) -> int
+Returns active state for supported widgets.
+.INDENT 7.0
+.TP
+.B Parameters
+.INDENT 7.0
+.IP \(bu 2
+\fBName\fP (\fIstr\fP) \-\- Widget name.
+.IP \(bu 2
+\fBValue\fP (\fIAny\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional comparison value for combo\-box\-like widgets.
+.UNINDENT
+.TP
+.B Returns
+\fI1\fP if active/matching, else \fI0\fP\&.
+.TP
+.B Return type
+int
+.UNINDENT
+.sp
+Examples
+.sp
+state = win.is_active(\(dqcheckEnabled\(dq)
+.UNINDENT
+.SS is_sensitive()
+.INDENT 0.0
+.TP
+.B SimpleWx.is_sensitive(Name: str) -> int
+Returns sensitivity/enabled state of a widget or group.
+.INDENT 7.0
+.TP
+.B Parameters
+\fBName\fP (\fIstr\fP) \-\- Widget name or group name.
+.TP
+.B Returns
+\fI1\fP if enabled, else \fI0\fP\&.
+.TP
+.B Return type
+int
+.UNINDENT
+.sp
+Examples
+.sp
+state = win.is_sensitive(\(dqcheckEnabled\(dq)
+.UNINDENT
+.SS is_underlined()
+.INDENT 0.0
+.TP
+.B SimpleWx.is_underlined(text: str) -> bool
+Detects SimpleGtk/SimpleWx mnemonic markers in text.
+.INDENT 7.0
+.TP
+.B Parameters
+\fBtext\fP (\fIstr\fP) \-\- Input label text.
+.TP
+.B Returns
+True if text contains a mnemonic underscore, else False.
+.TP
+.B Return type
+bool
+.UNINDENT
+.sp
+Examples
+.sp
+has_mnemonic = win.is_underlined(\(dq_Close\(dq)
+.UNINDENT
+.SS main_quit()
+.INDENT 0.0
+.TP
+.B SimpleWx.main_quit() -> None
+Closes and destroys the main application window.
+.sp
+Examples
+.sp
+win.main_quit()
+.UNINDENT
+.SS modify_list_data()
+.INDENT 0.0
+.TP
+.B SimpleWx.modify_list_data(Name: str, **commands: Any) -> int
+Modifies list\-view row or cell data.
+.INDENT 7.0
+.TP
+.B Parameters
+.INDENT 7.0
+.IP \(bu 2
+\fBName\fP (\fIstr\fP) \-\- Name of the list\-view widget. Must be unique.
+.IP \(bu 2
+\fB**commands\fP (\fIAny\fP) \-\- Exactly one command mapping, e.g. \fIpush=[...]\fP, \fIdelete=2\fP,
+\fIset=[row, col, value]\fP, \fIclear=None\fP\&.
+.UNINDENT
+.TP
+.B Returns
+\fI0\fP on success.
+.TP
+.B Return type
+int
+.UNINDENT
+.UNINDENT
+.SS modify_tree_data()
+.INDENT 0.0
+.TP
+.B SimpleWx.modify_tree_data(Name: str, **commands: Any) -> Any
+Modifies tree\-view data (\fIadd\fP, \fIchange\fP, \fIdelete\fP).
+.INDENT 7.0
+.TP
+.B Parameters
+.INDENT 7.0
+.IP \(bu 2
+\fBName\fP (\fIstr\fP) \-\- Name of the tree\-view widget. Must be unique.
+.IP \(bu 2
+\fB**commands\fP (\fIAny\fP) \-\- Exactly one command mapping.
+.UNINDENT
+.TP
+.B Returns
+Added tree item id for \fIadd\fP, else \fI0\fP\&.
+.TP
+.B Return type
+Any
+.UNINDENT
+.UNINDENT
+.SS new_window()
+.INDENT 0.0
+.TP
+.B SimpleWx.new_window(Name: str, Title: str, Version: str | None = None, Base: int = 10, Size: list[int] | tuple[int, int] | None = None, Fixed: int = 0, Iconpath: str | None = None, ThemeIcon: str | None = None, Statusbar: int | None = None) -> SimpleWx
+Creates a new top\-level window and default content container.
+.INDENT 7.0
+.TP
+.B Parameters
+.INDENT 7.0
+.IP \(bu 2
+\fBName\fP (\fIstr\fP) \-\- Name of the window object. Must be unique.
+.IP \(bu 2
+\fBTitle\fP (\fIstr\fP) \-\- Window title.
+.IP \(bu 2
+\fBVersion\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Version string appended to the title.
+.IP \(bu 2
+\fBBase\fP (\fIint\fP\fI, \fP\fIoptional\fP) \-\- Base font size used during layout creation.
+.IP \(bu 2
+\fBSize\fP (\fIlist\fP\fI[\fP\fIint\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIint\fP\fI, \fP\fIint\fP\fI] \fP\fI| \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Initial window width and height.
+.IP \(bu 2
+\fBFixed\fP (\fIint\fP\fI, \fP\fIoptional\fP) \-\- If non\-zero, window is non\-resizable.
+.IP \(bu 2
+\fBIconpath\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Path to icon file.
+.IP \(bu 2
+\fBThemeIcon\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Theme icon name (reserved for later mapping in wx).
+.IP \(bu 2
+\fBStatusbar\fP (\fIint\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Statusbar mode or timeout value.
+.UNINDENT
+.TP
+.B Returns
+Current instance for fluent API usage.
+.TP
+.B Return type
+SimpleWx
+.UNINDENT
+.sp
+Examples
+.INDENT 7.0
+.TP
+.B win = SimpleWx().new_window(
+Name=\(dqmainWindow\(dq,
+Title=\(dqtestem\-all\(dq,
+Size=[400, 400],
+ThemeIcon=\(dqemblem\-dropbox\-syncing\(dq,
+.UNINDENT
+.sp
+)
+.UNINDENT
+.SS print_document()
+.INDENT 0.0
+.TP
+.B SimpleWx.print_document(Printout: str, PrintDialog: str | None = None, PageSetup: str | None = None, Prompt: int = 1) -> int
+Prints a predefined printout through wx.Printer.
+.UNINDENT
+.SS remove_nb_page()
+.INDENT 0.0
+.TP
+.B SimpleWx.remove_nb_page(Name: str, Number: int | None = None) -> int
+Removes a notebook page by notebook/index or by page name.
+.INDENT 7.0
+.TP
+.B Parameters
+.INDENT 7.0
+.IP \(bu 2
+\fBName\fP (\fIstr\fP) \-\- Notebook name (when \fINumber\fP is set) or notebook\-page name.
+.IP \(bu 2
+\fBNumber\fP (\fIint\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional 0\-based page index in the notebook.
+.UNINDENT
+.TP
+.B Returns
+\fI1\fP if a page was removed, else \fI0\fP\&.
+.TP
+.B Return type
+int
+.UNINDENT
+.UNINDENT
+.SS remove_sb_text()
+.INDENT 0.0
+.TP
+.B SimpleWx.remove_sb_text(Name: str | None = None, Field: int | None = None, MsgId: Any | None = None) -> None
+Removes a status bar message by id or removes the last one.
+.INDENT 7.0
+.TP
+.B Parameters
+.INDENT 7.0
+.IP \(bu 2
+\fBName\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Statusbar name. Defaults to \fIwin_sbar\fP\&.
+.IP \(bu 2
+\fBField\fP (\fIint\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Target field index. Defaults to 0.
+.IP \(bu 2
+\fBMsgId\fP (\fIAny\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Message id to remove. If omitted, removes the last message.
+.UNINDENT
+.TP
+.B Return type
+None.
+.UNINDENT
+.sp
+Examples
+.sp
+win.remove_sb_text(\(dqwin_sbar\(dq, 0, msg_id)
+.UNINDENT
+.SS remove_signal_handler()
+.INDENT 0.0
+.TP
+.B SimpleWx.remove_signal_handler(name: str, signal: Any) -> None
+Removes a previously bound signal handler from a widget.
+.INDENT 7.0
+.TP
+.B Parameters
+.INDENT 7.0
+.IP \(bu 2
+\fBname\fP (\fIstr\fP) \-\- Widget name key.
+.IP \(bu 2
+\fBsignal\fP (\fIAny\fP) \-\- Signal/event key used on registration.
+.UNINDENT
+.TP
+.B Return type
+None.
+.UNINDENT
+.sp
+Examples
+.sp
+win.remove_signal_handler(\(dqcloseButton\(dq, wx.EVT_BUTTON)
+.UNINDENT
+.SS set_font()
+.INDENT 0.0
+.TP
+.B SimpleWx.set_font(name: str, font_spec: Any) -> None
+Applies a font tuple/list specification to a widget.
+.INDENT 7.0
+.TP
+.B Parameters
+.INDENT 7.0
+.IP \(bu 2
+\fBname\fP (\fIstr\fP) \-\- Widget name key.
+.IP \(bu 2
+\fBfont_spec\fP (\fIAny\fP) \-\- Font definition, typically \fI[family, size, weight]\fP\&.
+.UNINDENT
+.UNINDENT
+.sp
+Examples
+.sp
+win.set_font(\(dqcloseButton\(dq, [\(dqSans\(dq, 10, \(dqbold\(dq])
+.UNINDENT
+.SS set_font_color()
+.INDENT 0.0
+.TP
+.B SimpleWx.set_font_color(name: str, color: str, _state: str | None = None) -> None
+Applies foreground color to a widget.
+.INDENT 7.0
+.TP
+.B Parameters
+.INDENT 7.0
+.IP \(bu 2
+\fBname\fP (\fIstr\fP) \-\- Widget name key.
+.IP \(bu 2
+\fBcolor\fP (\fIstr\fP) \-\- Color name or color code accepted by wx.Colour.
+.IP \(bu 2
+\fB_state\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Reserved compatibility argument for state\-specific coloring.
+.UNINDENT
+.UNINDENT
+.sp
+Examples
+.sp
+win.set_font_color(\(dqcloseButton\(dq, \(dqred\(dq)
+.UNINDENT
+.SS set_image()
+.INDENT 0.0
+.TP
+.B SimpleWx.set_image(Name: str, Path: str | None = None, Pixbuffer: Any | None = None, Image: Any | None = None, Stock: list[Any] | tuple[Any, \&...] | None = None) -> None
+Sets a new image source by path, pixbuffer, image object, or stock.
+.INDENT 7.0
+.TP
+.B Parameters
+.INDENT 7.0
+.IP \(bu 2
+\fBName\fP (\fIstr\fP) \-\- Name of the image object. Must be unique.
+.IP \(bu 2
+\fBPath\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- New image file path.
+.IP \(bu 2
+\fBPixbuffer\fP (\fIAny\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- New bitmap/image source.
+.IP \(bu 2
+\fBImage\fP (\fIAny\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- New image object (\fIwx.Image\fP, \fIwx.Bitmap\fP, or \fIwx.StaticBitmap\fP).
+.IP \(bu 2
+\fBStock\fP (\fIlist\fP\fI[\fP\fIAny\fP\fI] \fP\fI| \fP\fItuple\fP\fI[\fP\fIAny\fP\fI, \fP\fI\&...\fP\fI] \fP\fI| \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- New stock/art source (\fI[stock_name, stock_size]\fP).
+.UNINDENT
+.TP
+.B Return type
+None.
+.UNINDENT
+.UNINDENT
+.SS set_pos()
+.INDENT 0.0
+.TP
+.B SimpleWx.set_pos(Name: str, NewX: int, NewY: int) -> None
+Sets new unscaled \fI(x, y)\fP position of a widget.
+.INDENT 7.0
+.TP
+.B Parameters
+.INDENT 7.0
+.IP \(bu 2
+\fBName\fP (\fIstr\fP) \-\- Name of the widget. Must be unique.
+.IP \(bu 2
+\fBNewX\fP (\fIint\fP) \-\- New x\-position.
+.IP \(bu 2
+\fBNewY\fP (\fIint\fP) \-\- New y\-position.
+.UNINDENT
+.TP
+.B Return type
+None.
+.UNINDENT
+.sp
+Examples
+.sp
+win.set_pos(\(dqcheck_button\(dq, 10, 45)
+.UNINDENT
+.SS set_sb_text()
+.INDENT 0.0
+.TP
+.B SimpleWx.set_sb_text(Name: str | None = None, Text: str | None = None, Field: int = 0, Timeout: int | None = None, MsgId: Any | None = None) -> Any
+Sets/displays a status bar message and returns its message id.
+.INDENT 7.0
+.TP
+.B Parameters
+.INDENT 7.0
+.IP \(bu 2
+\fBName\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Statusbar name. Defaults to \fIwin_sbar\fP\&.
+.IP \(bu 2
+\fBText\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- New message text. If omitted, Name is treated as text.
+.IP \(bu 2
+\fBField\fP (\fIint\fP\fI, \fP\fIoptional\fP) \-\- Statusbar field index. Defaults to 0.
+.IP \(bu 2
+\fBTimeout\fP (\fIint\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Auto\-remove timeout in seconds. Uses statusbar default if None.
+.IP \(bu 2
+\fBMsgId\fP (\fIAny\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Optional explicit message id.
+.UNINDENT
+.TP
+.B Returns
+Message id of the inserted message.
+.TP
+.B Return type
+Any
+.UNINDENT
+.sp
+Examples
+.sp
+msg_id = win.set_sb_text(\(dqwin_sbar\(dq, \(dqReady\(dq, 0, 3)
+.UNINDENT
+.SS set_sensitive()
+.INDENT 0.0
+.TP
+.B SimpleWx.set_sensitive(Name: str, State: int) -> None
+Sets sensitivity of a widget or a radio group.
+.INDENT 7.0
+.TP
+.B Parameters
+.INDENT 7.0
+.IP \(bu 2
+\fBName\fP (\fIstr\fP) \-\- Widget name or group name.
+.IP \(bu 2
+\fBState\fP (\fIint\fP) \-\- New sensitivity state (\fI0\fP inactive, \fI1\fP active).
+.UNINDENT
+.TP
+.B Return type
+None.
+.UNINDENT
+.sp
+Examples
+.sp
+win.set_sensitive(\(dqr_state\(dq, 0)
+.UNINDENT
+.SS set_size()
+.INDENT 0.0
+.TP
+.B SimpleWx.set_size(Name: str, NewWidth: int, NewHeight: int) -> None
+Sets new unscaled width/height of a widget.
+.INDENT 7.0
+.TP
+.B Parameters
+.INDENT 7.0
+.IP \(bu 2
+\fBName\fP (\fIstr\fP) \-\- Name of the widget. Must be unique.
+.IP \(bu 2
+\fBNewWidth\fP (\fIint\fP) \-\- New widget width.
+.IP \(bu 2
+\fBNewHeight\fP (\fIint\fP) \-\- New widget height.
+.UNINDENT
+.TP
+.B Return type
+None.
+.UNINDENT
+.sp
+Examples
+.sp
+win.set_size(\(dqimage1\(dq, 200, 100)
+.UNINDENT
+.SS set_textview()
+.INDENT 0.0
+.TP
+.B SimpleWx.set_textview(Name: str, Path: str | None = None, Textbuffer: str | None = None, Text: str | None = None) -> None
+Sets text\-view content from path, text buffer, or direct text.
+.INDENT 7.0
+.TP
+.B Parameters
+.INDENT 7.0
+.IP \(bu 2
+\fBName\fP (\fIstr\fP) \-\- Name of the text\-view object. Must be unique.
+.IP \(bu 2
+\fBPath\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- File path used as new text source.
+.IP \(bu 2
+\fBTextbuffer\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- New text\-buffer content.
+.IP \(bu 2
+\fBText\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- New direct text content.
+.UNINDENT
+.TP
+.B Return type
+None.
+.UNINDENT
+.sp
+Examples
+.sp
+win.set_textview(Name=\(dqtview1\(dq, Text=\(dqUpdated text\(dq)
+win.set_textview(Name=\(dqtview1\(dq, Path=\(dq./notes.txt\(dq)
+.UNINDENT
+.SS set_title()
+.INDENT 0.0
+.TP
+.B SimpleWx.set_title(Name: str, NewTitle: str) -> None
+Sets new title/label text on a supported widget.
+.INDENT 7.0
+.TP
+.B Parameters
+.INDENT 7.0
+.IP \(bu 2
+\fBName\fP (\fIstr\fP) \-\- Name of the widget. Must be unique.
+.IP \(bu 2
+\fBNewTitle\fP (\fIstr\fP) \-\- New title text.
+.UNINDENT
+.TP
+.B Return type
+None.
+.UNINDENT
+.sp
+Examples
+.sp
+win.set_title(\(dqlabelMaxSizeValue\(dq, \(dq1920x1080\(dq)
+.UNINDENT
+.SS set_tooltip()
+.INDENT 0.0
+.TP
+.B SimpleWx.set_tooltip(Name: str, TooltipText: str) -> None
+Sets a new tooltip text on a widget.
+.INDENT 7.0
+.TP
+.B Parameters
+.INDENT 7.0
+.IP \(bu 2
+\fBName\fP (\fIstr\fP) \-\- Name of the widget.
+.IP \(bu 2
+\fBTooltipText\fP (\fIstr\fP) \-\- New tooltip text.
+.UNINDENT
+.TP
+.B Return type
+None.
+.UNINDENT
+.sp
+Examples
+.sp
+win.set_tooltip(\(dqimage1\(dq, \(dqPreview image\(dq)
+.UNINDENT
+.SS set_value()
+.INDENT 0.0
+.TP
+.B SimpleWx.set_value(Name: str, Keyname: str, NewValue: Any) -> None
+Sets one widget\-specific value by key.
+.INDENT 7.0
+.TP
+.B Parameters
+.INDENT 7.0
+.IP \(bu 2
+\fBName\fP (\fIstr\fP) \-\- Name of the widget. Must be unique.
+.IP \(bu 2
+\fBKeyname\fP (\fIstr\fP) \-\- Value key.
+.IP \(bu 2
+\fBNewValue\fP (\fIAny\fP) \-\- New value for the selected key.
+.UNINDENT
+.TP
+.B Return type
+None.
+.UNINDENT
+.sp
+Examples
+.sp
+win.set_value(\(dqcheckEnabled\(dq, \(dqActive\(dq, 1)
+.UNINDENT
+.SS set_values()
+.INDENT 0.0
+.TP
+.B SimpleWx.set_values(Name: str, Values: Dict[str, Any]) -> None
+Sets multiple widget\-specific values in one call.
+.INDENT 7.0
+.TP
+.B Parameters
+.INDENT 7.0
+.IP \(bu 2
+\fBName\fP (\fIstr\fP) \-\- Name of the widget. Must be unique.
+.IP \(bu 2
+\fBValues\fP (\fIdict\fP\fI[\fP\fIstr\fP\fI, \fP\fIAny\fP\fI]\fP) \-\- Mapping of key names to new values.
+.UNINDENT
+.TP
+.B Return type
+None.
+.UNINDENT
+.sp
+Examples
+.sp
+win.set_values(\(dqspin1\(dq, {\(dqStart\(dq: 5, \(dqMinimum\(dq: 0, \(dqMaximum\(dq: 10, \(dqStep\(dq: 1})
+.UNINDENT
+.SS show()
+.INDENT 0.0
+.TP
+.B SimpleWx.show() -> None
+Shows the main window without entering the event loop.
+.sp
+Examples
+.sp
+win.show()
+.UNINDENT
+.SS show_about_dialog()
+.INDENT 0.0
+.TP
+.B SimpleWx.show_about_dialog(Name: str) -> None
+Shows a predefined about dialog.
+.INDENT 7.0
+.TP
+.B Parameters
+\fBName\fP (\fIstr\fP) \-\- Name of the about\-dialog object. Must be unique.
+.TP
+.B Return type
+None.
+.UNINDENT
+.sp
+Examples
+.sp
+win.show_about_dialog(\(dqabout1\(dq)
+.UNINDENT
+.SS show_and_run()
+.INDENT 0.0
+.TP
+.B SimpleWx.show_and_run() -> None
+Shows the main window and starts the wx main event loop.
+.sp
+Examples
+.sp
+win.show_and_run()
+.UNINDENT
+.SS show_colorselection_dialog()
+.INDENT 0.0
+.TP
+.B SimpleWx.show_colorselection_dialog(Name: Any, Green: int | None = None, Blue: int | None = None) -> wx.Colour | None
+Shows a predefined color\-selection dialog or a one\-shot color chooser.
+.INDENT 7.0
+.TP
+.B Parameters
+.INDENT 7.0
+.IP \(bu 2
+\fBName\fP (\fIAny\fP) \-\- Predefined dialog name or one\-shot red channel / color string.
+.IP \(bu 2
+\fBGreen\fP (\fIint\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- One\-shot green channel value.
+.IP \(bu 2
+\fBBlue\fP (\fIint\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- One\-shot blue channel value.
+.UNINDENT
+.TP
+.B Returns
+Selected color or \fINone\fP when cancelled / callback mode.
+.TP
+.B Return type
+wx.Colour | None
+.UNINDENT
+.sp
+Examples
+.sp
+color = win.show_colorselection_dialog(\(dqcolorDialog\(dq)
+.UNINDENT
+.SS show_dialog()
+.INDENT 0.0
+.TP
+.B SimpleWx.show_dialog(Name: str) -> int | None
+Shows a predefined generic dialog.
+.INDENT 7.0
+.TP
+.B Parameters
+\fBName\fP (\fIstr\fP) \-\- Name of the dialog object. Must be unique.
+.TP
+.B Returns
+Modal response id, or \fINone\fP in modeless mode.
+.TP
+.B Return type
+int | None
+.UNINDENT
+.sp
+Examples
+.sp
+response = win.show_dialog(\(dqdialog1\(dq)
+.UNINDENT
+.SS show_error()
+.INDENT 0.0
+.TP
+.B SimpleWx.show_error(object_or_msg: Any, msg: str | None = None) -> None
+Prints a formatted error message to stdout/stderr equivalent output.
+.INDENT 7.0
+.TP
+.B Parameters
+.INDENT 7.0
+.IP \(bu 2
+\fBobject_or_msg\fP (\fIAny\fP) \-\- WidgetEntry or message content depending on usage mode.
+.IP \(bu 2
+\fBmsg\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Explicit error message. If omitted, \fIobject_or_msg\fP is treated as
+the message text.
+.UNINDENT
+.UNINDENT
+.sp
+Examples
+.sp
+win.show_error(\(dqSomething went wrong\(dq)
+win.show_error(win.get_object(\(dqmainWindow\(dq), \(dqInvalid value\(dq)
+.UNINDENT
+.SS show_filechooser_dialog()
+.INDENT 0.0
+.TP
+.B SimpleWx.show_filechooser_dialog(Name: str, FileFolder: str | None = None, Filter: Any | None = None) -> str | None
+Shows a predefined file chooser dialog or a one\-shot chooser.
+.UNINDENT
+.SS show_fontselection_dialog()
+.INDENT 0.0
+.TP
+.B SimpleWx.show_fontselection_dialog(Name: str, Size: int | None = None, Weight: Any | None = None) -> wx.Font | None
+Shows a predefined font\-selection dialog or a one\-shot font chooser.
+.SS Modes
+.INDENT 7.0
+.IP \(bu 2
+Predefined: \fIshow_fontselection_dialog(name)\fP
+.IP \(bu 2
+One\-shot: \fIshow_fontselection_dialog(family, size, weight)\fP
+.UNINDENT
+.UNINDENT
+.SS show_message()
+.INDENT 0.0
+.TP
+.B SimpleWx.show_message(ObjectOrMsg: Any, Msg: str | None = None, Dialog: int = 0) -> None
+Prints an informational message and optionally shows it in a dialog.
+.INDENT 7.0
+.TP
+.B Parameters
+.INDENT 7.0
+.IP \(bu 2
+\fBObjectOrMsg\fP (\fIAny\fP) \-\- Either a widget object/context or the message text.
+.IP \(bu 2
+\fBMsg\fP (\fIstr\fP\fI | \fP\fINone\fP\fI, \fP\fIoptional\fP) \-\- Message text when context is passed in \fIObjectOrMsg\fP\&.
+.IP \(bu 2
+\fBDialog\fP (\fIint\fP\fI, \fP\fIoptional\fP) \-\- If non\-zero, opens an information message dialog.
+.UNINDENT
+.UNINDENT
+.UNINDENT
+.SS show_msg_dialog()
+.INDENT 0.0
+.TP
+.B SimpleWx.show_msg_dialog(Name: str, MessageText1: str | None = None, MessageText2: str | None = None, Modal: int | None = None) -> int | None
+Shows a predefined message dialog or a one\-shot dialog.
+.SS Modes
+.INDENT 7.0
+.IP \(bu 2
+Predefined: \fIshow_msg_dialog(name, msg1, [msg2])\fP
+.IP \(bu 2
+One\-shot: \fIshow_msg_dialog(dtype, mtype, message, Modal=0|1)\fP
+.UNINDENT
+.INDENT 7.0
+.TP
+.B returns
+Modal return code, or \fINone\fP for modeless mode.
+.TP
+.B rtype
+int | None
+.UNINDENT
+.UNINDENT
+.SS show_pagesetup_dialog()
+.INDENT 0.0
+.TP
+.B SimpleWx.show_pagesetup_dialog(Name: str) -> dict[str, Any] | None
+Shows a predefined page\-setup dialog or a one\-shot page\-setup dialog.
+.INDENT 7.0
+.TP
+.B Parameters
+\fBName\fP (\fIstr\fP) \-\- Predefined page\-setup dialog name or one\-shot title string.
+.TP
+.B Returns
+Selected page setup in modal mode, else \fINone\fP\&.
+.TP
+.B Return type
+dict[str, Any] | None
+.UNINDENT
+.sp
+Examples
+.sp
+setup = win.show_pagesetup_dialog(\(dqpset1\(dq)
+.UNINDENT
+.SS show_print_dialog()
+.INDENT 0.0
+.TP
+.B SimpleWx.show_print_dialog(Name: str) -> dict[str, Any] | None
+Shows a predefined print dialog or a one\-shot print dialog.
+.INDENT 7.0
+.TP
+.B Parameters
+\fBName\fP (\fIstr\fP) \-\- Predefined print\-dialog name or one\-shot title string.
+.TP
+.B Returns
+Selected print settings in modal mode, else \fINone\fP\&.
+.TP
+.B Return type
+dict[str, Any] | None
+.UNINDENT
+.sp
+Examples
+.sp
+settings = win.show_print_dialog(\(dqprint1\(dq)
+.UNINDENT
+.SS show_print_preview()
+.INDENT 0.0
+.TP
+.B SimpleWx.show_print_preview(Printout: str, PrintDialog: str | None = None, PageSetup: str | None = None, Title: str | None = None) -> wx.Frame | None
+Opens print preview for a predefined printout.
+.UNINDENT
+.SS show_widget()
+.INDENT 0.0
+.TP
+.B SimpleWx.show_widget(Name: str) -> None
+Shows a previously hidden widget.
+.INDENT 7.0
+.TP
+.B Parameters
+\fBName\fP (\fIstr\fP) \-\- Name of the widget. Must be unique.
+.TP
+.B Return type
+None.
+.UNINDENT
+.sp
+Examples
+.sp
+win.show_widget(\(dqframe1\(dq)
+.UNINDENT
+.SS translate()
+.INDENT 0.0
+.TP
+.B SimpleWx.translate(Text: Any) -> str
+Translates text using active gettext localization.
+.INDENT 7.0
+.TP
+.B Parameters
+\fBText\fP (\fIAny\fP) \-\- Source text.
+.TP
+.B Returns
+Translated text if gettext is active, otherwise original text.
+.TP
+.B Return type
+str
+.UNINDENT
+.sp
+Examples
+.sp
+title = win.translate(\(dqMenus in\(dq) + \(dq \(dq + key
+.UNINDENT
+.SS use_gettext()
+.INDENT 0.0
+.TP
+.B SimpleWx.use_gettext(AppName: str, Localepaths: str) -> None
+Activates gettext\-based localization.
+.INDENT 7.0
+.TP
+.B Parameters
+.INDENT 7.0
+.IP \(bu 2
+\fBAppName\fP (\fIstr\fP) \-\- Translation domain / \fI\&.mo\fP base filename.
+.IP \(bu 2
+\fBLocalepaths\fP (\fIstr\fP) \-\- Colon\-separated locale search paths.
+A leading \fI+\fP or trailing \fI+\fP controls whether default system
+locale paths are appended or prepended (compatibility behavior).
+.UNINDENT
+.TP
+.B Return type
+None.
+.UNINDENT
+.sp
+Examples
+.sp
+win.use_gettext(\(dqmyapp\(dq, \(dq/opt/myapp/locale:+\(dq)
+.UNINDENT
+.SH AUTHOR
+Thomas Funk
+.\" Generated by docutils manpage writer.
+.

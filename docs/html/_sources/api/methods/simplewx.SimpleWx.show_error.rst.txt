@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.show\_error
+=============================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.show_error

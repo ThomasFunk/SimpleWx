@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.show\_pagesetup\_dialog
+=========================================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.show_pagesetup_dialog

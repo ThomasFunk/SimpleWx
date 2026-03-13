@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.add\_separator
+================================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.add_separator

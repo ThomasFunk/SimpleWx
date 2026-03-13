@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.initial\_draw
+===============================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.initial_draw

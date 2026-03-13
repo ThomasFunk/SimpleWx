@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.add\_button
+=============================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.add_button

@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.add\_signal\_handler
+======================================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.add_signal_handler

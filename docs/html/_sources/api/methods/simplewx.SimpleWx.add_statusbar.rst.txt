@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.add\_statusbar
+================================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.add_statusbar

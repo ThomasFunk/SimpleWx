@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.get\_color
+============================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.get_color

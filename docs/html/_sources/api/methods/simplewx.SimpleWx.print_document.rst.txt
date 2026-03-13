@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.print\_document
+=================================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.print_document

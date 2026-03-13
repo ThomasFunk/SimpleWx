@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.get\_font\_array
+==================================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.get_font_array

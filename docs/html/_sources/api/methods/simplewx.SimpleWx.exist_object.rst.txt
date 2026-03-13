@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.exist\_object
+===============================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.exist_object

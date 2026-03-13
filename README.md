@@ -227,15 +227,20 @@ while isolated single-widget runs may stay quiet; this further indicates backend
 DOCUMENTATION
 -------------
 
-Sphinx documentation (HTML + manpage) can be built with:
+Pre-built documentation is included in the repository:
+
+- HTML: docs/html/index.html
+- Manpage: doc/simplewx.1  (install with: man doc/simplewx.1)
+
+To rebuild from source (requires dev dependencies):
 
   make docs-html
   make docs-man
 
-Generated output paths:
+To deploy the rebuilt output back into the repository:
 
-- docs/_build/html
-- docs/_build/man
+  make docs-deploy-html
+  make docs-deploy-man
 
 
 DEPENDENCIES

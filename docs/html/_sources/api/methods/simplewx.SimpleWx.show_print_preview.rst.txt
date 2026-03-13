@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.show\_print\_preview
+======================================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.show_print_preview

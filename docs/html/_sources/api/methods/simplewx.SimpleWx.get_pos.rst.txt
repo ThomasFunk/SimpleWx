@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.get\_pos
+==========================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.get_pos

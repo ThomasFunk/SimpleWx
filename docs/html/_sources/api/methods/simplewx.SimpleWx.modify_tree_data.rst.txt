@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.modify\_tree\_data
+====================================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.modify_tree_data

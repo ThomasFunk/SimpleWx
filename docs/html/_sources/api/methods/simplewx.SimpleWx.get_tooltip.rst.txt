@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.get\_tooltip
+==============================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.get_tooltip

@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.add\_progressbar
+==================================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.add_progressbar

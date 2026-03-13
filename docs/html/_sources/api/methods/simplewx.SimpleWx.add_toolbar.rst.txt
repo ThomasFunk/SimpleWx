@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.add\_toolbar
+==============================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.add_toolbar

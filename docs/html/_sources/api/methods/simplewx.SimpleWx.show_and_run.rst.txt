@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.show\_and\_run
+================================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.show_and_run

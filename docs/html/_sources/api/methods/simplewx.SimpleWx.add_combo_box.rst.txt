@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.add\_combo\_box
+=================================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.add_combo_box

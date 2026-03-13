@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.set\_title
+============================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.set_title

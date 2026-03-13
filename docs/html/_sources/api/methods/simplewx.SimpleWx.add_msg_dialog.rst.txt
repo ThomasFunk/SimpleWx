@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.add\_msg\_dialog
+==================================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.add_msg_dialog

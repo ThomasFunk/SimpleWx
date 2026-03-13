@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.is\_underlined
+================================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.is_underlined

@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.get\_treeview
+===============================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.get_treeview

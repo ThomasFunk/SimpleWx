@@ -29,7 +29,7 @@
 
 - [x] Smoke tests for core examples (startup + basic interactions).
 - [x] Unit test base for core helpers (alias normalisation, filter builder, art-ID mapping, scale factor calculation).
-- [ ] Set up Sphinx documentation for SimpleWx with both HTML output and manpage generation.
+- [x] Set up Sphinx documentation for SimpleWx with both HTML output and manpage generation.
 - [ ] Update documentation once `AuiManager` / `TaskBarIcon` are implemented.
 - [ ] Optional: create a release checklist for the first stable tag (`v0.1.x`).
 

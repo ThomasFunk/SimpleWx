@@ -9,6 +9,7 @@ release = '0.4.1'
 
 extensions = [
     'sphinx.ext.autodoc',
+    'sphinx.ext.autosummary',
     'sphinx.ext.napoleon',
 ]
 
@@ -16,6 +17,8 @@ templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 html_theme = 'alabaster'
+html_static_path = ['_static']
+html_css_files = ['custom.css']
 
 autodoc_mock_imports = [
     'wx',
@@ -28,6 +31,8 @@ autodoc_mock_imports = [
 man_pages = [
     ('index', 'simplewx', 'SimpleWx Documentation', [author], 1),
 ]
+
+autosummary_generate = False
 
 suppress_warnings = [
     'docutils',

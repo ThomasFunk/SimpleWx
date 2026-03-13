@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.add\_dataview
+===============================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.add_dataview

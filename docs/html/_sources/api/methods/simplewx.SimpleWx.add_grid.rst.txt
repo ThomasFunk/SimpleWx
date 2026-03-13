@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.add\_grid
+===========================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.add_grid

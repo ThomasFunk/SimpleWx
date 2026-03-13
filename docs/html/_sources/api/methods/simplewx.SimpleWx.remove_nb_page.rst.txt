@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.remove\_nb\_page
+==================================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.remove_nb_page

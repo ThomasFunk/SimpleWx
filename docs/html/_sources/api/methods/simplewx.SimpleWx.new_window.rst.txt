@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.new\_window
+=============================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.new_window

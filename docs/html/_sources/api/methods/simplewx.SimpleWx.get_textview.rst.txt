@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.get\_textview
+===============================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.get_textview

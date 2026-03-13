@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.set\_size
+===========================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.set_size

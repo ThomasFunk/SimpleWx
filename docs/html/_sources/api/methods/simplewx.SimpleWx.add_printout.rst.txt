@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.add\_printout
+===============================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.add_printout

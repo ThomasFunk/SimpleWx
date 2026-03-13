@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.set\_font\_color
+==================================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.set_font_color

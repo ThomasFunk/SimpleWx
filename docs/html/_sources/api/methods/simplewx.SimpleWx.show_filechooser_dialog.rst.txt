@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.show\_filechooser\_dialog
+===========================================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.show_filechooser_dialog

@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.add\_splitter\_pane
+=====================================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.add_splitter_pane

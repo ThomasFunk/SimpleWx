@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.set\_image
+============================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.set_image

@@ -1,0 +1,6 @@
+﻿simplewx.SimpleWx.init\_app
+===========================
+
+.. currentmodule:: simplewx
+
+.. automethod:: SimpleWx.init_app
