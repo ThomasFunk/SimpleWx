@@ -23,6 +23,7 @@ The format is based on Keep a Changelog.
 
 - Refined geometry scaling in `simplewx.py` by switching `_calc_scalefactor(...)` to a font-metric-based approach using monospace text extents, with rounded fallback behavior.
 - Updated `README.md` Qt Designer import section with documented `--dev` usage and behavior.
+- Performed repository cleanup for the builder workflow: moved the converter to `tools/swx-builder/`, split builder docs into `tools/swx-builder/README.md`, and removed obsolete example/import artifacts.
 
 ### Fixed
 
