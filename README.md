@@ -210,6 +210,13 @@ Geometry / scaling notes:
 - Default mode uses SimpleWx defaults and can scale geometry depending on theme/font metrics.
 - This means the same `.ui` can look slightly different between environments unless `--dev` is used.
 
+Known pitfalls:
+
+- Menu bar and status bar heights are theme-dependent. Visible content area can differ across desktops.
+- With default scaling, fixed-position widgets may shift slightly if runtime font metrics differ.
+- If your measured runtime geometry does not match Qt Designer values, regenerate with `--dev` and compare.
+- `Statusbar=0` means no statusbar should be created; if one still appears, verify the generated script and rerun.
+
 
 INSTALLATION
 ------------
