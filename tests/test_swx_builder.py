@@ -235,3 +235,64 @@ def test_convert_static_ui_frame_title_height_adjusts_child_y(tmp_path: Path) ->
     assert "Frame='frame_Main'" in generated
     assert "Position=[20, 20]" in generated
     _unit_passed("frame title height does not shift frame-local child y")
+
+
+def test_convert_static_ui_groups_frames_with_children_and_comments(tmp_path: Path) -> None:
+    ui_path = tmp_path / "frame_grouping.ui"
+    ui_path.write_text(
+        """<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<ui version=\"4.0\">
+ <class>MainWindow</class>
+ <widget class=\"QMainWindow\" name=\"MainWindow\">
+  <property name=\"geometry\">
+   <rect><x>0</x><y>0</y><width>420</width><height>260</height></rect>
+  </property>
+  <property name=\"windowTitle\"><string>Demo</string></property>
+  <widget class=\"QWidget\" name=\"centralwidget\">
+   <widget class=\"QFrame\" name=\"frame_Top\">
+    <property name=\"geometry\">
+     <rect><x>10</x><y>10</y><width>180</width><height>80</height></rect>
+    </property>
+   </widget>
+   <widget class=\"QLabel\" name=\"label_frame_Top\">
+    <property name=\"geometry\">
+     <rect><x>20</x><y>3</y><width>80</width><height>16</height></rect>
+    </property>
+    <property name=\"text\"><string>Top</string></property>
+   </widget>
+   <widget class=\"QCheckBox\" name=\"checkBox\">
+    <property name=\"geometry\">
+     <rect><x>20</x><y>30</y><width>80</width><height>19</height></rect>
+    </property>
+    <property name=\"text\"><string>One</string></property>
+   </widget>
+   <widget class=\"QLineEdit\" name=\"lineEdit\">
+    <property name=\"geometry\">
+     <rect><x>90</x><y>55</y><width>60</width><height>24</height></rect>
+    </property>
+    <property name=\"text\"><string>abc</string></property>
+   </widget>
+   <widget class=\"QPushButton\" name=\"pushButton\">
+    <property name=\"geometry\">
+     <rect><x>10</x><y>200</y><width>80</width><height>24</height></rect>
+    </property>
+    <property name=\"text\"><string>Run</string></property>
+   </widget>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
+""",
+        encoding="utf-8",
+    )
+
+    builder = _load_builder_module()
+    generated = builder.convert_ui_to_simplewx(ui_path)
+
+    assert "# Main Window 'Demo'" in generated
+    assert "# Frame 'Top'" in generated
+    assert generated.index("# Frame 'Top'") < generated.index("Name='checkBox'")
+    assert generated.index("Name='checkBox'") < generated.index("Name='lineEdit'")
+    assert "# Buttons at the bottom" in generated
+    _unit_passed("frame sections are grouped with visual ordering comments")

@@ -571,6 +571,19 @@ def build_widget_call(widget: WidgetSpec) -> str:
     raise BuilderError(f"Interner Fehler: Keine Mapping-Regel für {widget.qt_class}")
 
 
+def _widget_sort_key(widget: WidgetSpec) -> tuple[int, int, str]:
+    """Sort widgets visually by row first, then left to right within a row."""
+    y = int(widget.position[1])
+    x = int(widget.position[0])
+    row_bucket = y // 15
+    return (row_bucket, x, y, widget.name)
+
+
+def _widget_comment_title(widget: WidgetSpec) -> str:
+    """Return a readable title for section comments."""
+    return widget.title if widget.title else widget.name
+
+
 def render_python(
     window: WindowSpec,
     widgets: List[WidgetSpec],
@@ -584,6 +597,8 @@ def render_python(
     lines.append("#!/usr/bin/env python3")
     lines.append("from simplewx import SimpleWx as simplewx")
     lines.append("")
+
+    lines.append(f"# Main Window {quote(window.title)}")
     lines.append("win = simplewx()")
 
     window_args = [
@@ -636,15 +651,42 @@ def render_python(
                 lines.append(_format_call("win.add_menu_item", args))
         lines.append("")
 
-    # Emit frames first so later child widgets are drawn on top of the frame and
-    # are not visually overpainted by the border.
-    ordered_widgets = [widget for widget in widgets if widget.qt_class == "QFrame"]
-    ordered_widgets.extend(widget for widget in widgets if widget.qt_class != "QFrame")
+    frames = sorted(
+        [widget for widget in widgets if widget.qt_class == "QFrame"],
+        key=_widget_sort_key,
+    )
+    frame_names = {frame.name for frame in frames}
 
-    for widget in ordered_widgets:
-        lines.append(build_widget_call(widget))
+    children_by_frame: Dict[str, List[WidgetSpec]] = {frame.name: [] for frame in frames}
+    outside_widgets: List[WidgetSpec] = []
 
-    lines.append("")
+    for widget in widgets:
+        if widget.qt_class == "QFrame":
+            continue
+        if widget.frame and widget.frame in frame_names:
+            children_by_frame[widget.frame].append(widget)
+        else:
+            outside_widgets.append(widget)
+
+    for frame in frames:
+        lines.append(f"# Frame {quote(_widget_comment_title(frame))}")
+        lines.append(build_widget_call(frame))
+
+        frame_children = sorted(children_by_frame.get(frame.name, []), key=_widget_sort_key)
+        for child in frame_children:
+            lines.append(build_widget_call(child))
+        lines.append("")
+
+    outside_widgets = sorted(outside_widgets, key=_widget_sort_key)
+    if outside_widgets:
+        if all(widget.qt_class == "QPushButton" for widget in outside_widgets):
+            lines.append("# Buttons at the bottom")
+        else:
+            lines.append("# Widgets outside frames")
+        for widget in outside_widgets:
+            lines.append(build_widget_call(widget))
+        lines.append("")
+
     lines.append("if __name__ == '__main__':")
     lines.append("    win.show_and_run()")
     lines.append("")

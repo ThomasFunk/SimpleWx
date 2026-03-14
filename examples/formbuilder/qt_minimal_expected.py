@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from simplewx import SimpleWx as simplewx
 
+# Main Window 'MainWindow'
 win = simplewx()
 win.new_window(Name='MainWindow', Title='MainWindow', Size=[340, 200], Statusbar=1)
 
@@ -13,6 +14,7 @@ win.add_menu_item(Name='actionSave', Menu='menuNew', Title='Save')
 win.add_menu_item(Name='actionLoad', Menu='menuNew', Title='Load')
 win.add_menu_item(Name='actionExit', Menu='menuNew', Title='Exit')
 
+# Buttons at the bottom
 win.add_button(
     Name='pushButton',
     Position=[230, 100],
