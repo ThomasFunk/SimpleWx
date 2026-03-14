@@ -173,6 +173,8 @@ Use:
 
   ./venv/bin/python tools/swx-builder/swx-builder.py -i path/to/form.ui
 
+Currently supported Qt widget classes for static import include `QPushButton`, `QLabel`, `QLineEdit`, `QCheckBox`, `QRadioButton`, and `QFrame` plus `QMenuBar` / `QMenu` / `QAction`.
+
 For full usage, options, examples, and troubleshooting, see:
 
   `tools/swx-builder/README.md`

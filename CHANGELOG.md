@@ -16,12 +16,23 @@ The format is based on Keep a Changelog.
 
 ### Added
 
-- _Nothing yet._
+- Extended `swx-builder.py` static Qt import support to include `QFrame`, `QLineEdit`, `QRadioButton`, and `QCheckBox` in the documented supported subset, including frame-local widget export.
+- Added builder regression coverage for `QFrame` title mapping and frame-contained widgets.
+
+### Changed
+
+- Updated Qt import documentation in [README.md](README.md) and [tools/swx-builder/README.md](tools/swx-builder/README.md) to reflect the current supported widget subset and frame-title handling.
+- Marked the static Qt Designer importer task as completed in [TODO.md](TODO.md).
+
+### Fixed
+
+- Fixed `Frame` rendering in `simplewx.py` so frame geometry stays externally stable while title and child placement match the imported Qt layout more closely.
 
 ## [0.5.0] - 2026-03-13
 
 ### Added
 
+- Added the Qt Designer importer `swx-builder.py` (static-only `.ui` conversion to a SimpleWx scaffold).
 - Added `-d` / `--dev` mode to `swx-builder.py`; in dev mode generated `new_window(...)` includes `Base=0` for pixel-accurate geometry debugging.
 - Added builder regression coverage in `tests/test_swx_builder.py` to validate dev-mode output includes `Base=0`.
 - Added Sphinx documentation with HTML and manpage output.
@@ -35,7 +46,7 @@ The format is based on Keep a Changelog.
 - Updated the README headline version from `0.4.1` to `0.5.0`.
 - Refined geometry scaling in `simplewx.py` by switching `_calc_scalefactor(...)` to a font-metric-based approach using monospace text extents, with rounded fallback behavior.
 - Updated `README.md` Qt Designer import section with documented `--dev` usage and behavior.
-- Performed repository cleanup for the builder workflow: moved the converter to `tools/swx-builder/`, split builder docs into `tools/swx-builder/README.md`, and removed obsolete example/import artifacts.
+- Organized the new builder workflow under `tools/swx-builder/` with dedicated documentation in `tools/swx-builder/README.md`.
 
 ### Fixed
 

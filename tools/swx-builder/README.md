@@ -10,9 +10,16 @@ Supported widget mapping (current subset):
 
 - `QPushButton` -> `add_button`
 - `QLabel` -> `add_label`
+- `QFrame` -> `add_frame`
 - `QLineEdit` -> `add_entry`
 - `QCheckBox` -> `add_check_button`
+- `QRadioButton` -> `add_radio_button`
 - `QMenuBar` / `QMenu` / `QAction` -> `add_menu_bar` / `add_menu` / `add_menu_item`
+
+Special handling:
+
+- `QFrame` children are detected geometrically and emitted with `Frame=<name>`.
+- `QLabel` widgets named `label_<frame_name>` are consumed as frame titles instead of being emitted as standalone labels.
 
 ## Usage
 

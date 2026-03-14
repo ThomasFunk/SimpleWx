@@ -3,7 +3,7 @@
 ## P0 – Major Features
 
 
-- [ ] Qt Designer import (`swx-builder.py`):
+- [x] Qt Designer import (`swx-builder.py`):
 	- parse `.ui` (XML) and generate a SimpleWx scaffold,
 	- accept only pure static layouts,
 	- abort with a clear error message when Sizer or dynamic elements are present.
@@ -30,6 +30,10 @@
 - [x] Smoke tests for core examples (startup + basic interactions).
 - [x] Unit test base for core helpers (alias normalisation, filter builder, art-ID mapping, scale factor calculation).
 - [x] Set up Sphinx documentation for SimpleWx with both HTML output and manpage generation.
+- [ ] GUI scaling checks across multiple resolutions / DPI levels:
+	- verify frame/content spacing (top and bottom margins) remains visually balanced,
+	- verify border offsets for Frame/Panel/ScrolledWindow/NotebookPage containers,
+	- capture before/after screenshots for regression comparison.
 - [ ] Update documentation once `AuiManager` / `TaskBarIcon` are implemented.
 - [ ] Optional: create a release checklist for the first stable tag (`v0.1.x`).
 

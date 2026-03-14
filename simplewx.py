@@ -1046,12 +1046,11 @@ class SimpleWx:
         elif object_entry.type == "Frame":
             frame_data = object_entry.data if isinstance(object_entry.data, dict) else {}
             title_label = frame_data.get("title_label")
+            static_box = frame_data.get("static_box")
             if isinstance(title_label, wx.StaticText):
                 title_label.SetLabel(title_text)
-            elif title_text:
-                title_label = wx.StaticText(widget, wx.ID_ANY, title_text)
-                frame_data["title_label"] = title_label
-                object_entry.data = frame_data
+            if isinstance(static_box, wx.StaticBox):
+                static_box.SetLabel("")
             self._layout_frame_container(Name)
         elif object_entry.type == "NotebookPage":
             page_data = object_entry.data if isinstance(object_entry.data, dict) else {}
@@ -1222,6 +1221,8 @@ class SimpleWx:
         object_entry.pos_x = int(NewX)
         object_entry.pos_y = int(NewY)
         self._add_to_container(Name)
+        if object_entry.type == "Frame":
+            self._layout_frame_container(Name)
 
     def get_value(self, Name: str, Keyname: str, Value: Optional[Any] = None) -> Any:
         """
@@ -3097,9 +3098,23 @@ class SimpleWx:
         """
         frame = self.get_object(name)
 
-        # wx-native frames use an inner content panel, so child coords are already local
+        # wx-native frames are shifted upward internally by half the default
+        # font height. Compensate child coordinates so external geometry stays
+        # stable and generated frame-local positions remain intuitive.
         if frame.type == "Frame" and isinstance(frame.data, dict) and frame.data.get("content_panel") is not None:
-            return src_x, src_y
+            half_default_font = 5
+            static_box = frame.data.get("static_box")
+            if isinstance(static_box, wx.StaticBox):
+                try:
+                    _, font_height_px = static_box.GetTextExtent("Ag")
+                    if font_height_px > 0:
+                        half_default_font = max(
+                            1,
+                            int(round((font_height_px / max(0.1, float(self.scalefactor))) / 2)),
+                        )
+                except Exception:
+                    pass
+            return src_x, src_y + half_default_font
 
         label_height = 0
         if frame.title and frame.ref and hasattr(frame.ref, "GetLabel"):
@@ -3127,30 +3142,49 @@ class SimpleWx:
 
         outer_panel = frame_object.ref
         content_panel = frame_object.data.get("content_panel")
+        static_box = frame_object.data.get("static_box")
         title_label = frame_object.data.get("title_label")
         if not isinstance(content_panel, wx.Window):
             return
 
-        # place title label at the upper edge if present
-        title_height_unscaled = 0
+        # resize StaticBox to cover the entire frame panel
+        panel_size = outer_panel.GetClientSize()
+        if isinstance(static_box, wx.StaticBox):
+            static_box.SetSize(panel_size)
+
+        # Internally shift the full frame upward by half the default font
+        # height so the overlay title sits centered on the top border line,
+        # while the public frame position remains unchanged.
+        half_default_font_px = self._scale(5)
+        if isinstance(static_box, wx.StaticBox):
+            try:
+                _, font_height_px = static_box.GetTextExtent("Ag")
+                if font_height_px > 0:
+                    half_default_font_px = max(1, int(round(font_height_px / 2)))
+            except Exception:
+                pass
+
+        nominal_x = self._scale(frame_object.pos_x)
+        nominal_y = self._scale(frame_object.pos_y)
+        outer_panel.SetPosition((nominal_x, nominal_y - half_default_font_px))
+
+        # Do not add any extra content insets here; child coordinates are
+        # already emitted explicitly by the importer.
+        content_panel.SetPosition((0, 0))
+        content_panel.SetSize(panel_size)
+
+        # Draw the title as an overlay label so its horizontal offset can be
+        # controlled while keeping the left top border corner visible.
         if isinstance(title_label, wx.StaticText):
-            title_label.SetPosition((self._scale(10), 0))
-            label_height = title_label.GetBestSize().GetHeight()
-            title_height_unscaled = int(round(label_height / self.scalefactor)) if self.scalefactor != 0 else int(label_height)
-
-        # calculate inner content offset to keep children away from frame title border
-        content_offset_y = max(6, (title_height_unscaled // 2) + 4)
-        frame_object.data["content_offset_y"] = content_offset_y
-
-        # use logical (unscaled) frame size as source of truth
-        frame_width = frame_object.width if frame_object.width is not None else int(round(outer_panel.GetSize().GetWidth() / self.scalefactor))
-        frame_height = frame_object.height if frame_object.height is not None else int(round(outer_panel.GetSize().GetHeight() / self.scalefactor))
-
-        # apply scaled geometry to inner absolute-position container
-        content_panel.SetPosition((self._scale(5), self._scale(content_offset_y)))
-        content_width = max(1, self._scale(max(1, frame_width - 10)))
-        content_height = max(1, self._scale(max(1, frame_height - (content_offset_y + 5))))
-        content_panel.SetSize((content_width, content_height))
+            title_text = frame_object.title if frame_object.title is not None else ""
+            title_label.SetLabel(title_text)
+            title_label.SetBackgroundColour(outer_panel.GetBackgroundColour())
+            text_size = title_label.GetBestSize()
+            text_height = max(1, int(text_size.GetHeight()))
+            title_x = self._scale(8)
+            title_y = max(0, half_default_font_px - (text_height // 2))
+            title_label.SetPosition((title_x, title_y))
+            title_label.SetSize(text_size)
 
     def _apply_splitter_layout(self, splitter_name: str) -> None:
         """
@@ -3205,7 +3239,6 @@ class SimpleWx:
         side = str(Side or "second").lower()
         side = "first" if side.startswith("fir") else "second"
         object_entry.data["collapse"] = side
-        object_entry.data["unsplit"] = 1
         self._apply_splitter_layout(Name)
 
     def expand_splitter(self, Name: str) -> None:
@@ -3418,7 +3451,7 @@ class SimpleWx:
             # Use stable page name key to avoid tooltip/index drift.
             tab_tooltips[object_entry.name] = object_entry.tip
         else:
-            # Standardverhalten für alle anderen Widgets
+            # Standard behavior for all other widgets.
             object_entry.ref.SetToolTip(object_entry.tip)
 
 # def add_tooltip(self, Name: str, Tip: str):
@@ -3426,25 +3459,25 @@ class SimpleWx:
 #     if not widget_entry:
 #         return
 
-#     # Prüfen, ob es sich um eine Notebook-Seite handelt
-#     # In wxPython sind Pages oft einfache wx.Panel oder ähnliches, 
-#     # die in ein wx.Notebook eingefügt wurden.
+#     # Check whether this is a notebook page.
+#     # In wxPython, pages are often plain wx.Panel instances or similar
+#     # widgets inserted into a wx.Notebook.
 #     parent = widget_entry.ref.GetParent()
 
 #     if isinstance(parent, wx.Notebook):
-#         # Initialisiere den Tooltip-Speicher am Notebook, falls noch nicht vorhanden
+#         # Initialize notebook tooltip storage only once.
 #         if not hasattr(parent, "_tab_tooltips"):
 #             parent._tab_tooltips = {}
-#             # Event nur einmal binden
+#             # Bind the hover event only once.
 #             parent.Bind(wx.EVT_MOTION, self._on_notebook_motion)
 
-#         # Finde den Index der Seite im Notebook
+#         # Find the page index inside the notebook.
 #         for i in range(parent.GetPageCount()):
 #             if parent.GetPage(i) == widget_entry.ref:
 #                 parent._tab_tooltips[i] = Tip
 #                 break
 #     else:
-#         # Standardverhalten für alle anderen Widgets
+#         # Standard behavior for all other widgets.
 #         widget_entry.ref.SetToolTip(Tip)
 
 
@@ -8666,48 +8699,82 @@ class SimpleWx:
             wx.ID_ANY,
             pos=(0, 0),
             size=wx.DefaultSize,
-            style=wx.BORDER_SIMPLE,
+            style=wx.BORDER_NONE,
         )
         object_entry.ref = frame_panel
 
-        # add optional title label on frame border area
-        title_label: Optional[wx.StaticText] = None
-        if object_entry.title:
-            title_label = wx.StaticText(frame_panel, wx.ID_ANY, str(object_entry.title))
+        # Native border via StaticBox; title is drawn by overlay label so we can
+        # shift it right while preserving the left corner line segment.
+        static_box = wx.StaticBox(
+            frame_panel,
+            wx.ID_ANY,
+            "",
+        )
+        title_label = wx.StaticText(
+            frame_panel,
+            wx.ID_ANY,
+            str(object_entry.title) if object_entry.title else "",
+        )
+        title_label.SetBackgroundColour(frame_panel.GetBackgroundColour())
 
-        # create inner absolute-position container for frame children
+        # create inner absolute-position container for frame children;
+        # children live here so Enable(False) propagates automatically to all of them
         content_panel = wx.Panel(frame_panel, wx.ID_ANY)
         content_panel.SetSizer(None)
         self.containers[object_entry.name] = content_panel
 
         # persist frame internals for later layout/title updates
         object_entry.data = {
-            "title_label": title_label,
+            "static_box": static_box,
             "content_panel": content_panel,
-            "content_offset_y": 6,
+            "title_label": title_label,
         }
+
+        # relayout content_panel whenever frame_panel is resized
+        frame_panel.Bind(wx.EVT_SIZE, lambda event, frame_name=object_entry.name: self._on_frame_size(event, frame_name))
 
         # apply common defaults (size, tooltip, sensitive)
         self._set_commons(object_entry.name, **params)
 
-        # apply optional font to frame/title
+        # apply optional font to frame title
         frame_font = params.get("font")
         if frame_font is not None:
             self.set_font(object_entry.name, frame_font)
-            if title_label is not None:
-                current = title_label.GetFont()
-                if isinstance(frame_font, (list, tuple)) and len(frame_font) >= 2:
-                    family = str(frame_font[0])
-                    size = int(frame_font[1])
-                    weight_label = str(frame_font[2]).lower() if len(frame_font) > 2 and frame_font[2] is not None else "normal"
-                    weight = wx.FONTWEIGHT_BOLD if "bold" in weight_label else wx.FONTWEIGHT_LIGHT if "light" in weight_label else wx.FONTWEIGHT_NORMAL
-                    font = wx.Font(size, current.GetFamily(), current.GetStyle(), weight, faceName=family)
-                    if font.IsOk():
-                        title_label.SetFont(font)
+            current = static_box.GetFont()
+            if isinstance(frame_font, (list, tuple)) and len(frame_font) >= 2:
+                family = str(frame_font[0])
+                size = int(frame_font[1])
+                weight_label = str(frame_font[2]).lower() if len(frame_font) > 2 and frame_font[2] is not None else "normal"
+                weight = wx.FONTWEIGHT_BOLD if "bold" in weight_label else wx.FONTWEIGHT_LIGHT if "light" in weight_label else wx.FONTWEIGHT_NORMAL
+                font = wx.Font(size, current.GetFamily(), current.GetStyle(), weight, faceName=family)
+                if font.IsOk():
+                    static_box.SetFont(font)
+                    title_label.SetFont(font)
 
         # place frame and then layout its inner content area
         self._add_to_container(object_entry.name)
         self._layout_frame_container(object_entry.name)
+
+    def _on_frame_size(self, event: wx.SizeEvent, frame_name: str) -> None:
+        """
+        Updates inner frame layout and repaints border after frame resize.
+
+        Parameters
+        ----------
+
+        event : wx.SizeEvent
+            Native size event.
+
+        frame_name : str
+            Name of the frame object.
+
+        Returns
+        -------
+
+        None.
+        """
+        self._layout_frame_container(frame_name)
+        event.Skip()
 
     def _get_notebook_style(self, tabs: str, scrollable: int) -> int:
         """
