@@ -296,3 +296,61 @@ def test_convert_static_ui_groups_frames_with_children_and_comments(tmp_path: Pa
     assert generated.index("Name='checkBox'") < generated.index("Name='lineEdit'")
     assert "# Buttons at the bottom" in generated
     _unit_passed("frame sections are grouped with visual ordering comments")
+
+
+def test_convert_static_ui_qgroupbox_radio_offset_and_group(tmp_path: Path) -> None:
+    ui_path = tmp_path / "frame_groupbox_radio.ui"
+    ui_path.write_text(
+        """<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<ui version=\"4.0\">
+ <class>MainWindow</class>
+ <widget class=\"QMainWindow\" name=\"MainWindow\">
+  <property name=\"geometry\">
+   <rect><x>0</x><y>0</y><width>320</width><height>200</height></rect>
+  </property>
+  <widget class=\"QWidget\" name=\"centralwidget\">
+   <widget class=\"QFrame\" name=\"frame_Composite_Manager\">
+    <property name=\"geometry\">
+     <rect><x>10</x><y>10</y><width>280</width><height>80</height></rect>
+    </property>
+    <widget class=\"QGroupBox\" name=\"groupBox_Compositors\">
+     <property name=\"geometry\">
+      <rect><x>10</x><y>10</y><width>260</width><height>40</height></rect>
+     </property>
+     <widget class=\"QRadioButton\" name=\"radioButton\">
+      <property name=\"geometry\">
+       <rect><x>60</x><y>5</y><width>100</width><height>19</height></rect>
+      </property>
+      <property name=\"text\"><string>Xcompmgr</string></property>
+     </widget>
+    </widget>
+   </widget>
+   <widget class=\"QRadioButton\" name=\"radioButton_legacy\">
+    <property name=\"geometry\">
+     <rect><x>30</x><y>30</y><width>100</width><height>19</height></rect>
+    </property>
+    <property name=\"text\"><string>Legacy</string></property>
+   </widget>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
+""",
+        encoding="utf-8",
+    )
+
+    builder = _load_builder_module()
+    generated = builder.convert_ui_to_simplewx(ui_path)
+
+    # GroupBox child: absolute(80,25) inside frame(10,10) -> local(70,15)
+    assert "Name='radioButton'" in generated
+    assert "Position=[70, 15]" in generated
+    assert "Group='groupBox_Compositors'" in generated
+
+    # Legacy path without GroupBox must remain unchanged.
+    # absolute(30,30) inside frame(10,10) -> local(20,20)
+    assert "Name='radioButton_legacy'" in generated
+    assert "Position=[20, 20]" in generated
+    assert "Group='group_frame_Composite_Manager'" in generated
+    _unit_passed("qgroupbox radio offset/group works without changing legacy behavior")

@@ -3,7 +3,7 @@ from simplewx import SimpleWx as simplewx
 
 # Main Window 'MainWindow'
 win = simplewx()
-win.new_window(Name='MainWindow', Title='MainWindow', Size=[470, 415])
+win.new_window(Name='MainWindow', Title='MainWindow', Base=0, Size=[470, 415])
 
 # Frame 'Composite Manager'
 win.add_frame(Name='frame_Composite_Manager', Position=[10, 10], Size=[450, 50], Title='Composite Manager')
@@ -47,7 +47,7 @@ win.add_check_button(
     Active=0,
     Frame='frame_Shadows',
 )
-win.add_label(Name='label_8', Position=[15, 95], Title='Opacity:', Frame='frame_Shadows')
+win.add_label(Name='label_8', Position=[15, 94], Title='Opacity:', Frame='frame_Shadows')
 win.add_entry(
     Name='lineEdit_5',
     Position=[150, 90],
@@ -55,7 +55,7 @@ win.add_entry(
     Title='0.10',
     Frame='frame_Shadows',
 )
-win.add_label(Name='label_6', Position=[15, 125], Title='Blur Radius:', Frame='frame_Shadows')
+win.add_label(Name='label_6', Position=[15, 124], Title='Blur Radius:', Frame='frame_Shadows')
 win.add_entry(
     Name='lineEdit_4',
     Position=[150, 120],
@@ -63,7 +63,7 @@ win.add_entry(
     Title='1234',
     Frame='frame_Shadows',
 )
-win.add_label(Name='label_9', Position=[15, 155], Title='Left Offset:', Frame='frame_Shadows')
+win.add_label(Name='label_9', Position=[15, 154], Title='Left Offset:', Frame='frame_Shadows')
 win.add_entry(
     Name='lineEdit_6',
     Position=[150, 150],
@@ -71,7 +71,7 @@ win.add_entry(
     Title='-15',
     Frame='frame_Shadows',
 )
-win.add_label(Name='label_10', Position=[15, 185], Title='Top Offset:', Frame='frame_Shadows')
+win.add_label(Name='label_10', Position=[15, 184], Title='Top Offset:', Frame='frame_Shadows')
 win.add_entry(
     Name='lineEdit_7',
     Position=[150, 180],
@@ -79,7 +79,7 @@ win.add_entry(
     Title='-15',
     Frame='frame_Shadows',
 )
-win.add_label(Name='label_17', Position=[15, 215], Title='Shadow color:', Frame='frame_Shadows')
+win.add_label(Name='label_17', Position=[15, 214], Title='Shadow color:', Frame='frame_Shadows')
 win.add_entry(
     Name='lineEdit_12',
     Position=[150, 210],
@@ -111,7 +111,7 @@ win.add_check_button(
     Active=0,
     Frame='frame_Fading',
 )
-win.add_label(Name='label_13', Position=[15, 95], Title='Fade-in Steps:', Frame='frame_Fading')
+win.add_label(Name='label_13', Position=[15, 93], Title='Fade-in Steps:', Frame='frame_Fading')
 win.add_entry(
     Name='lineEdit_8',
     Position=[150, 90],
@@ -119,7 +119,7 @@ win.add_entry(
     Title='0.028',
     Frame='frame_Fading',
 )
-win.add_label(Name='label_12', Position=[15, 125], Title='Fade-out Steps:', Frame='frame_Fading')
+win.add_label(Name='label_12', Position=[15, 123], Title='Fade-out Steps:', Frame='frame_Fading')
 win.add_entry(
     Name='lineEdit_9',
     Position=[150, 120],
@@ -127,7 +127,7 @@ win.add_entry(
     Title='0.03',
     Frame='frame_Fading',
 )
-win.add_label(Name='label_14', Position=[15, 155], Title='Fade Step Time:', Frame='frame_Fading')
+win.add_label(Name='label_14', Position=[15, 153], Title='Fade Step Time:', Frame='frame_Fading')
 win.add_entry(
     Name='lineEdit_10',
     Position=[150, 150],
@@ -135,7 +135,7 @@ win.add_entry(
     Title='10',
     Frame='frame_Fading',
 )
-win.add_label(Name='label_16', Position=[15, 215], Title='Opacity on menus:', Frame='frame_Fading')
+win.add_label(Name='label_16', Position=[15, 213], Title='Opacity on menus:', Frame='frame_Fading')
 win.add_entry(
     Name='lineEdit_11',
     Position=[150, 210],

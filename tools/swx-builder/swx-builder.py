@@ -38,6 +38,8 @@ class WidgetSpec:
     handler_name: Optional[str] = None
     frame: Optional[str] = None
     frame_title_height: int = 0
+    # Radio group name extracted from a containing QGroupBox, if present.
+    group: Optional[str] = None
 
 
 # Represents a single menu item from the QMenu/QAction structure.
@@ -240,15 +242,59 @@ def parse_window(main_widget: ET.Element, menu_height: int = 0) -> WindowSpec:
     return WindowSpec(name=frame_name, title=frame_title, size=frame_size, statusbar=has_statusbar)
 
 
-def _iter_supported_widgets(parent: ET.Element) -> List[ET.Element]:
-    # Walk the XML tree recursively and collect only widget classes that this
-    # builder can actually translate into SimpleWx calls.
-    items: List[ET.Element] = []
+def _iter_supported_widgets(
+    parent: ET.Element,
+    _offset_x: int = 0,
+    _offset_y: int = 0,
+    _group_name: Optional[str] = None,
+) -> List[Tuple[ET.Element, int, int, Optional[str]]]:
+    """
+    Walk the XML tree recursively and collect only widget classes that this
+    builder can actually translate into SimpleWx calls.
+
+    Non-supported containers like QGroupBox are transparently traversed and
+    their coordinates are accumulated so child widgets land at correct
+    absolute (centralwidget-relative) positions.
+
+    Returns a list of (element, offset_x, offset_y, group_name) tuples.
+    The caller must add offset_x/offset_y to the XML-stored x/y values to
+    obtain the correct absolute position.
+    """
+    items: List[Tuple[ET.Element, int, int, Optional[str]]] = []
     for child in parent.findall("widget"):
         child_class = (child.get("class") or "").strip()
+        child_name_raw = sanitize_name((child.get("name") or "widget").strip(), "widget", 0)
         if child_class in SUPPORTED_WIDGET_CLASSES:
-            items.append(child)
-        items.extend(_iter_supported_widgets(child))
+            items.append((child, _offset_x, _offset_y, _group_name))
+            # Keep legacy behavior for most supported classes.
+            # Exception: QFrame is a real geometric container, so propagate its
+            # offset for nested content (e.g. QGroupBox -> QRadioButton).
+            if child_class == "QFrame":
+                child_rect = _property_rect(child, "geometry", child_name_raw)
+                if child_rect is not None:
+                    next_ox = _offset_x + child_rect[0]
+                    next_oy = _offset_y + child_rect[1]
+                else:
+                    next_ox, next_oy = _offset_x, _offset_y
+            else:
+                next_ox, next_oy = _offset_x, _offset_y
+            items.extend(_iter_supported_widgets(child, next_ox, next_oy, _group_name))
+        elif child_class == "QGroupBox":
+            # QGroupBox is a logical grouping container (commonly used for radio
+            # buttons). It is not rendered in output but its position must be
+            # added to all child coordinates.
+            child_rect = _property_rect(child, "geometry", child_name_raw)
+            if child_rect is not None:
+                gb_ox = _offset_x + child_rect[0]
+                gb_oy = _offset_y + child_rect[1]
+            else:
+                gb_ox, gb_oy = _offset_x, _offset_y
+            gb_title = _property_string(child, "title") or (child.get("name") or "")
+            gb_group = sanitize_name(gb_title, "group", 0) if gb_title else _group_name
+            items.extend(_iter_supported_widgets(child, gb_ox, gb_oy, gb_group))
+        else:
+            # Any other non-supported container: recurse without changing offsets.
+            items.extend(_iter_supported_widgets(child, _offset_x, _offset_y, _group_name))
     return items
 
 
@@ -415,25 +461,29 @@ def parse_widgets(root: ET.Element, handlers: Dict[str, str]) -> List[WidgetSpec
     running_index = 1
 
     # First read all widgets with their absolute geometry.
-    for widget in _iter_supported_widgets(main_widget):
-        qt_class = (widget.get("class") or "").strip()
-        raw_name = (widget.get("name") or "").strip()
+    for widget_el, offset_x, offset_y, group_name in _iter_supported_widgets(main_widget):
+        qt_class = (widget_el.get("class") or "").strip()
+        raw_name = (widget_el.get("name") or "").strip()
         widget_name = sanitize_name(raw_name, "widget", running_index)
 
-        geometry = _property_rect(widget, "geometry", widget_name)
+        geometry = _property_rect(widget_el, "geometry", widget_name)
         if geometry is None:
             raise BuilderError(
                 f"Widget '{widget_name}' ({qt_class}) hat keine geometry-Property. "
                 "Für statische Qt-Layouts sind absolute Koordinaten zwingend erforderlich."
             )
 
-        x, y, width, height = geometry
+        raw_x, raw_y, width, height = geometry
+        # Add accumulated parent-container offsets (e.g. from a QGroupBox) so
+        # all positions are expressed relative to the centralwidget.
+        x = raw_x + offset_x
+        y = raw_y + offset_y
 
         # QFrame usually has no `text`, but some variants expose a `title`.
         # Accept both so no useful captions are lost.
-        text = _property_string(widget, "text") or _property_string(widget, "title") or ""
-        tooltip = _property_string(widget, "toolTip")
-        checked = _property_bool(widget, "checked") if qt_class in {"QCheckBox", "QRadioButton"} else 0
+        text = _property_string(widget_el, "text") or _property_string(widget_el, "title") or ""
+        tooltip = _property_string(widget_el, "toolTip")
+        checked = _property_bool(widget_el, "checked") if qt_class in {"QCheckBox", "QRadioButton"} else 0
         handler_name = handlers.get(widget_name)
 
         widgets.append(
@@ -446,6 +496,7 @@ def parse_widgets(root: ET.Element, handlers: Dict[str, str]) -> List[WidgetSpec
                 tooltip=tooltip,
                 checked=checked,
                 handler_name=handler_name,
+                group=group_name,
             )
         )
         running_index += 1
@@ -541,8 +592,9 @@ def build_widget_call(widget: WidgetSpec) -> str:
     if widget.qt_class == "QRadioButton":
         title = widget.title or widget.name
         # Radio buttons always need a group in SimpleWx.
-        # Inside a frame, automatically create a frame-specific group name.
-        default_group = f"group_{widget.frame}" if widget.frame else "group_main"
+        # Use the QGroupBox title as the group when available; otherwise fall
+        # back to a frame-specific or global default name.
+        default_group = widget.group or (f"group_{widget.frame}" if widget.frame else "group_main")
         args = [
             f"Name={quote(widget.name)}",
             f"Position=[{x}, {y}]",

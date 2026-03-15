@@ -34,7 +34,7 @@
     <property name="geometry">
      <rect>
       <x>25</x>
-      <y>185</y>
+      <y>184</y>
       <width>81</width>
       <height>16</height>
      </rect>
@@ -73,7 +73,7 @@
     <property name="geometry">
      <rect>
       <x>25</x>
-      <y>155</y>
+      <y>154</y>
       <width>81</width>
       <height>16</height>
      </rect>
@@ -86,7 +86,7 @@
     <property name="geometry">
      <rect>
       <x>25</x>
-      <y>215</y>
+      <y>214</y>
       <width>81</width>
       <height>16</height>
      </rect>
@@ -112,7 +112,7 @@
     <property name="geometry">
      <rect>
       <x>25</x>
-      <y>245</y>
+      <y>244</y>
       <width>81</width>
       <height>16</height>
      </rect>
@@ -190,7 +190,7 @@
     <property name="geometry">
      <rect>
       <x>255</x>
-      <y>185</y>
+      <y>183</y>
       <width>111</width>
       <height>16</height>
      </rect>
@@ -203,7 +203,7 @@
     <property name="geometry">
      <rect>
       <x>255</x>
-      <y>155</y>
+      <y>153</y>
       <width>101</width>
       <height>16</height>
      </rect>
@@ -229,7 +229,7 @@
     <property name="geometry">
      <rect>
       <x>255</x>
-      <y>215</y>
+      <y>213</y>
       <width>111</width>
       <height>16</height>
      </rect>
@@ -268,7 +268,7 @@
     <property name="geometry">
      <rect>
       <x>255</x>
-      <y>275</y>
+      <y>273</y>
       <width>131</width>
       <height>16</height>
      </rect>
@@ -320,8 +320,8 @@
     <property name="geometry">
      <rect>
       <x>25</x>
-      <y>275</y>
-      <width>91</width>
+      <y>274</y>
+      <width>111</width>
       <height>16</height>
      </rect>
     </property>
@@ -407,32 +407,6 @@
      <string>Cancel</string>
     </property>
    </widget>
-   <widget class="QRadioButton" name="radioButton">
-    <property name="geometry">
-     <rect>
-      <x>70</x>
-      <y>20</y>
-      <width>104</width>
-      <height>19</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Xcompmgr</string>
-    </property>
-   </widget>
-   <widget class="QRadioButton" name="radioButton_2">
-    <property name="geometry">
-     <rect>
-      <x>290</x>
-      <y>20</y>
-      <width>104</width>
-      <height>19</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Compton</string>
-    </property>
-   </widget>
    <widget class="QLabel" name="label_Composite_Manager_Frame">
     <property name="geometry">
      <rect>
@@ -461,6 +435,32 @@
     <property name="frameShadow">
      <enum>QFrame::Shadow::Raised</enum>
     </property>
+    <widget class="QRadioButton" name="radioButton">
+     <property name="geometry">
+      <rect>
+       <x>60</x>
+       <y>10</y>
+       <width>104</width>
+       <height>19</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Xcompmgr</string>
+     </property>
+    </widget>
+    <widget class="QRadioButton" name="radioButton_2">
+     <property name="geometry">
+      <rect>
+       <x>280</x>
+       <y>10</y>
+       <width>104</width>
+       <height>19</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Compton</string>
+     </property>
+    </widget>
    </widget>
    <widget class="QFrame" name="frame_Fading">
     <property name="geometry">
@@ -570,8 +570,6 @@
    <zorder>lineEdit_13</zorder>
    <zorder>pushButton_4</zorder>
    <zorder>pushButton_5</zorder>
-   <zorder>radioButton</zorder>
-   <zorder>radioButton_2</zorder>
    <zorder>label_Composite_Manager_Frame</zorder>
    <zorder>pushButton_6</zorder>
    <zorder>pushButton_7</zorder>
