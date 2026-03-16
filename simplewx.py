@@ -541,6 +541,7 @@ class SimpleWx:
             "min": "minimum",
             "max": "maximum",
             "orient": "orientation",
+            "showpct": "showpercent",
             "valuepos": "valueposition",
             "pixbuf": "pixbuffer",
             "textbuf": "textbuffer",
@@ -1362,6 +1363,8 @@ class SimpleWx:
                 return int(data.get("timer", 100))
             if key == "align":
                 return str(data.get("align", "left"))
+            if key in ("showpercent", "showpct"):
+                return 1 if int(data.get("showpercent", 1)) else 0
 
         # scrollbar
         if object_entry.type == "Scrollbar" and widget is not None:
@@ -2156,22 +2159,29 @@ class SimpleWx:
         # progressbar values
         if object_entry.type == "ProgressBar":
             if "mode" in params:
-                data["mode"] = str(params.pop("mode") or "percent").lower()
+                mode_value = str(params.pop("mode") or "percent").lower()
+                data["mode"] = mode_value if mode_value in ("percent", "pulse") else "percent"
             if "steps" in params:
                 steps = int(params.pop("steps"))
                 if steps <= 0:
                     steps = 100
                 data["steps"] = steps
-                if hasattr(widget, "SetRange"):
-                    widget.SetRange(steps)
                 current_value = int(data.get("value", 0))
                 current_value = max(0, min(current_value, steps))
                 data["value"] = current_value
-                widget.SetValue(current_value)
+            if "orientation" in params:
+                orient_value = str(params.pop("orientation") or "horizontal").lower()
+                data["orientation"] = "vertical" if orient_value.startswith("v") else "horizontal"
+            if "orient" in params:
+                orient_value = str(params.pop("orient") or "horizontal").lower()
+                data["orientation"] = "vertical" if orient_value.startswith("v") else "horizontal"
             if "timer" in params:
                 data["timer"] = max(1, int(params.pop("timer")))
             if "align" in params:
-                data["align"] = str(params.pop("align") or "left").lower()
+                align_value = str(params.pop("align") or "left").lower()
+                data["align"] = align_value if align_value in ("left", "right") else "left"
+            if "showpercent" in params:
+                data["showpercent"] = 1 if int(params.pop("showpercent") or 0) else 0
 
             if "fraction" in params:
                 fraction = float(params.pop("fraction"))
@@ -2179,7 +2189,6 @@ class SimpleWx:
                 steps = max(1, int(data.get("steps", 100)))
                 value = int(round(fraction * steps))
                 data["value"] = value
-                widget.SetValue(value)
 
             if "start" in params:
                 params["active"] = params.pop("start")
@@ -2189,11 +2198,9 @@ class SimpleWx:
                 value = int(round(float(params.pop("active"))))
                 steps = max(1, int(data.get("steps", 100)))
                 value = max(0, min(value, steps))
-                if str(data.get("mode", "percent")).lower() == "pulse":
-                    widget.Pulse()
-                else:
-                    widget.SetValue(value)
                 data["value"] = value
+
+            self._layout_progress_bar_fill(object_entry.name)
 
         # scrollbar values
         if object_entry.type == "Scrollbar":
@@ -11211,6 +11218,15 @@ class SimpleWx:
         # position the slider in its target container
         self._add_to_container(object_entry.name)
 
+    def _layout_progress_bar_fill(self, Name: str) -> None:
+        """
+        Triggers a repaint of the custom progress-bar panel.
+        """
+        object_entry = self.get_object(Name)
+        if object_entry.type != "ProgressBar" or object_entry.ref is None:
+            return
+        object_entry.ref.Refresh()
+
     def add_progress_bar(
         self,
         Name: str,
@@ -11221,6 +11237,7 @@ class SimpleWx:
         Orient: str = "horizontal",
         Timer: int = 100,
         Align: str = "left",
+        ShowPercent: int = 1,
         Frame: Optional[str] = None,
         Tooltip: Optional[str] = None,
         Function: Optional[Callable[..., Any] | list[Any] | tuple[Any, ...]] = None,
@@ -11257,6 +11274,9 @@ class SimpleWx:
         Align : str, optional
             Compatibility alignment metadata (`left` or `right`).
 
+        ShowPercent : int, optional
+            Draw centered percent text (`0` disabled, `1` enabled).
+
         Frame : str | None, optional
             Optional parent container name.
 
@@ -11282,7 +11302,6 @@ class SimpleWx:
 
         win.add_progress_bar(Name="prog1", Position=[20, 20], Size=[200, 18], Mode="percent", Steps=100)
         """
-        # normalize incoming progress-bar parameters
         params = self._normalize(
             Name=Name,
             Position=Position,
@@ -11292,6 +11311,7 @@ class SimpleWx:
             Orient=Orient,
             Timer=Timer,
             Align=Align,
+            ShowPercent=ShowPercent,
             Frame=Frame,
             Tooltip=Tooltip,
             Function=Function,
@@ -11299,12 +11319,10 @@ class SimpleWx:
             Sensitive=Sensitive,
         )
 
-        # create and register object entry
         object_entry = self._new_widget(**params)
         object_entry.type = "ProgressBar"
         self.widgets[object_entry.name] = object_entry
 
-        # read and validate progress-bar specific values
         mode = str(params.get("mode") or "percent").lower()
         if mode not in ("percent", "pulse"):
             mode = "percent"
@@ -11321,42 +11339,116 @@ class SimpleWx:
         if align not in ("left", "right"):
             align = "left"
 
+        show_percent = 1 if int(params.get("showpercent", 1) or 0) else 0
+
         timer = max(1, int(params.get("timer") or 100))
 
-        # map orientation into wx.Gauge style and create native widget
-        style = wx.GA_HORIZONTAL if orientation == "horizontal" else wx.GA_VERTICAL
         provisional_parent = self.container if self.container is not None else self._get_container(self.default_container_name)
-        gauge = wx.Gauge(
+        host_panel = wx.Panel(
             provisional_parent,
             wx.ID_ANY,
-            range=steps,
             pos=(0, 0),
             size=wx.DefaultSize,
-            style=style,
+            style=wx.BORDER_THEME,
         )
+        # use owner-drawn painting to avoid GTK gauge height limits and
+        # transparency issues with child widgets
+        host_panel.SetBackgroundStyle(wx.BG_STYLE_PAINT)
 
-        # initialize widget value based on selected mode
-        value = 0
-        if mode == "pulse":
-            gauge.Pulse()
-        else:
-            gauge.SetValue(value)
-
-        # store native reference and metadata in WidgetEntry
-        object_entry.ref = gauge
+        object_entry.ref = host_panel
         object_entry.data = {
             "mode": mode,
             "steps": steps,
             "orientation": orientation,
             "timer": timer,
             "align": align,
-            "value": value,
+            "showpercent": show_percent,
+            "value": 0,
         }
 
-        # apply common setup and place widget in target container
+        def _on_progressbar_paint(event: wx.Event, progress_name: str = object_entry.name) -> None:
+            obj = self.get_object(progress_name)
+            d = obj.data if isinstance(obj.data, dict) else {}
+            host = obj.ref
+            dc = wx.AutoBufferedPaintDC(host)
+            w, h = host.GetClientSize()
+            if w <= 1 or h <= 1:
+                return
+
+            pb_steps = max(1, int(d.get("steps", 100)))
+            pb_value = max(0, min(int(d.get("value", 0)), pb_steps))
+            pb_orient = str(d.get("orientation", "horizontal"))
+
+            # explicit frame
+            border_col = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNSHADOW)
+            dc.SetPen(wx.Pen(border_col, 1))
+            dc.SetBrush(wx.TRANSPARENT_BRUSH)
+            dc.DrawRectangle(0, 0, w, h)
+
+            # inner track background
+            inner_x = 1
+            inner_y = 1
+            inner_w = max(0, w - 2)
+            inner_h = max(0, h - 2)
+            bg_col = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE)
+            dc.SetBrush(wx.Brush(bg_col))
+            dc.SetPen(wx.TRANSPARENT_PEN)
+            dc.DrawRectangle(inner_x, inner_y, inner_w, inner_h)
+
+            # fill
+            fill_col = wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHT)
+            dc.SetBrush(wx.Brush(fill_col))
+            fill_x = inner_x
+            fill_y = inner_y
+            fill_w_draw = 0
+            fill_h_draw = 0
+            if pb_orient == "vertical" and inner_w > 0 and inner_h > 0:
+                fill_h = int(round((inner_h * pb_value) / pb_steps)) if pb_value > 0 else 0
+                if fill_h > 0:
+                    fill_x = inner_x
+                    fill_y = inner_y + inner_h - fill_h
+                    fill_w_draw = inner_w
+                    fill_h_draw = fill_h
+                    dc.DrawRectangle(fill_x, fill_y, fill_w_draw, fill_h_draw)
+            elif inner_w > 0 and inner_h > 0:
+                fill_w = int(round((inner_w * pb_value) / pb_steps)) if pb_value > 0 else 0
+                if fill_w > 0:
+                    fill_x = inner_x
+                    fill_y = inner_y
+                    fill_w_draw = fill_w
+                    fill_h_draw = inner_h
+                    dc.DrawRectangle(fill_x, fill_y, fill_w_draw, fill_h_draw)
+
+            # centered percentage text
+            if int(d.get("showpercent", 1)):
+                pct = int(round((pb_value / pb_steps) * 100))
+                text = f"{pct}%"
+                dc.SetFont(host.GetFont())
+                tw, th = dc.GetTextExtent(text)
+                text_x = max(0, (w - tw) // 2)
+                text_y = max(0, (h - th) // 2)
+
+                # base text color on track
+                dc.SetTextForeground(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
+                dc.DrawText(text, text_x, text_y)
+
+                # overwrite text part that lies on the fill with highlight text color
+                if fill_w_draw > 0 and fill_h_draw > 0:
+                    dc.SetClippingRegion(fill_x, fill_y, fill_w_draw, fill_h_draw)
+                    dc.SetTextForeground(wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHTTEXT))
+                    dc.DrawText(text, text_x, text_y)
+                    dc.DestroyClippingRegion()
+
+        def _on_progressbar_size(event: wx.Event, progress_name: str = object_entry.name) -> None:
+            self._layout_progress_bar_fill(progress_name)
+            event.Skip()
+
+        host_panel.Bind(wx.EVT_PAINT, _on_progressbar_paint)
+        host_panel.Bind(wx.EVT_SIZE, _on_progressbar_size)
+
         self._set_commons(object_entry.name, **params)
         self._add_to_container(object_entry.name)
-
+        self._layout_progress_bar_fill(object_entry.name)
     def add_progressbar(
         self,
         Name: str,
@@ -11367,6 +11459,7 @@ class SimpleWx:
         Orient: str = "horizontal",
         Timer: int = 100,
         Align: str = "left",
+        ShowPercent: int = 1,
         Frame: Optional[str] = None,
         Tooltip: Optional[str] = None,
         Function: Optional[Callable[..., Any] | list[Any] | tuple[Any, ...]] = None,
@@ -11403,6 +11496,9 @@ class SimpleWx:
         Align : str, optional
             Compatibility alignment metadata (`left` or `right`).
 
+        ShowPercent : int, optional
+            Draw centered percent text (`0` disabled, `1` enabled).
+
         Frame : str | None, optional
             Optional parent container name.
 
@@ -11438,6 +11534,7 @@ class SimpleWx:
             Orient=Orient,
             Timer=Timer,
             Align=Align,
+            ShowPercent=ShowPercent,
             Frame=Frame,
             Tooltip=Tooltip,
             Function=Function,
