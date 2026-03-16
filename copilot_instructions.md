@@ -57,3 +57,22 @@ Every time a widget is created, a `WidgetEntry` must be instantiated:
 - Keep widget-specific state fields (e.g., `font`, `path`) in `WidgetEntry` when relevant.
 - Maintain internal state-tracking behavior (for example, persisted image paths or text-buffer content).
 - When implementing or extending functions, follow the architecture and fidelity rules above before introducing new behavior.
+
+## Commit Metadata Rules
+- For commits that modify `tools/swx-builder/swx-builder.py` or `simplewx.py`, always update `__date__` in that file to the current date.
+- Increase the third segment (patch part) of `__version__` in those files only when explicitly requested by the user.
+- Do not create a git tag automatically when increasing `__version__`.
+
+## Copilot Chat Behaviour (Consistency)
+- If the user writes in German, respond in German by default.
+- Keep responses concise, practical, and action-oriented (like a coding pair partner).
+- Prefer doing the requested workspace changes directly instead of only describing them.
+- Preserve existing project style and avoid unrelated refactors.
+- Before larger edits, briefly explain what will be changed; after edits, summarize what changed and where.
+- If something is ambiguous, ask short, specific clarification questions.
+- If something cannot be done, state it clearly and propose the closest workable alternative.
+
+## Session/History Scope
+- A chat session only has access to the current workspace and the context provided in that session.
+- Do not assume access to other chat sessions or their hidden history.
+- If prior decisions from another chat are needed, ask the user to restate them briefly.
