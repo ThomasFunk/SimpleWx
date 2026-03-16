@@ -29,6 +29,12 @@ class WindowSpec:
     statusbar: bool
 
 
+@dataclass
+class ConnectionSpec:
+    handler_name: str
+    qt_signal: str
+
+
 # Represents a single Qt widget after parsing.
 # `frame` later stores the surrounding frame name when the widget is assigned
 # to a containing `QFrame` by geometric inspection.
@@ -42,6 +48,7 @@ class WidgetSpec:
     tooltip: Optional[str]
     checked: int = 0
     handler_name: Optional[str] = None
+    signal: Optional[str] = None
     frame: Optional[str] = None
     frame_title_height: int = 0
     # Radio group name extracted from a containing QGroupBox, if present.
@@ -66,6 +73,8 @@ class NotebookSpec:
     position: Tuple[int, int]
     size: Tuple[int, int]
     pages: List[NotebookPageSpec]
+    handler_name: Optional[str] = None
+    signal: Optional[str] = None
 
 
 # Represents a single menu item from the QMenu/QAction structure.
@@ -74,6 +83,7 @@ class MenuItemSpec:
     name: str
     title: str
     handler_name: Optional[str] = None
+    signal: Optional[str] = None
 
 
 # Bundles one complete menu with all of its contained items.
@@ -180,10 +190,46 @@ def _normalize_signal_name(raw: str) -> str:
     return clean or "signal"
 
 
-def parse_connections(root: ET.Element) -> Dict[str, str]:
+def _map_qt_signal_to_simplewx_event(qt_class: str, qt_signal: str) -> Optional[str]:
+    signal_name = _normalize_signal_name(qt_signal)
+    signal_map: Dict[str, Dict[str, str]] = {
+        "QAction": {
+            "triggered": "wx.EVT_MENU",
+            "toggled": "wx.EVT_MENU",
+        },
+        "QPushButton": {
+            "clicked": "wx.EVT_BUTTON",
+        },
+        "QCheckBox": {
+            "clicked": "wx.EVT_CHECKBOX",
+            "toggled": "wx.EVT_CHECKBOX",
+            "statechanged": "wx.EVT_CHECKBOX",
+        },
+        "QRadioButton": {
+            "clicked": "wx.EVT_RADIOBUTTON",
+            "toggled": "wx.EVT_RADIOBUTTON",
+        },
+        "QLineEdit": {
+            "textchanged": "wx.EVT_TEXT",
+            "textedited": "wx.EVT_TEXT",
+        },
+        "QTextEdit": {
+            "textchanged": "wx.EVT_TEXT",
+        },
+        "QSpinBox": {
+            "valuechanged": "wx.EVT_SPINCTRL",
+        },
+        "QTabWidget": {
+            "currentchanged": "wx.EVT_NOTEBOOK_PAGE_CHANGED",
+        },
+    }
+    return signal_map.get(qt_class, {}).get(signal_name)
+
+
+def parse_connections(root: ET.Element) -> Dict[str, ConnectionSpec]:
     # Build a mapping "widget name -> handler name" from the Qt <connections>
     # block. The renderer later turns this back into `Function=...`.
-    handlers: Dict[str, str] = {}
+    handlers: Dict[str, ConnectionSpec] = {}
     for conn in root.findall("./connections/connection"):
         sender = (conn.findtext("sender") or "").strip()
         signal = (conn.findtext("signal") or "").strip()
@@ -191,11 +237,14 @@ def parse_connections(root: ET.Element) -> Dict[str, str]:
             continue
         sender_name = sanitize_name(sender, "widget", 0)
         signal_name = _normalize_signal_name(signal)
-        handlers[sender_name] = f"on_{sender_name}_{signal_name}"
+        handlers[sender_name] = ConnectionSpec(
+            handler_name=f"on_{sender_name}_{signal_name}",
+            qt_signal=signal,
+        )
     return handlers
 
 
-def parse_menus(main_widget: ET.Element, handlers: Dict[str, str]) -> Tuple[Optional[str], List[MenuSpec], int]:
+def parse_menus(main_widget: ET.Element, handlers: Dict[str, ConnectionSpec]) -> Tuple[Optional[str], List[MenuSpec], int]:
     # Menus are processed separately from the normal widget stream because Qt
     # describes them as a QMenuBar/QMenu/QAction structure rather than ordinary
     # visible widgets in the central area.
@@ -241,11 +290,14 @@ def parse_menus(main_widget: ET.Element, handlers: Dict[str, str]) -> Tuple[Opti
                 unique_name = f"{menu_name}_{action_name}_{seen + 1}"
             used_item_names[action_name] = seen + 1
 
+            connection = handlers.get(action_name)
+
             items.append(
                 MenuItemSpec(
                     name=unique_name,
                     title=action_title,
-                    handler_name=handlers.get(action_name),
+                    handler_name=connection.handler_name if connection is not None else None,
+                    signal=_map_qt_signal_to_simplewx_event("QAction", connection.qt_signal) if connection is not None else None,
                 )
             )
 
@@ -334,7 +386,7 @@ def _iter_supported_widgets(
 
 def _widget_from_element(
     widget_el: ET.Element,
-    handlers: Dict[str, str],
+    handlers: Dict[str, ConnectionSpec],
     running_index: int,
     offset_x: int = 0,
     offset_y: int = 0,
@@ -359,7 +411,9 @@ def _widget_from_element(
     text = _property_string(widget_el, "text") or _property_string(widget_el, "title") or ""
     tooltip = _property_string(widget_el, "toolTip")
     checked = _property_bool(widget_el, "checked") if qt_class in {"QCheckBox", "QRadioButton"} else 0
-    handler_name = handlers.get(widget_name)
+    connection = handlers.get(widget_name)
+    handler_name = connection.handler_name if connection is not None else None
+    signal = _map_qt_signal_to_simplewx_event(qt_class, connection.qt_signal) if connection is not None else None
 
     extra: Dict[str, str] = {}
     if qt_class == "QTextEdit":
@@ -380,6 +434,7 @@ def _widget_from_element(
         tooltip=tooltip,
         checked=checked,
         handler_name=handler_name,
+        signal=signal,
         group=group_name,
         container=container,
         extra=extra,
@@ -399,7 +454,7 @@ def _tab_page_title(page_widget: ET.Element, fallback: str) -> str:
     return fallback
 
 
-def parse_notebooks(root: ET.Element, handlers: Dict[str, str]) -> Tuple[List[NotebookSpec], List[WidgetSpec]]:
+def parse_notebooks(root: ET.Element, handlers: Dict[str, ConnectionSpec]) -> Tuple[List[NotebookSpec], List[WidgetSpec]]:
     main_widget = root.find("./widget[@class='QMainWindow']")
     if main_widget is None:
         raise BuilderError("Keine QMainWindow-Definition gefunden. Erwartet wird eine Qt-Designer .ui Datei.")
@@ -419,6 +474,7 @@ def parse_notebooks(root: ET.Element, handlers: Dict[str, str]) -> Tuple[List[No
             )
 
         x, y, width, height = geometry
+        connection = handlers.get(notebook_name)
         pages: List[NotebookPageSpec] = []
 
         page_index = 0
@@ -461,6 +517,8 @@ def parse_notebooks(root: ET.Element, handlers: Dict[str, str]) -> Tuple[List[No
                 position=(x, y),
                 size=(width, height),
                 pages=pages,
+                handler_name=connection.handler_name if connection is not None else None,
+                signal=_map_qt_signal_to_simplewx_event("QTabWidget", connection.qt_signal) if connection is not None else None,
             )
         )
 
@@ -677,7 +735,7 @@ def _adjust_spinbox_min_size_and_adjacent_labels(widgets: List[WidgetSpec]) -> L
     return widgets
 
 
-def parse_widgets(root: ET.Element, handlers: Dict[str, str]) -> List[WidgetSpec]:
+def parse_widgets(root: ET.Element, handlers: Dict[str, ConnectionSpec]) -> List[WidgetSpec]:
     # Central parser for all visible, supported Qt widgets.
     # Raw XML nodes are converted into `WidgetSpec` objects here.
     main_widget = root.find("./widget[@class='QMainWindow']")
@@ -754,6 +812,8 @@ def build_widget_call(widget: WidgetSpec, container_frame: Optional[str] = None)
             args.append(f"Frame={quote(effective_frame)}")
         if widget.tooltip:
             args.append(f"Tooltip={quote(widget.tooltip)}")
+        if widget.signal:
+            args.append(f"Signal={widget.signal}")
         if widget.handler_name:
             args.append(f"Function={widget.handler_name}")
         return _format_call("win.add_button", args)
@@ -770,6 +830,10 @@ def build_widget_call(widget: WidgetSpec, container_frame: Optional[str] = None)
             args.append(f"Frame={quote(effective_frame)}")
         if widget.tooltip:
             args.append(f"Tooltip={quote(widget.tooltip)}")
+        if widget.signal:
+            args.append(f"Signal={widget.signal}")
+        if widget.handler_name:
+            args.append(f"Function={widget.handler_name}")
         return _format_call("win.add_entry", args)
 
     if widget.qt_class == "QCheckBox":
@@ -784,6 +848,10 @@ def build_widget_call(widget: WidgetSpec, container_frame: Optional[str] = None)
             args.append(f"Frame={quote(effective_frame)}")
         if widget.tooltip:
             args.append(f"Tooltip={quote(widget.tooltip)}")
+        if widget.signal:
+            args.append(f"Signal={widget.signal}")
+        if widget.handler_name:
+            args.append(f"Function={widget.handler_name}")
         return _format_call("win.add_check_button", args)
 
     if widget.qt_class == "QRadioButton":
@@ -803,6 +871,10 @@ def build_widget_call(widget: WidgetSpec, container_frame: Optional[str] = None)
             args.append(f"Frame={quote(effective_frame)}")
         if widget.tooltip:
             args.append(f"Tooltip={quote(widget.tooltip)}")
+        if widget.signal:
+            args.append(f"Signal={widget.signal}")
+        if widget.handler_name:
+            args.append(f"Function={widget.handler_name}")
         return _format_call("win.add_radio_button", args)
 
     if widget.qt_class == "QTextEdit":
@@ -817,6 +889,10 @@ def build_widget_call(widget: WidgetSpec, container_frame: Optional[str] = None)
             args.append(f"Frame={quote(effective_frame)}")
         if widget.tooltip:
             args.append(f"Tooltip={quote(widget.tooltip)}")
+        if widget.signal:
+            args.append(f"Signal={widget.signal}")
+        if widget.handler_name:
+            args.append(f"Function={widget.handler_name}")
         return _format_call("win.add_text_view", args)
 
     if widget.qt_class == "QSpinBox":
@@ -831,6 +907,10 @@ def build_widget_call(widget: WidgetSpec, container_frame: Optional[str] = None)
             args.append(f"Frame={quote(effective_frame)}")
         if widget.tooltip:
             args.append(f"Tooltip={quote(widget.tooltip)}")
+        if widget.signal:
+            args.append(f"Signal={widget.signal}")
+        if widget.handler_name:
+            args.append(f"Function={widget.handler_name}")
         return _format_call("win.add_spin_button", args)
 
     if widget.qt_class == "QFrame":
@@ -950,17 +1030,18 @@ def _render_notebook_block(
     notebook: NotebookSpec,
     widgets: List[WidgetSpec],
 ) -> None:
+    notebook_args = [
+        f"Name={quote(notebook.name)}",
+        f"Position=[{notebook.position[0]}, {notebook.position[1]}]",
+        f"Size=[{notebook.size[0]}, {notebook.size[1]}]",
+    ]
+    if notebook.signal:
+        notebook_args.append(f"Signal={notebook.signal}")
+    if notebook.handler_name:
+        notebook_args.append(f"Function={notebook.handler_name}")
+
     lines.append(f"# Notebook {quote(notebook.name)}")
-    lines.append(
-        _format_call(
-            "win.add_notebook",
-            [
-                f"Name={quote(notebook.name)}",
-                f"Position=[{notebook.position[0]}, {notebook.position[1]}]",
-                f"Size=[{notebook.size[0]}, {notebook.size[1]}]",
-            ],
-        )
-    )
+    lines.append(_format_call("win.add_notebook", notebook_args))
 
     pages_sorted = sorted(notebook.pages, key=lambda page: page.position_number)
     for page in pages_sorted:
@@ -998,6 +1079,11 @@ def render_python(
     # Build the final Python source text from the parsed data.
     resolved_date = (build_date or datetime.date.today().strftime("%Y/%m/%d")).strip()
 
+    signal_refs: List[str] = []
+    signal_refs.extend(widget.signal for widget in widgets if widget.signal)
+    signal_refs.extend(item.signal for menu in menus for item in menu.items if item.signal)
+    signal_refs.extend(notebook.signal for notebook in notebooks if notebook.signal)
+
     lines: List[str] = []
     lines.append("#!/usr/bin/env python3")
     lines.append("")
@@ -1005,6 +1091,12 @@ def render_python(
     lines.append(f'__date__ = "{resolved_date}"')
     lines.append(f'__version__ = "{version}"')
     lines.append("")
+    if any(signal.startswith("wx.") for signal in signal_refs):
+        lines.append("import wx")
+    if any(signal.startswith("wx.adv.") for signal in signal_refs):
+        lines.append("import wx.adv")
+    if signal_refs:
+        lines.append("")
     lines.append("from simplewx import SimpleWx as simplewx")
     lines.append("")
 
@@ -1028,7 +1120,8 @@ def render_python(
     # Emit handler stubs only once per name even if Qt references the same
     # connection multiple times internally.
     emitted: List[str] = []
-    for handler_name in handlers.values():
+    for connection in handlers.values():
+        handler_name = connection.handler_name
         if handler_name in emitted:
             continue
         emitted.append(handler_name)
@@ -1056,6 +1149,8 @@ def render_python(
                     f"Menu={quote(menu.name)}",
                     f"Title={quote(item.title)}",
                 ]
+                if item.signal:
+                    args.append(f"Signal={item.signal}")
                 if item.handler_name:
                     args.append(f"Function={item.handler_name}")
                 lines.append(_format_call("win.add_menu_item", args))

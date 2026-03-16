@@ -65,7 +65,51 @@ def test_convert_static_ui_default_mode_sets_base_zero() -> None:
     assert "__author__ = 'swxbuilder'" in generated
     assert '__version__ = "0.1.0"' in generated
     assert re.search(r'__date__\s*=\s*"\d{4}/\d{2}/\d{2}"', generated) is not None
+    assert "Signal=wx.EVT_BUTTON" in generated
     _unit_passed("default builder mode emits Base=0 in new_window")
+
+
+def test_convert_static_ui_qaction_triggered_maps_to_menu_signal(tmp_path: Path) -> None:
+    ui_path = tmp_path / "menu_action_signal.ui"
+    ui_path.write_text(
+        """<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<ui version=\"4.0\">
+ <class>MainWindow</class>
+ <widget class=\"QMainWindow\" name=\"MainWindow\">
+  <property name=\"geometry\"><rect><x>0</x><y>0</y><width>320</width><height>200</height></rect></property>
+  <widget class=\"QWidget\" name=\"centralwidget\"/>
+  <widget class=\"QMenuBar\" name=\"menubar\">
+   <property name=\"geometry\"><rect><x>0</x><y>0</y><width>320</width><height>24</height></rect></property>
+   <widget class=\"QMenu\" name=\"menuFile\">
+    <property name=\"title\"><string>File</string></property>
+    <addaction name=\"actionNew\"/>
+   </widget>
+  </widget>
+  <action name=\"actionNew\">
+   <property name=\"text\"><string>New</string></property>
+  </action>
+ </widget>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>actionNew</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>dummy()</slot>
+  </connection>
+ </connections>
+</ui>
+""",
+        encoding="utf-8",
+    )
+
+    builder = _load_builder_module()
+    generated = builder.convert_ui_to_simplewx(ui_path)
+
+    assert "import wx" in generated
+    assert "Function=on_actionNew_triggered" in generated
+    assert "Signal=wx.EVT_MENU" in generated
+    _unit_passed("qaction triggered signal maps to menu event")
 
 
 def test_convert_static_ui_qframe_maps_to_add_frame(tmp_path: Path) -> None:

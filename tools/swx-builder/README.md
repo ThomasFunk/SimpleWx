@@ -33,6 +33,7 @@ Special handling:
 - `QFrame` children are detected geometrically and emitted with `Frame=<name>`.
 - `QLabel` widgets named `label_<frame_name>` are consumed as frame titles instead of being emitted as standalone labels.
 - `QTabWidget` pages are emitted as notebook pages; widgets on each tab are emitted with `Frame=<tab_page_name>`.
+- Supported Qt connections are mapped to matching wx/SimpleWx events where possible (for example `QPushButton.clicked()` -> `wx.EVT_BUTTON`, `QAction.triggered()` -> `wx.EVT_MENU`).
 - On GTK, `wx.SpinCtrl` often needs more width than a narrow Qt `QSpinBox` geometry to render cleanly.
   - The builder enforces a minimum generated spin width of about `80px`.
   - If a label is placed directly to the right of a spin control, keep enough horizontal spare space so the label is not overlapped.

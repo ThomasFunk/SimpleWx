@@ -38,6 +38,7 @@ references/
 # Generated/imported Qt builder files
 tools/swx-builder/*.ui
 tools/swx-builder/*.py
+tools/swx-builder/*.qrc
 
 # Local private chat handover note
 LOCAL_CHAT_START_TEMPLATE.txt

@@ -4,6 +4,8 @@ __author__ = 'swxbuilder'
 __date__ = "2026/03/16"
 __version__ = "0.1.0"
 
+import wx
+
 from simplewx import SimpleWx as simplewx
 
 # Main Window 'MainWindow'
@@ -32,6 +34,7 @@ win.add_button(
     Title='Press Me',
     Size=[90, 30],
     Tooltip='bla bla bal',
+    Signal=wx.EVT_BUTTON,
     Function=on_pushButton_clicked,
 )
 
