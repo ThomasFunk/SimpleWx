@@ -40,6 +40,8 @@ Special handling:
 - Supported Qt connections are mapped to matching wx/SimpleWx events where possible (for example `QPushButton.clicked()` -> `wx.EVT_BUTTON`, `QAction.triggered()` -> `wx.EVT_MENU`).
 - Menu separators are emitted as `add_menu_item(..., Type="separator")`.
 - Common themed Qt action icons like `document-open`, `document-save`, `document-new`, `application-exit` are mapped to matching SimpleWx/wx stock icon names.
+- Icon file paths from Qt are resolved against the `.ui` file; paths from `.qrc` includes are resolved against the `.qrc` file.
+- If a referenced icon file or `.qrc` resource cannot be found, the builder aborts with a clear error message.
 - On GTK, `wx.SpinCtrl` often needs more width than a narrow Qt `QSpinBox` geometry to render cleanly.
   - The builder enforces a minimum generated spin width of about `80px`.
   - If a label is placed directly to the right of a spin control, keep enough horizontal spare space so the label is not overlapped.

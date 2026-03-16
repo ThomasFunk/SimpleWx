@@ -12,6 +12,7 @@ import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from dataclasses import field
 from pathlib import Path
+from pathlib import PurePosixPath
 from typing import Any, Dict, List, Optional, Tuple
 
 
@@ -181,7 +182,98 @@ def _property_enum(widget: ET.Element, name: str) -> Optional[str]:
     return raw if raw else None
 
 
-def _property_icon(widget: ET.Element, name: str) -> Optional[str]:
+def _normalize_qt_resource_path(raw_path: str) -> str:
+    stripped = raw_path.strip().replace("\\", "/")
+    if not stripped:
+        return ""
+
+    if stripped.startswith(":"):
+        stripped = stripped[1:]
+
+    parts: List[str] = []
+    for part in PurePosixPath(stripped).parts:
+        if part in ("", "/", "."):
+            continue
+        if part == "..":
+            if parts:
+                parts.pop()
+            continue
+        parts.append(part)
+
+    return "/" + "/".join(parts) if parts else "/"
+
+
+def _resolve_icon_file_path(icon_path: str, ui_path: Path, owner_name: str) -> str:
+    candidate = Path(icon_path)
+    if not candidate.is_absolute():
+        candidate = (ui_path.parent / candidate).resolve()
+    else:
+        candidate = candidate.resolve()
+
+    if not candidate.exists():
+        raise BuilderError(
+            f"Icon-Datei für '{owner_name}' nicht gefunden: {candidate}"
+        )
+
+    return str(candidate)
+
+
+def _collect_qt_resource_paths(root: ET.Element, ui_path: Path) -> Dict[str, str]:
+    resource_paths: Dict[str, str] = {}
+
+    for include in root.findall("./resources/include"):
+        location = (include.get("location") or "").strip()
+        if not location:
+            continue
+
+        qrc_path = Path(location)
+        if not qrc_path.is_absolute():
+            qrc_path = (ui_path.parent / qrc_path).resolve()
+        else:
+            qrc_path = qrc_path.resolve()
+
+        if not qrc_path.exists():
+            raise BuilderError(f"Qt-Ressourcendatei nicht gefunden: {qrc_path}")
+
+        try:
+            qrc_tree = ET.parse(qrc_path)
+        except ET.ParseError as exc:
+            raise BuilderError(f"Qt-Ressourcendatei konnte nicht gelesen werden: {qrc_path}: {exc}") from exc
+
+        qrc_root = qrc_tree.getroot()
+        for qresource in qrc_root.findall("./qresource"):
+            prefix = (qresource.get("prefix") or "").strip()
+            for file_node in qresource.findall("file"):
+                file_ref = "".join(file_node.itertext()).strip()
+                if not file_ref:
+                    continue
+
+                alias = (file_node.get("alias") or "").strip()
+                resource_name = _normalize_qt_resource_path(f"{prefix}/{alias or file_ref}")
+
+                file_path = Path(file_ref)
+                if not file_path.is_absolute():
+                    file_path = (qrc_path.parent / file_path).resolve()
+                else:
+                    file_path = file_path.resolve()
+
+                if not file_path.exists():
+                    raise BuilderError(
+                        f"Qt-Ressource '{resource_name}' verweist auf fehlende Datei: {file_path}"
+                    )
+
+                resource_paths[resource_name] = str(file_path)
+
+    return resource_paths
+
+
+def _property_icon(
+    widget: ET.Element,
+    name: str,
+    ui_path: Path,
+    resource_paths: Dict[str, str],
+    owner_name: str,
+) -> Optional[str]:
     prop = _find_property(widget, name)
     if prop is None:
         return None
@@ -199,9 +291,19 @@ def _property_icon(widget: ET.Element, name: str) -> Optional[str]:
         if value is None:
             continue
         stripped = value.strip()
-        if not stripped or stripped.startswith(":/"):
+        if not stripped:
             continue
-        return stripped
+
+        if stripped.startswith(":"):
+            resource_name = _normalize_qt_resource_path(stripped)
+            resolved = resource_paths.get(resource_name)
+            if resolved is None:
+                raise BuilderError(
+                    f"Qt-Ressource für '{owner_name}' nicht gefunden: {resource_name}"
+                )
+            return resolved
+
+        return _resolve_icon_file_path(stripped, ui_path, owner_name)
 
     return None
 
@@ -343,7 +445,12 @@ def parse_connections(root: ET.Element) -> Dict[str, ConnectionSpec]:
     return handlers
 
 
-def parse_menus(main_widget: ET.Element, handlers: Dict[str, ConnectionSpec]) -> Tuple[Optional[str], List[MenuSpec], int]:
+def parse_menus(
+    main_widget: ET.Element,
+    handlers: Dict[str, ConnectionSpec],
+    ui_path: Path,
+    resource_paths: Dict[str, str],
+) -> Tuple[Optional[str], List[MenuSpec], int]:
     # Menus are processed separately from the normal widget stream because Qt
     # describes them as a QMenuBar/QMenu/QAction structure rather than ordinary
     # visible widgets in the central area.
@@ -364,7 +471,7 @@ def parse_menus(main_widget: ET.Element, handlers: Dict[str, ConnectionSpec]) ->
         action_specs[action_name] = {
             "title": action_title,
             "tooltip": _property_string(action, "toolTip"),
-            "icon": _property_icon(action, "icon"),
+            "icon": _property_icon(action, "icon", ui_path, resource_paths, action_name),
         }
 
     menus: List[MenuSpec] = []
@@ -1451,7 +1558,8 @@ def convert_ui_to_simplewx(
 
     # Parse in clearly separated phases: signals, menus, window, widgets, render.
     handlers = parse_connections(root)
-    menubar_name, menus, menu_height = parse_menus(main_widget, handlers)
+    resource_paths = _collect_qt_resource_paths(root, input_path)
+    menubar_name, menus, menu_height = parse_menus(main_widget, handlers, input_path, resource_paths)
     window = parse_window(main_widget, menu_height=menu_height)
     notebooks, notebook_widgets = parse_notebooks(root, handlers)
     widgets = parse_widgets(root, handlers)

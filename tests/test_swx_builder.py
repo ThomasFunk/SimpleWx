@@ -290,6 +290,135 @@ def test_convert_static_ui_menu_separator_and_icons_are_rendered(tmp_path: Path)
     _unit_passed("menu separators and icons are rendered")
 
 
+def test_convert_static_ui_qrc_icon_is_resolved_to_real_file(tmp_path: Path) -> None:
+    icons_dir = tmp_path / "assets"
+    icons_dir.mkdir()
+    icon_path = icons_dir / "rename.png"
+    icon_path.write_bytes(b"fake-png")
+
+    qrc_path = tmp_path / "images.qrc"
+    qrc_path.write_text(
+        """<RCC>
+  <qresource>
+    <file>assets/rename.png</file>
+  </qresource>
+</RCC>
+""",
+        encoding="utf-8",
+    )
+
+    ui_path = tmp_path / "resource_icon.ui"
+    ui_path.write_text(
+        """<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<ui version=\"4.0\">
+ <class>MainWindow</class>
+ <widget class=\"QMainWindow\" name=\"MainWindow\">
+  <property name=\"geometry\"><rect><x>0</x><y>0</y><width>320</width><height>200</height></rect></property>
+  <widget class=\"QWidget\" name=\"centralwidget\"/>
+  <widget class=\"QMenuBar\" name=\"menubar\">
+   <property name=\"geometry\"><rect><x>0</x><y>0</y><width>320</width><height>24</height></rect></property>
+   <widget class=\"QMenu\" name=\"menuFile\">
+    <property name=\"title\"><string>File</string></property>
+    <addaction name=\"actionRename\"/>
+   </widget>
+  </widget>
+  <action name=\"actionRename\">
+   <property name=\"icon\"><iconset><selectedon>:/assets/rename.png</selectedon></iconset></property>
+   <property name=\"text\"><string>Rename</string></property>
+  </action>
+ </widget>
+ <resources>
+  <include location=\"images.qrc\"/>
+ </resources>
+ <connections/>
+</ui>
+""",
+        encoding="utf-8",
+    )
+
+    builder = _load_builder_module()
+    generated = builder.convert_ui_to_simplewx(ui_path)
+
+    assert f"Icon='{icon_path.resolve()}'" in generated
+    _unit_passed("qrc icon paths are resolved to real files")
+
+
+def test_convert_static_ui_relative_icon_path_is_resolved_from_ui_dir(tmp_path: Path) -> None:
+    icons_dir = tmp_path / "icons"
+    icons_dir.mkdir()
+    icon_path = icons_dir / "rename.png"
+    icon_path.write_bytes(b"fake-png")
+
+    ui_path = tmp_path / "relative_icon.ui"
+    ui_path.write_text(
+        """<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<ui version=\"4.0\">
+ <class>MainWindow</class>
+ <widget class=\"QMainWindow\" name=\"MainWindow\">
+  <property name=\"geometry\"><rect><x>0</x><y>0</y><width>320</width><height>200</height></rect></property>
+  <widget class=\"QWidget\" name=\"centralwidget\"/>
+  <widget class=\"QMenuBar\" name=\"menubar\">
+   <property name=\"geometry\"><rect><x>0</x><y>0</y><width>320</width><height>24</height></rect></property>
+   <widget class=\"QMenu\" name=\"menuFile\">
+    <property name=\"title\"><string>File</string></property>
+    <addaction name=\"actionRename\"/>
+   </widget>
+  </widget>
+  <action name=\"actionRename\">
+   <property name=\"icon\"><iconset><selectedon>icons/rename.png</selectedon></iconset></property>
+   <property name=\"text\"><string>Rename</string></property>
+  </action>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
+""",
+        encoding="utf-8",
+    )
+
+    builder = _load_builder_module()
+    generated = builder.convert_ui_to_simplewx(ui_path)
+
+    assert f"Icon='{icon_path.resolve()}'" in generated
+    _unit_passed("relative icon paths are resolved from ui directory")
+
+
+def test_convert_static_ui_missing_icon_path_fails_with_clear_error(tmp_path: Path) -> None:
+    ui_path = tmp_path / "missing_icon.ui"
+    ui_path.write_text(
+        """<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<ui version=\"4.0\">
+ <class>MainWindow</class>
+ <widget class=\"QMainWindow\" name=\"MainWindow\">
+  <property name=\"geometry\"><rect><x>0</x><y>0</y><width>320</width><height>200</height></rect></property>
+  <widget class=\"QWidget\" name=\"centralwidget\"/>
+  <widget class=\"QMenuBar\" name=\"menubar\">
+   <property name=\"geometry\"><rect><x>0</x><y>0</y><width>320</width><height>24</height></rect></property>
+   <widget class=\"QMenu\" name=\"menuFile\">
+    <property name=\"title\"><string>File</string></property>
+    <addaction name=\"actionRename\"/>
+   </widget>
+  </widget>
+  <action name=\"actionRename\">
+   <property name=\"icon\"><iconset><selectedon>icons/does-not-exist.png</selectedon></iconset></property>
+   <property name=\"text\"><string>Rename</string></property>
+  </action>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
+""",
+        encoding="utf-8",
+    )
+
+    builder = _load_builder_module()
+
+    with pytest.raises(builder.BuilderError, match="Icon-Datei.*actionRename.*nicht gefunden"):
+        builder.convert_ui_to_simplewx(ui_path)
+
+    _unit_passed("missing icon path fails with clear error")
+
+
 def test_convert_static_ui_qframe_maps_to_add_frame(tmp_path: Path) -> None:
     ui_path = tmp_path / "frame_only.ui"
     ui_path.write_text(
