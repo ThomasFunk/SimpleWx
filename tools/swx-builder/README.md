@@ -27,6 +27,7 @@ Explicitly not supported:
 - `QHeaderView` (SimpleWx handles headers via widget data/columns, not as a standalone header-view widget)
 - `QStackedWidget` (no direct SimpleWx stacked-container equivalent)
 - `QCalendarWidget` (no direct SimpleWx calendar widget equivalent)
+- `QScrollBar` (scrollbars appear automatically in container widgets like `TextView`, `TreeView`, etc.; a standalone `QScrollBar` is only needed for custom scroll mechanisms, which have no SimpleWx equivalent)
 
 Special handling:
 
