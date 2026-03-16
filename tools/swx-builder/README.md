@@ -24,6 +24,17 @@ Special handling:
 - `QFrame` children are detected geometrically and emitted with `Frame=<name>`.
 - `QLabel` widgets named `label_<frame_name>` are consumed as frame titles instead of being emitted as standalone labels.
 - `QTabWidget` pages are emitted as notebook pages; widgets on each tab are emitted with `Frame=<tab_page_name>`.
+- On GTK, `wx.SpinCtrl` often needs more width than a narrow Qt `QSpinBox` geometry to render cleanly.
+  - The builder enforces a minimum generated spin width of about `80px`.
+  - If a label is placed directly to the right of a spin control, keep enough horizontal spare space so the label is not overlapped.
+  - Practical rule of thumb:
+    - required extra space = `max(0, 80 - spin_width)`
+    - example: `spin_width=61` -> extra `19px`
+    - if the label was at `x=110`, move it to `x=129` (`110 + 19`)
+  - This keeps the original visual gap stable across GTK themes.
+
+
+
 
 ## Usage
 

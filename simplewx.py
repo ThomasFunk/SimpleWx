@@ -11987,6 +11987,8 @@ class SimpleWx:
         elif align == "center":
             align_style = wx.TE_CENTER
 
+        spin_style = wx.SP_ARROW_KEYS | align_style
+
         # create native spin control with provisional parent
         provisional_parent = self.container if self.container is not None else self._get_container(self.default_container_name)
         if digits > 0:
@@ -11996,7 +11998,7 @@ class SimpleWx:
                 value="",
                 pos=(0, 0),
                 size=wx.DefaultSize,
-                style=wx.SP_ARROW_KEYS | align_style,
+                style=spin_style,
                 min=minimum,
                 max=maximum,
                 initial=start,
@@ -12012,7 +12014,7 @@ class SimpleWx:
                 value="",
                 pos=(0, 0),
                 size=wx.DefaultSize,
-                style=wx.SP_ARROW_KEYS | align_style,
+                style=spin_style,
                 min=int(round(minimum)),
                 max=int(round(maximum)),
                 initial=int(round(start)),
@@ -12078,6 +12080,30 @@ class SimpleWx:
 
         # apply common setup (tooltip, callback, sensitive, size)
         self._set_commons(object_entry.name, **params)
+
+        # Some GTK themes require a slightly larger spin control than the raw
+        # imported pixel size. If the requested size is below the native best
+        # size, clamp it upward so the entry field remains visible.
+        best_size = spin.GetBestSize()
+        current_size = spin.GetSize()
+        best_w = int(best_size.GetWidth())
+        best_h = int(best_size.GetHeight())
+        cur_w = int(current_size.GetWidth())
+        cur_h = int(current_size.GetHeight())
+        if (best_w > 0 and cur_w < best_w) or (best_h > 0 and cur_h < best_h):
+            target_w = max(cur_w, best_w)
+            target_h = max(cur_h, best_h)
+            spin.SetSize((target_w, target_h))
+
+            if self.scalefactor > 0:
+                req_w = int(round(target_w / self.scalefactor))
+                req_h = int(round(target_h / self.scalefactor))
+                while self._scale(req_w) < target_w:
+                    req_w += 1
+                while self._scale(req_h) < target_h:
+                    req_h += 1
+                object_entry.width = req_w
+                object_entry.height = req_h
 
         # position the spin button in target container
         self._add_to_container(object_entry.name)

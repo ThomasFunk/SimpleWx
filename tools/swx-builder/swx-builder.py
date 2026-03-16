@@ -90,6 +90,8 @@ SUPPORTED_WIDGET_CLASSES = {
     "QSpinBox",
 }
 
+MIN_SPINBOX_WIDTH = 80
+
 
 def sanitize_name(name: str, fallback_prefix: str, index: int) -> str:
     # Qt names may contain characters that are awkward or invalid in Python /
@@ -619,6 +621,57 @@ def _assign_widgets_to_frames(widgets: List[WidgetSpec]) -> List[WidgetSpec]:
     return widgets
 
 
+def _adjust_spinbox_min_size_and_adjacent_labels(widgets: List[WidgetSpec]) -> List[WidgetSpec]:
+    """
+    Enforces a minimum QSpinBox width and shifts directly adjacent right-side
+    labels by the same delta so the original horizontal gap is preserved.
+    """
+    spin_widgets = [widget for widget in widgets if widget.qt_class == "QSpinBox" and widget.size is not None]
+    if not spin_widgets:
+        return widgets
+
+    for spin in spin_widgets:
+        spin_x, spin_y = spin.position
+        spin_width, spin_height = spin.size
+        if spin_width >= MIN_SPINBOX_WIDTH:
+            continue
+
+        delta = MIN_SPINBOX_WIDTH - spin_width
+        spin_old_right = spin_x + spin_width
+        spin_bottom = spin_y + spin_height
+        spin.size = (MIN_SPINBOX_WIDTH, spin_height)
+
+        for label in widgets:
+            if label.qt_class != "QLabel" or label.size is None:
+                continue
+            if label is spin:
+                continue
+            if label.frame != spin.frame:
+                continue
+            if label.container != spin.container:
+                continue
+
+            label_x, label_y = label.position
+            _label_width, label_height = label.size
+
+            if label_x < spin_old_right:
+                continue
+
+            # Keep the adjustment tight: only labels that are horizontally to
+            # the right and vertically aligned to the spin control are shifted.
+            label_center_y = label_y + (label_height / 2.0)
+            if label_center_y < (spin_y - 4) or label_center_y > (spin_bottom + 4):
+                continue
+
+            original_gap = label_x - spin_old_right
+            if original_gap < 0 or original_gap > 60:
+                continue
+
+            label.position = (label_x + delta, label_y)
+
+    return widgets
+
+
 def parse_widgets(root: ET.Element, handlers: Dict[str, str]) -> List[WidgetSpec]:
     # Central parser for all visible, supported Qt widgets.
     # Raw XML nodes are converted into `WidgetSpec` objects here.
@@ -980,6 +1033,7 @@ def convert_ui_to_simplewx(input_path: Path, dev_mode: bool = True) -> str:
     widgets.extend(notebook_widgets)
     widgets = _apply_frame_title_labels(widgets)
     widgets = _assign_widgets_to_frames(widgets)
+    widgets = _adjust_spinbox_min_size_and_adjacent_labels(widgets)
     return render_python(window, widgets, notebooks, handlers, menubar_name, menus, dev_mode=dev_mode)
 
 

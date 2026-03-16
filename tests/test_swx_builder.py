@@ -453,3 +453,36 @@ def test_convert_static_ui_frame_label_mapping_is_case_insensitive(tmp_path: Pat
     assert "Title='Groups'" in generated
     assert "win.add_label(Name='label_frame_groups'" not in generated
     _unit_passed("frame title label mapping handles case differences")
+
+
+def test_convert_static_ui_spinbox_min_width_shifts_right_label(tmp_path: Path) -> None:
+    ui_path = tmp_path / "spin_with_right_label.ui"
+    ui_path.write_text(
+        """<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<ui version=\"4.0\">
+ <class>MainWindow</class>
+ <widget class=\"QMainWindow\" name=\"MainWindow\">
+  <property name=\"geometry\"><rect><x>0</x><y>0</y><width>320</width><height>220</height></rect></property>
+  <widget class=\"QWidget\" name=\"centralwidget\">
+   <widget class=\"QSpinBox\" name=\"spinBox_Counter\">
+    <property name=\"geometry\"><rect><x>30</x><y>30</y><width>61</width><height>29</height></rect></property>
+   </widget>
+   <widget class=\"QLabel\" name=\"label_counter\">
+    <property name=\"geometry\"><rect><x>110</x><y>35</y><width>67</width><height>21</height></rect></property>
+    <property name=\"text\"><string>Counter</string></property>
+   </widget>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
+""",
+        encoding="utf-8",
+    )
+
+    builder = _load_builder_module()
+    generated = builder.convert_ui_to_simplewx(ui_path)
+
+    assert "win.add_spin_button(Name='spinBox_Counter', Position=[30, 30], Size=[80, 29])" in generated
+    assert "win.add_label(Name='label_counter', Position=[129, 35], Title='Counter')" in generated
+    _unit_passed("spinbox minimum width is enforced and right-side label keeps its gap")
