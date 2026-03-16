@@ -11190,6 +11190,27 @@ class SimpleWx:
         slider.SetLineSize(line_step)
         slider.SetPageSize(max(1, line_step * 10))
 
+        # wxGTK often needs more cross-axis space than compact Qt slider
+        # geometries provide. Enforce at least the native best-size thickness
+        # so the slider remains visible, while keeping the original centerline.
+        best_size = slider.GetBestSize()
+        best_w = max(1, int(best_size.GetWidth()))
+        best_h = max(1, int(best_size.GetHeight()))
+        if orientation == "horizontal":
+            current_h = int(object_entry.height) if object_entry.height is not None else -1
+            if current_h <= 0 or current_h < best_h:
+                old_h = current_h if current_h > 0 else best_h
+                object_entry.height = best_h
+                if current_h > 0:
+                    object_entry.pos_y = max(0, object_entry.pos_y - ((best_h - old_h) // 2))
+        else:
+            current_w = int(object_entry.width) if object_entry.width is not None else -1
+            if current_w <= 0 or current_w < best_w:
+                old_w = current_w if current_w > 0 else best_w
+                object_entry.width = best_w
+                if current_w > 0:
+                    object_entry.pos_x = max(0, object_entry.pos_x - ((best_w - old_w) // 2))
+
         # add widget reference and range metadata to object state
         object_entry.ref = slider
         object_entry.data = {
