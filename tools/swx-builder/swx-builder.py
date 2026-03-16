@@ -846,11 +846,16 @@ def build_widget_call(widget: WidgetSpec, container_frame: Optional[str] = None)
 
 
 def _widget_sort_key(widget: WidgetSpec) -> tuple[int, int, str]:
-    """Sort widgets visually by row first, then left to right within a row."""
+    """Sort widgets strictly top-to-bottom, then left-to-right."""
     y = int(widget.position[1])
     x = int(widget.position[0])
-    row_bucket = y // 15
-    return (row_bucket, x, y, widget.name)
+    return (y, x, widget.name)
+
+
+def _notebook_sort_key(notebook: NotebookSpec) -> tuple[int, int, str]:
+    y = int(notebook.position[1])
+    x = int(notebook.position[0])
+    return (y, x, notebook.name)
 
 
 def _widget_comment_title(widget: WidgetSpec) -> str:
@@ -858,15 +863,10 @@ def _widget_comment_title(widget: WidgetSpec) -> str:
     return widget.title if widget.title else widget.name
 
 
-def _render_grouped_widgets(
-    lines: List[str],
+def _collect_scope_widgets(
     widgets: List[WidgetSpec],
-    default_frame: Optional[str] = None,
-) -> None:
-    frames = sorted(
-        [widget for widget in widgets if widget.qt_class == "QFrame"],
-        key=_widget_sort_key,
-    )
+) -> Tuple[List[WidgetSpec], Dict[str, List[WidgetSpec]], List[WidgetSpec]]:
+    frames = [widget for widget in widgets if widget.qt_class == "QFrame"]
     frame_names = {frame.name for frame in frames}
 
     children_by_frame: Dict[str, List[WidgetSpec]] = {frame.name: [] for frame in frames}
@@ -880,24 +880,102 @@ def _render_grouped_widgets(
         else:
             outside_widgets.append(widget)
 
-    for frame in frames:
-        lines.append(f"# Frame {quote(_widget_comment_title(frame))}")
-        lines.append(build_widget_call(frame, container_frame=default_frame))
+    return frames, children_by_frame, outside_widgets
 
-        frame_children = sorted(children_by_frame.get(frame.name, []), key=_widget_sort_key)
-        for child in frame_children:
-            lines.append(build_widget_call(child, container_frame=default_frame))
-        lines.append("")
 
-    outside_widgets = sorted(outside_widgets, key=_widget_sort_key)
-    if outside_widgets:
-        if all(widget.qt_class == "QPushButton" for widget in outside_widgets):
-            lines.append("# Buttons at the bottom")
+def _render_frame_block(
+    lines: List[str],
+    frame: WidgetSpec,
+    frame_children: List[WidgetSpec],
+    default_frame: Optional[str] = None,
+) -> None:
+    lines.append(f"# Frame {quote(_widget_comment_title(frame))}")
+    lines.append(build_widget_call(frame, container_frame=default_frame))
+
+    last_groupbox_comment: Optional[str] = None
+    for child in sorted(frame_children, key=_widget_sort_key):
+        if child.qt_class == "QRadioButton" and child.group and child.group.startswith("groupBox_"):
+            groupbox_comment = child.group[len("groupBox_"):]
+            if groupbox_comment and groupbox_comment != last_groupbox_comment:
+                lines.append(f"# GroupBox {quote(groupbox_comment)}")
+            last_groupbox_comment = groupbox_comment
         else:
-            lines.append("# Widgets outside frames")
-        for widget in outside_widgets:
-            lines.append(build_widget_call(widget, container_frame=default_frame))
+            last_groupbox_comment = None
+        lines.append(build_widget_call(child, container_frame=default_frame))
+
+
+def _render_grouped_widgets(
+    lines: List[str],
+    widgets: List[WidgetSpec],
+    default_frame: Optional[str] = None,
+) -> None:
+    frames, children_by_frame, outside_widgets = _collect_scope_widgets(widgets)
+
+    top_entries: List[Tuple[str, WidgetSpec]] = []
+    top_entries.extend(("frame", frame) for frame in frames)
+    top_entries.extend(("widget", widget) for widget in outside_widgets)
+    top_entries.sort(key=lambda entry: _widget_sort_key(entry[1]))
+
+    outside_widgets_sorted = sorted(outside_widgets, key=_widget_sort_key)
+    outside_header_emitted = False
+    outside_are_buttons = bool(outside_widgets_sorted) and all(
+        widget.qt_class == "QPushButton" for widget in outside_widgets_sorted
+    )
+
+    for kind, item in top_entries:
+        if kind == "frame":
+            _render_frame_block(lines, item, children_by_frame.get(item.name, []), default_frame=default_frame)
+            lines.append("")
+            continue
+
+        if not outside_header_emitted:
+            if outside_are_buttons:
+                lines.append("# Buttons at the bottom")
+            else:
+                lines.append("# Widgets outside frames")
+            outside_header_emitted = True
+        lines.append(build_widget_call(item, container_frame=default_frame))
+
+    if outside_header_emitted:
         lines.append("")
+
+
+def _render_notebook_block(
+    lines: List[str],
+    notebook: NotebookSpec,
+    widgets: List[WidgetSpec],
+) -> None:
+    lines.append(f"# Notebook {quote(notebook.name)}")
+    lines.append(
+        _format_call(
+            "win.add_notebook",
+            [
+                f"Name={quote(notebook.name)}",
+                f"Position=[{notebook.position[0]}, {notebook.position[1]}]",
+                f"Size=[{notebook.size[0]}, {notebook.size[1]}]",
+            ],
+        )
+    )
+
+    pages_sorted = sorted(notebook.pages, key=lambda page: page.position_number)
+    for page in pages_sorted:
+        lines.append(f"# NotebookPage {quote(page.title)}")
+        lines.append(
+            _format_call(
+                "win.add_nb_page",
+                [
+                    f"Name={quote(page.name)}",
+                    f"Notebook={quote(notebook.name)}",
+                    f"Title={quote(page.title)}",
+                    f"PositionNumber={page.position_number}",
+                ],
+            )
+        )
+
+        page_widget_items = [widget for widget in widgets if widget.container == page.name]
+        _render_grouped_widgets(lines, page_widget_items, default_frame=page.name)
+
+    lines.append("")
 
 
 def render_python(
@@ -969,39 +1047,41 @@ def render_python(
         lines.append("")
 
     main_widgets = [widget for widget in widgets if widget.container is None]
-    _render_grouped_widgets(lines, main_widgets)
+    main_frames, main_children_by_frame, main_outside_widgets = _collect_scope_widgets(main_widgets)
 
-    notebooks_sorted = sorted(notebooks, key=lambda nb: (nb.position[1] // 15, nb.position[0], nb.name))
-    for notebook in notebooks_sorted:
-        lines.append(f"# Notebook {quote(notebook.name)}")
-        lines.append(
-            _format_call(
-                "win.add_notebook",
-                [
-                    f"Name={quote(notebook.name)}",
-                    f"Position=[{notebook.position[0]}, {notebook.position[1]}]",
-                    f"Size=[{notebook.size[0]}, {notebook.size[1]}]",
-                ],
-            )
-        )
+    top_entries: List[Tuple[str, object]] = []
+    top_entries.extend(("frame", frame) for frame in main_frames)
+    top_entries.extend(("widget", widget) for widget in main_outside_widgets)
+    top_entries.extend(("notebook", notebook) for notebook in notebooks)
+    top_entries.sort(
+        key=lambda entry: _widget_sort_key(entry[1]) if entry[0] != "notebook" else _notebook_sort_key(entry[1])
+    )
 
-        pages_sorted = sorted(notebook.pages, key=lambda page: page.position_number)
-        for page in pages_sorted:
-            lines.append(
-                _format_call(
-                    "win.add_nb_page",
-                    [
-                        f"Name={quote(page.name)}",
-                        f"Notebook={quote(notebook.name)}",
-                        f"Title={quote(page.title)}",
-                        f"PositionNumber={page.position_number}",
-                    ],
-                )
-            )
+    outside_widgets_sorted = sorted(main_outside_widgets, key=_widget_sort_key)
+    outside_header_emitted = False
+    outside_are_buttons = bool(outside_widgets_sorted) and all(
+        widget.qt_class == "QPushButton" for widget in outside_widgets_sorted
+    )
 
-            page_widget_items = [widget for widget in widgets if widget.container == page.name]
-            _render_grouped_widgets(lines, page_widget_items, default_frame=page.name)
+    for kind, item in top_entries:
+        if kind == "frame":
+            _render_frame_block(lines, item, main_children_by_frame.get(item.name, []))
+            lines.append("")
+            continue
 
+        if kind == "widget":
+            if not outside_header_emitted:
+                if outside_are_buttons:
+                    lines.append("# Buttons at the bottom")
+                else:
+                    lines.append("# Widgets outside frames")
+                outside_header_emitted = True
+            lines.append(build_widget_call(item))
+            continue
+
+        _render_notebook_block(lines, item, widgets)
+
+    if outside_header_emitted:
         lines.append("")
 
     lines.append("if __name__ == '__main__':")

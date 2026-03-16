@@ -25,6 +25,14 @@
 	- `use_gettext`
 	- `translate`
 
+- [ ] swx-builder: remaining Qt widget mappings (prioritised)
+	- [ ] Priority 1: `QComboBox`, `QSlider`, `QProgressBar`, `QScrollBar`
+	- [ ] Priority 2: `QTreeWidget`, `QTableWidget`, `QListView`, `QTableView`
+	- [ ] Priority 3: `QSplitter`, `QToolBar`, `QToolButton`, `QHeaderView`
+	- [ ] Priority 4: `QDateEdit`, `QTimeEdit`, `QDateTimeEdit`, `QFontComboBox`
+	- [ ] Priority 5 (dialogs): `QDialog`, `QDialogButtonBox`, `QFileDialog`, `QMessageBox`
+	- [ ] Priority 6 (complex widgets): `QTreeView`, `QGraphicsView`, `QDockWidget`, `QTabBar`
+
 ## P2 – Stabilisation
 
 - [x] Smoke tests for core examples (startup + basic interactions).
