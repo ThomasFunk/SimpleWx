@@ -290,6 +290,120 @@ def test_convert_static_ui_menu_separator_and_icons_are_rendered(tmp_path: Path)
     _unit_passed("menu separators and icons are rendered")
 
 
+def test_convert_static_ui_qframe_hline_vline_map_to_separators(tmp_path: Path) -> None:
+    ui_path = tmp_path / "frame_line_separators.ui"
+    ui_path.write_text(
+        """<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<ui version=\"4.0\">
+ <class>MainWindow</class>
+ <widget class=\"QMainWindow\" name=\"MainWindow\">
+  <property name=\"geometry\"><rect><x>0</x><y>0</y><width>360</width><height>220</height></rect></property>
+  <widget class=\"QWidget\" name=\"centralwidget\">
+   <widget class=\"QFrame\" name=\"lineHorizontal\">
+    <property name=\"geometry\"><rect><x>20</x><y>40</y><width>200</width><height>3</height></rect></property>
+    <property name=\"frameShape\"><enum>QFrame::HLine</enum></property>
+   </widget>
+   <widget class=\"QFrame\" name=\"lineVertical\">
+    <property name=\"geometry\"><rect><x>260</x><y>20</y><width>3</width><height>120</height></rect></property>
+    <property name=\"frameShape\"><enum>QFrame::VLine</enum></property>
+   </widget>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
+""",
+        encoding="utf-8",
+    )
+
+    builder = _load_builder_module()
+    generated = builder.convert_ui_to_simplewx(ui_path)
+
+    assert "win.add_separator(" in generated
+    assert "Name='lineHorizontal'" in generated
+    assert "Orientation='horizontal'" in generated
+    assert "Name='lineVertical'" in generated
+    assert "Orientation='vertical'" in generated
+    assert "win.add_frame(Name='lineHorizontal'" not in generated
+    assert "win.add_frame(Name='lineVertical'" not in generated
+    _unit_passed("qframe hline/vline map to add_separator")
+
+
+def test_convert_static_ui_notebook_page_qframe_line_uses_page_frame(tmp_path: Path) -> None:
+    ui_path = tmp_path / "notebook_line_separator.ui"
+    ui_path.write_text(
+        """<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<ui version=\"4.0\">
+ <class>MainWindow</class>
+ <widget class=\"QMainWindow\" name=\"MainWindow\">
+  <property name=\"geometry\"><rect><x>0</x><y>0</y><width>420</width><height>320</height></rect></property>
+  <widget class=\"QWidget\" name=\"centralwidget\">
+   <widget class=\"QTabWidget\" name=\"tabWidget\">
+    <property name=\"geometry\"><rect><x>10</x><y>10</y><width>390</width><height>240</height></rect></property>
+    <widget class=\"QWidget\" name=\"tab_one\">
+     <attribute name=\"title\"><string>One</string></attribute>
+     <widget class=\"QFrame\" name=\"linePage\">
+      <property name=\"geometry\"><rect><x>20</x><y>30</y><width>180</width><height>3</height></rect></property>
+      <property name=\"frameShape\"><enum>QFrame::HLine</enum></property>
+     </widget>
+    </widget>
+   </widget>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
+""",
+        encoding="utf-8",
+    )
+
+    builder = _load_builder_module()
+    generated = builder.convert_ui_to_simplewx(ui_path)
+
+    assert "win.add_separator(" in generated
+    assert "Name='linePage'" in generated
+    assert "Orientation='horizontal'" in generated
+    assert "Frame='tab_one'" in generated
+    _unit_passed("notebook page qframe line uses add_separator with page frame")
+
+
+def test_convert_static_ui_line_widgets_map_to_separators(tmp_path: Path) -> None:
+    ui_path = tmp_path / "line_widgets.ui"
+    ui_path.write_text(
+        """<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<ui version=\"4.0\">
+ <class>MainWindow</class>
+ <widget class=\"QMainWindow\" name=\"MainWindow\">
+  <property name=\"geometry\"><rect><x>0</x><y>0</y><width>420</width><height>260</height></rect></property>
+  <widget class=\"QWidget\" name=\"centralwidget\">
+   <widget class=\"Line\" name=\"line_h\">
+    <property name=\"geometry\"><rect><x>20</x><y>40</y><width>200</width><height>3</height></rect></property>
+    <property name=\"orientation\"><enum>Qt::Orientation::Horizontal</enum></property>
+   </widget>
+   <widget class=\"Line\" name=\"line_v\">
+    <property name=\"geometry\"><rect><x>260</x><y>20</y><width>3</width><height>120</height></rect></property>
+    <property name=\"orientation\"><enum>Qt::Orientation::Vertical</enum></property>
+   </widget>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
+""",
+        encoding="utf-8",
+    )
+
+    builder = _load_builder_module()
+    generated = builder.convert_ui_to_simplewx(ui_path)
+
+    assert "win.add_separator(" in generated
+    assert "Name='line_h'" in generated
+    assert "Orientation='horizontal'" in generated
+    assert "Name='line_v'" in generated
+    assert "Orientation='vertical'" in generated
+    _unit_passed("line widgets map to add_separator")
+
+
 def test_convert_static_ui_qrc_icon_is_resolved_to_real_file(tmp_path: Path) -> None:
     icons_dir = tmp_path / "assets"
     icons_dir.mkdir()

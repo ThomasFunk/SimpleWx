@@ -99,6 +99,7 @@ class MenuSpec:
 
 
 SUPPORTED_WIDGET_CLASSES = {
+    "Line",
     "QLabel",
     "QPushButton",
     "QLineEdit",
@@ -686,6 +687,18 @@ def _widget_from_element(
         current_value = max(minimum_value, min(current_value, maximum_value))
         extra["steps"] = steps
         extra["value"] = current_value - minimum_value
+    if qt_class == "QFrame":
+        frame_shape = (_property_enum(widget_el, "frameShape") or "").lower()
+        if "hline" in frame_shape:
+            extra["separator_orientation"] = "horizontal"
+        elif "vline" in frame_shape:
+            extra["separator_orientation"] = "vertical"
+    if qt_class == "Line":
+        line_orient = (_property_enum(widget_el, "orientation") or "").lower()
+        if "vertical" in line_orient:
+            extra["separator_orientation"] = "vertical"
+        else:
+            extra["separator_orientation"] = "horizontal"
 
     return WidgetSpec(
         qt_class=qt_class,
@@ -882,7 +895,13 @@ def _assign_widgets_to_frames(widgets: List[WidgetSpec]) -> List[WidgetSpec]:
     frame-local coordinates for `Frame=<name>` output.
     """
     # Only real QFrames with geometry are valid container candidates.
-    frames = [widget for widget in widgets if widget.qt_class == "QFrame" and widget.size is not None]
+    frames = [
+        widget
+        for widget in widgets
+        if widget.qt_class == "QFrame"
+        and widget.size is not None
+        and "separator_orientation" not in widget.extra
+    ]
     if not frames:
         return widgets
 
@@ -1237,6 +1256,18 @@ def build_widget_call(widget: WidgetSpec, container_frame: Optional[str] = None)
         return _format_call("win.add_progress_bar", args)
 
     if widget.qt_class == "QFrame":
+        separator_orientation = widget.extra.get("separator_orientation")
+        if isinstance(separator_orientation, str) and separator_orientation in ("horizontal", "vertical"):
+            args = [
+                f"Name={quote(widget.name)}",
+                f"Orientation={quote(separator_orientation)}",
+                f"Position=[{x}, {y}]",
+                f"Size=[{width}, {height}]",
+            ]
+            if effective_frame:
+                args.append(f"Frame={quote(effective_frame)}")
+            return _format_call("win.add_separator", args)
+
         args = [
             f"Name={quote(widget.name)}",
             f"Position=[{x}, {y}]",
@@ -1249,6 +1280,20 @@ def build_widget_call(widget: WidgetSpec, container_frame: Optional[str] = None)
         if widget.tooltip:
             args.append(f"Tooltip={quote(widget.tooltip)}")
         return _format_call("win.add_frame", args)
+
+    if widget.qt_class == "Line":
+        separator_orientation = str(widget.extra.get("separator_orientation") or "horizontal")
+        if separator_orientation not in ("horizontal", "vertical"):
+            separator_orientation = "horizontal"
+        args = [
+            f"Name={quote(widget.name)}",
+            f"Orientation={quote(separator_orientation)}",
+            f"Position=[{x}, {y}]",
+            f"Size=[{width}, {height}]",
+        ]
+        if effective_frame:
+            args.append(f"Frame={quote(effective_frame)}")
+        return _format_call("win.add_separator", args)
 
     raise BuilderError(f"Interner Fehler: Keine Mapping-Regel für {widget.qt_class}")
 
@@ -1274,14 +1319,18 @@ def _widget_comment_title(widget: WidgetSpec) -> str:
 def _collect_scope_widgets(
     widgets: List[WidgetSpec],
 ) -> Tuple[List[WidgetSpec], Dict[str, List[WidgetSpec]], List[WidgetSpec]]:
-    frames = [widget for widget in widgets if widget.qt_class == "QFrame"]
+    frames = [
+        widget
+        for widget in widgets
+        if widget.qt_class == "QFrame" and "separator_orientation" not in widget.extra
+    ]
     frame_names = {frame.name for frame in frames}
 
     children_by_frame: Dict[str, List[WidgetSpec]] = {frame.name: [] for frame in frames}
     outside_widgets: List[WidgetSpec] = []
 
     for widget in widgets:
-        if widget.qt_class == "QFrame":
+        if widget.qt_class == "QFrame" and "separator_orientation" not in widget.extra:
             continue
         if widget.frame and widget.frame in frame_names:
             children_by_frame[widget.frame].append(widget)

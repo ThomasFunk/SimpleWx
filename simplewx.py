@@ -10581,31 +10581,75 @@ class SimpleWx:
         object_entry.type = "Separator"
         self.widgets[object_entry.name] = object_entry
 
-        # check orientation and map it to wx static line style
+        # validate orientation
         orientation = str(params.get("orientation") or "").lower()
-        if orientation == "horizontal":
-            wx_orientation = wx.LI_HORIZONTAL
-        elif orientation == "vertical":
-            wx_orientation = wx.LI_VERTICAL
-        else:
+        if orientation not in ("horizontal", "vertical"):
             self.internal_die(object_entry.name, f"Wrong orientation '{orientation}' defined!")
             return
 
-        # create separator with provisional parent
+        # create separator host with provisional parent
         provisional_parent = self.container if self.container is not None else self._get_container(self.default_container_name)
-        separator = wx.StaticLine(
+        separator = wx.Panel(
             provisional_parent,
             wx.ID_ANY,
             pos=(0, 0),
             size=wx.DefaultSize,
-            style=wx_orientation,
+            style=wx.BORDER_NONE,
         )
+        separator.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE))
+
+        dark_strip = wx.Panel(separator, wx.ID_ANY, pos=(0, 0), size=(1, 1), style=wx.BORDER_NONE)
+        light_strip = wx.Panel(separator, wx.ID_ANY, pos=(0, 0), size=(1, 1), style=wx.BORDER_NONE)
+        dark_strip.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNSHADOW))
+        light_strip.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNHIGHLIGHT))
+
+        def _layout_separator_strips(host: wx.Panel, orient: str, dark: wx.Panel, light: wx.Panel) -> None:
+            w, h = host.GetClientSize()
+            if w <= 0 or h <= 0:
+                dark.Hide()
+                light.Hide()
+                return
+
+            if orient == "horizontal":
+                y_dark = max(0, min(h - 1, (h // 2) - 1))
+                y_light = max(0, min(h - 1, y_dark + 1))
+                dark.SetPosition((0, y_dark))
+                dark.SetSize((w, 1))
+                light.SetPosition((0, y_light))
+                light.SetSize((w, 1))
+            else:
+                x_dark = max(0, min(w - 1, (w // 2) - 1))
+                x_light = max(0, min(w - 1, x_dark + 1))
+                dark.SetPosition((x_dark, 0))
+                dark.SetSize((1, h))
+                light.SetPosition((x_light, 0))
+                light.SetSize((1, h))
+
+            dark.Show(True)
+            light.Show(True)
+            dark.Raise()
+            light.Raise()
+
+        def _on_separator_size(
+            event: wx.Event,
+            host: wx.Panel = separator,
+            orient: str = orientation,
+            dark: wx.Panel = dark_strip,
+            light: wx.Panel = light_strip,
+        ) -> None:
+            _layout_separator_strips(host, orient, dark, light)
+            event.Skip()
+
+        separator.Bind(wx.EVT_SIZE, _on_separator_size)
+        _layout_separator_strips(separator, orientation, dark_strip, light_strip)
 
         # store native reference and separator metadata
         object_entry.ref = separator
         object_entry.data = {
             "orientation": orientation,
             "separator": separator,
+            "separator_dark": dark_strip,
+            "separator_light": light_strip,
         }
 
         # apply common setup and position separator
