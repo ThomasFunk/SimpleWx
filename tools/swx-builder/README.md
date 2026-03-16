@@ -68,7 +68,7 @@ Optional metadata header options:
 - `-a` / `--author`: author string in generated header (default: `swxbuilder`)
 - `-v` / `--version`: version string in generated header (default: `0.1.0`)
 - `-d` / `--date`: date string in generated header (default: current date, format `YYYY/MM/DD`)
-- `--debug`: optional compatibility flag; generated output already uses `Base=0` by default
+- `--debug`: optional debug mode for pixel-accurate geometry; generated `new_window(...)` includes `Base=0` only in this mode
 
 This creates `path/to/form_swx.py` by default (same directory as input).
 
@@ -79,30 +79,32 @@ Set an explicit output file or directory:
 ./venv/bin/python tools/swx-builder/swx-builder.py -i path/to/form.ui -o path/to/output_dir
 ```
 
-Default mode (pixel-accurate geometry debugging):
+Default mode (scaled runtime behavior):
 
 ```bash
 ./venv/bin/python tools/swx-builder/swx-builder.py -i path/to/form.ui
 ```
 
-By default, the generated `new_window(...)` call includes `Base=0`.
+By default, the generated `new_window(...)` call keeps SimpleWx scaling enabled.
 
-SimpleWx normally scales the GUI and all its widgets based on the default font size. This ensures that a SimpleWx application appears at a usable size across different screen resolutions. `Base=0` disables this behaviour so the generated output stays closer to the original Qt Designer geometry.
+SimpleWx normally scales the GUI and all its widgets based on the default font size. This ensures that a SimpleWx application appears at a usable size across different screen resolutions.
+
+If you want pixel-accurate Qt geometry for debugging, use `--debug`; in that mode the generated `new_window(...)` call uses `Base=0`, which disables scaling.
 
 ## Quick workflow
 
-1. Generate the form directly.
-2. The generated output uses `Base=0` by default to preserve Qt geometry.
-3. If you want scaled runtime behavior later, adjust the generated `new_window(...)` call manually.
+1. Generate the form directly for normal scaled runtime behavior.
+2. If you want pixel-accurate Qt coordinates, generate with `--debug`.
+3. In debug output, `Base=0` is set in `new_window(...)` to disable scaling.
 
 ## Geometry and scaling notes
 
-- Default builder output uses `Base=0` and disables geometry scaling from SimpleWx base-font logic.
-- This keeps generated coordinates closer to the static Qt Designer file.
+- Default builder output keeps SimpleWx geometry scaling enabled.
+- For exact Qt Designer coordinates, run the builder with `--debug`; this emits `Base=0` and disables scaling.
 
 ## Known pitfalls
 
 - Menu bar and status bar heights are theme-dependent. Visible content area can differ across desktops.
 - With default scaling, fixed-position widgets may shift slightly if runtime font metrics differ.
-- If you want SimpleWx scaling instead, remove `Base=0` from the generated `new_window(...)` call.
+- If you want exact Qt geometry, run with `--debug` so the generated `new_window(...)` call includes `Base=0`.
 - `Statusbar=0` means no statusbar should be created; if one still appears, verify the generated script and rerun.

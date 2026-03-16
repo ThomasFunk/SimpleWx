@@ -32,7 +32,7 @@ def test_convert_static_ui_matches_expected_reference() -> None:
     expected_path = root / "examples" / "formbuilder" / "qt_minimal_expected.py"
 
     builder = _load_builder_module()
-    generated = builder.convert_ui_to_simplewx(sample_path)
+    generated = builder.convert_ui_to_simplewx(sample_path, dev_mode=True)
     expected = expected_path.read_text(encoding="utf-8")
 
     generated_norm = re.sub(r'__date__\s*=\s*"\d{4}/\d{2}/\d{2}"', '__date__ = "<DATE>"', generated)
@@ -54,19 +54,30 @@ def test_convert_dynamic_ui_fails_on_layout() -> None:
     _unit_passed("dynamic/layout ui rejected with clear error")
 
 
-def test_convert_static_ui_default_mode_sets_base_zero() -> None:
+def test_convert_static_ui_default_mode_keeps_scaling_enabled() -> None:
     root = Path(__file__).resolve().parent.parent
     sample_path = root / "examples" / "formbuilder" / "qt_minimal.ui"
 
     builder = _load_builder_module()
     generated = builder.convert_ui_to_simplewx(sample_path)
 
-    assert "Base=0" in generated
+    assert "Base=0" not in generated
     assert "__author__ = 'swxbuilder'" in generated
     assert '__version__ = "0.1.0"' in generated
     assert re.search(r'__date__\s*=\s*"\d{4}/\d{2}/\d{2}"', generated) is not None
     assert "Signal=wx.EVT_BUTTON" in generated
-    _unit_passed("default builder mode emits Base=0 in new_window")
+    _unit_passed("default builder mode keeps scaling enabled")
+
+
+def test_convert_static_ui_debug_mode_emits_base_zero() -> None:
+    root = Path(__file__).resolve().parent.parent
+    sample_path = root / "examples" / "formbuilder" / "qt_minimal.ui"
+
+    builder = _load_builder_module()
+    generated = builder.convert_ui_to_simplewx(sample_path, dev_mode=True)
+
+    assert "Base=0" in generated
+    _unit_passed("debug builder mode emits Base=0 in new_window")
 
 
 def test_build_arg_parser_accepts_date_short_option_and_debug_long_option() -> None:

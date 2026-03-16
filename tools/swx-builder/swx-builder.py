@@ -1291,7 +1291,7 @@ def render_python(
     handlers: Dict[str, str],
     menubar_name: Optional[str],
     menus: List[MenuSpec],
-    dev_mode: bool = True,
+    dev_mode: bool = False,
     author: str = "swxbuilder",
     version: str = "0.1.0",
     build_date: Optional[str] = None,
@@ -1432,7 +1432,7 @@ def render_python(
 
 def convert_ui_to_simplewx(
     input_path: Path,
-    dev_mode: bool = True,
+    dev_mode: bool = False,
     author: str = "swxbuilder",
     version: str = "0.1.0",
     build_date: Optional[str] = None,
@@ -1499,7 +1499,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--debug",
         action="store_true",
-        help="Kompatibilitätsflag: Base=0 ist bereits Standard im generierten new_window()-Aufruf.",
+        help="Debug-Modus: generiert den new_window()-Aufruf mit Base=0 für pixelgenaue Qt-Geometrie.",
     )
     parser.add_argument(
         "-a",
@@ -1552,7 +1552,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     try:
         code = convert_ui_to_simplewx(
             input_path,
-            dev_mode=True,
+            dev_mode=bool(args.debug),
             author=str(args.author),
             version=str(args.version),
             build_date=str(args.date).strip() if args.date is not None else None,
