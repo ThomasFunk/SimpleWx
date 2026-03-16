@@ -19,6 +19,15 @@ Supported widget mapping (current subset):
 - `QSpinBox` -> `add_spin_button`
 - `QMenuBar` / `QMenu` / `QAction` -> `add_menu_bar` / `add_menu` / `add_menu_item`
 
+Explicitly not supported:
+
+- `QDockWidget` (no SimpleWx docking equivalent; this belongs to future `AuiManager` work)
+- `QTabBar` (SimpleWx supports `Notebook`, but not a standalone tab-bar widget)
+- `QToolButton` (SimpleWx supports toolbar tools via `add_toolbar`, but not a standalone tool-button widget)
+- `QHeaderView` (SimpleWx handles headers via widget data/columns, not as a standalone header-view widget)
+- `QStackedWidget` (no direct SimpleWx stacked-container equivalent)
+- `QCalendarWidget` (no direct SimpleWx calendar widget equivalent)
+
 Special handling:
 
 - `QFrame` children are detected geometrically and emitted with `Frame=<name>`.
@@ -32,9 +41,6 @@ Special handling:
     - example: `spin_width=61` -> extra `19px`
     - if the label was at `x=110`, move it to `x=129` (`110 + 19`)
   - This keeps the original visual gap stable across GTK themes.
-
-
-
 
 ## Usage
 

@@ -26,12 +26,13 @@
 	- `translate`
 
 - [ ] swx-builder: remaining Qt widget mappings (prioritised)
-	- [ ] Priority 1: `QComboBox`, `QSlider`, `QProgressBar`, `QScrollBar`
-	- [ ] Priority 2: `QTreeWidget`, `QTableWidget`, `QListView`, `QTableView`
-	- [ ] Priority 3: `QSplitter`, `QToolBar`, `QToolButton`, `QHeaderView`
-	- [ ] Priority 4: `QDateEdit`, `QTimeEdit`, `QDateTimeEdit`, `QFontComboBox`
-	- [ ] Priority 5 (dialogs): `QDialog`, `QDialogButtonBox`, `QFileDialog`, `QMessageBox`
-	- [ ] Priority 6 (complex widgets): `QTreeView`, `QGraphicsView`, `QDockWidget`, `QTabBar`
+	- [ ] Priority 1 (basic): `QComboBox`, `QSlider`, `QProgressBar`, `QScrollBar`
+	- [ ] Priority 2 (basic): `QFrame` (`HLine` / `VLine` -> `Separator`)
+	- [ ] Priority 3: `QTreeWidget`, `QTableWidget`, `QListView`, `QTableView`
+	- [ ] Priority 4: `QSplitter`, `QToolBar`
+	- [ ] Priority 5: `QDateTimeEdit`, `QFontComboBox` (`QDateEdit`/`QTimeEdit` already covered)
+	- [ ] Priority 6 (dialogs): `QDialog`, `QDialogButtonBox`, `QFileDialog`, `QMessageBox`
+	- [ ] Priority 7 (complex widgets): `QTreeView`, `QGraphicsView`
 
 ## P2 – Stabilisation
 
