@@ -1268,7 +1268,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
-        "--dev",
+        "--debug",
         action="store_true",
         help="Kompatibilitätsflag: Base=0 ist bereits Standard im generierten new_window()-Aufruf.",
     )

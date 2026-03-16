@@ -58,9 +58,12 @@ Optional metadata header options:
 ./venv/bin/python tools/swx-builder/swx-builder.py -i path/to/form.ui -a swxbuilder -v 0.1.0 -d 2026/03/16
 ```
 
+- `-i` / `--input`: mandatory input `.ui` file
+- `-o` / `--output`: optional output file or directory
 - `-a` / `--author`: author string in generated header (default: `swxbuilder`)
 - `-v` / `--version`: version string in generated header (default: `0.1.0`)
 - `-d` / `--date`: date string in generated header (default: current date, format `YYYY/MM/DD`)
+- `--debug`: optional compatibility flag; generated output already uses `Base=0` by default
 
 This creates `path/to/form_swx.py` by default (same directory as input).
 

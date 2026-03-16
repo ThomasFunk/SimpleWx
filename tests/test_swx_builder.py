@@ -69,6 +69,43 @@ def test_convert_static_ui_default_mode_sets_base_zero() -> None:
     _unit_passed("default builder mode emits Base=0 in new_window")
 
 
+def test_build_arg_parser_accepts_date_short_option_and_debug_long_option() -> None:
+    builder = _load_builder_module()
+    parser = builder.build_arg_parser()
+
+    args = parser.parse_args([
+        "-i",
+        "form.ui",
+        "-d",
+        "2026/03/16",
+        "--debug",
+        "-a",
+        "swxbuilder",
+        "-v",
+        "0.1.0",
+    ])
+
+    assert args.input == Path("form.ui")
+    assert args.date == "2026/03/16"
+    assert args.debug is True
+    assert args.author == "swxbuilder"
+    assert args.version == "0.1.0"
+    _unit_passed("cli parser accepts -d for date and --debug flag")
+
+
+def test_build_arg_parser_keeps_output_optional() -> None:
+    builder = _load_builder_module()
+    parser = builder.build_arg_parser()
+
+    args = parser.parse_args(["-i", "form.ui"])
+
+    assert args.input == Path("form.ui")
+    assert args.output is None
+    assert args.date is None
+    assert args.debug is False
+    _unit_passed("cli parser keeps output and metadata flags optional")
+
+
 def test_convert_static_ui_qaction_triggered_maps_to_menu_signal(tmp_path: Path) -> None:
     ui_path = tmp_path / "menu_action_signal.ui"
     ui_path.write_text(
