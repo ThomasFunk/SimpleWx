@@ -12,7 +12,7 @@ import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from dataclasses import field
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 
 class BuilderError(Exception):
@@ -56,7 +56,7 @@ class WidgetSpec:
     # Logical container scope (e.g. notebook page name) used for frame matching.
     container: Optional[str] = None
     # Additional widget-specific metadata for renderer mappings.
-    extra: Dict[str, str] = field(default_factory=dict)
+    extra: Dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -82,6 +82,9 @@ class NotebookSpec:
 class MenuItemSpec:
     name: str
     title: str
+    item_type: str = "item"
+    tooltip: Optional[str] = None
+    icon: Optional[str] = None
     handler_name: Optional[str] = None
     signal: Optional[str] = None
 
@@ -103,6 +106,9 @@ SUPPORTED_WIDGET_CLASSES = {
     "QFrame",
     "QTextEdit",
     "QSpinBox",
+    "QComboBox",
+    "QSlider",
+    "QProgressBar",
 }
 
 MIN_SPINBOX_WIDTH = 80
@@ -148,6 +154,58 @@ def _property_bool(widget: ET.Element, name: str) -> int:
     return 1 if value in {"1", "true", "yes"} else 0
 
 
+def _property_number(widget: ET.Element, name: str) -> Optional[str]:
+    prop = _find_property(widget, name)
+    if prop is None:
+        return None
+    for child_name in ("number", "numberint", "double", "float"):
+        value = prop.findtext(child_name)
+        if value is not None:
+            stripped = value.strip()
+            if stripped:
+                return stripped
+    raw = "".join(prop.itertext()).strip()
+    return raw if raw else None
+
+
+def _property_enum(widget: ET.Element, name: str) -> Optional[str]:
+    prop = _find_property(widget, name)
+    if prop is None:
+        return None
+    value = prop.findtext("enum")
+    if value is not None:
+        stripped = value.strip()
+        if stripped:
+            return stripped
+    raw = "".join(prop.itertext()).strip()
+    return raw if raw else None
+
+
+def _property_icon(widget: ET.Element, name: str) -> Optional[str]:
+    prop = _find_property(widget, name)
+    if prop is None:
+        return None
+
+    iconset = prop.find("iconset")
+    if iconset is None:
+        return None
+
+    theme_name = (iconset.get("theme") or "").strip()
+    if theme_name:
+        return _map_qt_icon_to_simplewx_icon(theme_name)
+
+    for tag in ("normaloff", "normalon", "selectedoff", "selectedon"):
+        value = iconset.findtext(tag)
+        if value is None:
+            continue
+        stripped = value.strip()
+        if not stripped or stripped.startswith(":/"):
+            continue
+        return stripped
+
+    return None
+
+
 def _property_rect(widget: ET.Element, name: str, widget_name: str) -> Optional[Tuple[int, int, int, int]]:
     # Extract a Qt geometry as a tuple `(x, y, width, height)`.
     # These absolute coordinates are the basis of the static SimpleWx export.
@@ -190,6 +248,35 @@ def _normalize_signal_name(raw: str) -> str:
     return clean or "signal"
 
 
+def _map_qt_icon_to_simplewx_icon(icon_name: str) -> Optional[str]:
+    normalized = icon_name.strip().lower()
+    if not normalized:
+        return None
+
+    icon_map = {
+        "document-open": "gtk-open",
+        "document-save": "gtk-save",
+        "document-save-as": "gtk-save-as",
+        "document-new": "gtk-new",
+        "edit-copy": "gtk-copy",
+        "edit-cut": "gtk-cut",
+        "edit-paste": "gtk-paste",
+        "edit-delete": "gtk-delete",
+        "application-exit": "gtk-quit",
+        "help-browser": "gtk-help",
+        "edit-find": "gtk-find",
+        "go-home": "gtk-home",
+        "go-previous": "gtk-go-back",
+        "go-next": "gtk-go-forward",
+        "view-refresh": "gtk-refresh",
+        "edit-undo": "gtk-undo",
+        "dialog-information": "gtk-info",
+        "dialog-warning": "gtk-warning",
+        "dialog-error": "gtk-error",
+    }
+    return icon_map.get(normalized, normalized)
+
+
 def _map_qt_signal_to_simplewx_event(qt_class: str, qt_signal: str) -> Optional[str]:
     signal_name = _normalize_signal_name(qt_signal)
     signal_map: Dict[str, Dict[str, str]] = {
@@ -218,6 +305,18 @@ def _map_qt_signal_to_simplewx_event(qt_class: str, qt_signal: str) -> Optional[
         },
         "QSpinBox": {
             "valuechanged": "wx.EVT_SPINCTRL",
+        },
+        "QComboBox": {
+            "activated": "wx.EVT_COMBOBOX",
+            "currentindexchanged": "wx.EVT_COMBOBOX",
+            "currenttextchanged": "wx.EVT_COMBOBOX",
+        },
+        "QSlider": {
+            "actiontriggered": "wx.EVT_SLIDER",
+            "slidermoved": "wx.EVT_SLIDER",
+            "sliderpressed": "wx.EVT_SLIDER",
+            "sliderreleased": "wx.EVT_SLIDER",
+            "valuechanged": "wx.EVT_SLIDER",
         },
         "QTabWidget": {
             "currentchanged": "wx.EVT_NOTEBOOK_PAGE_CHANGED",
@@ -258,11 +357,15 @@ def parse_menus(main_widget: ET.Element, handlers: Dict[str, ConnectionSpec]) ->
 
     # Collect QAction titles first so later addaction references can resolve to
     # their visible menu text.
-    action_titles: Dict[str, str] = {}
+    action_specs: Dict[str, Dict[str, Optional[str]]] = {}
     for action in main_widget.findall("./action"):
-        action_name = sanitize_name((action.get("name") or "").strip(), "action", len(action_titles) + 1)
+        action_name = sanitize_name((action.get("name") or "").strip(), "action", len(action_specs) + 1)
         action_title = _property_string(action, "text") or action_name
-        action_titles[action_name] = action_title
+        action_specs[action_name] = {
+            "title": action_title,
+            "tooltip": _property_string(action, "toolTip"),
+            "icon": _property_icon(action, "icon"),
+        }
 
     menus: List[MenuSpec] = []
     running_menu_index = 1
@@ -279,8 +382,15 @@ def parse_menus(main_widget: ET.Element, handlers: Dict[str, ConnectionSpec]) ->
             raw_action_name = (addaction.get("name") or "").strip()
             if not raw_action_name:
                 continue
+
+            if raw_action_name == "separator":
+                separator_name = sanitize_name(f"{menu_name}_separator_{len(items) + 1}", "separator", len(items) + 1)
+                items.append(MenuItemSpec(name=separator_name, title="", item_type="separator"))
+                continue
+
             action_name = sanitize_name(raw_action_name, "action", len(items) + 1)
-            action_title = action_titles.get(action_name, action_name)
+            action_spec = action_specs.get(action_name, {})
+            action_title = action_spec.get("title") or action_name
 
             # The same QAction name can appear in multiple menus, so enforce a
             # unique internal name here.
@@ -296,6 +406,9 @@ def parse_menus(main_widget: ET.Element, handlers: Dict[str, ConnectionSpec]) ->
                 MenuItemSpec(
                     name=unique_name,
                     title=action_title,
+                    item_type="item",
+                    tooltip=action_spec.get("tooltip"),
+                    icon=action_spec.get("icon"),
                     handler_name=connection.handler_name if connection is not None else None,
                     signal=_map_qt_signal_to_simplewx_event("QAction", connection.qt_signal) if connection is not None else None,
                 )
@@ -415,7 +528,7 @@ def _widget_from_element(
     handler_name = connection.handler_name if connection is not None else None
     signal = _map_qt_signal_to_simplewx_event(qt_class, connection.qt_signal) if connection is not None else None
 
-    extra: Dict[str, str] = {}
+    extra: Dict[str, Any] = {}
     if qt_class == "QTextEdit":
         text_view_text = _property_string(widget_el, "plainText") or _property_string(widget_el, "html") or ""
         if text_view_text:
@@ -424,6 +537,48 @@ def _widget_from_element(
         spin_value = _property_string(widget_el, "value")
         if spin_value is not None and spin_value.strip() != "":
             extra["start"] = spin_value.strip()
+    if qt_class == "QComboBox":
+        combo_items: List[str] = []
+        for item in widget_el.findall("item"):
+            item_text = _property_string(item, "text")
+            if item_text is not None:
+                combo_items.append(item_text)
+        extra["data"] = combo_items
+        combo_index = _property_number(widget_el, "currentIndex")
+        if combo_index is not None and combo_index.strip() != "":
+            extra["start"] = combo_index.strip()
+    if qt_class == "QSlider":
+        orientation = (_property_enum(widget_el, "orientation") or "Qt::Orientation::Horizontal").lower()
+        extra["orientation"] = "vertical" if "vertical" in orientation else "horizontal"
+        for source_name, target_name in (
+            ("minimum", "minimum"),
+            ("maximum", "maximum"),
+            ("singleStep", "step"),
+            ("value", "start"),
+        ):
+            number_value = _property_number(widget_el, source_name)
+            if number_value is not None and number_value.strip() != "":
+                extra[target_name] = number_value.strip()
+    if qt_class == "QProgressBar":
+        orientation = (_property_enum(widget_el, "orientation") or "Qt::Orientation::Horizontal").lower()
+        extra["orientation"] = "vertical" if "vertical" in orientation else "horizontal"
+        minimum_raw = _property_number(widget_el, "minimum") or "0"
+        maximum_raw = _property_number(widget_el, "maximum") or "100"
+        value_raw = _property_number(widget_el, "value") or "0"
+        try:
+            minimum_value = int(round(float(minimum_raw)))
+            maximum_value = int(round(float(maximum_raw)))
+            current_value = int(round(float(value_raw)))
+        except ValueError:
+            minimum_value = 0
+            maximum_value = 100
+            current_value = 0
+        if maximum_value < minimum_value:
+            minimum_value, maximum_value = maximum_value, minimum_value
+        steps = max(1, maximum_value - minimum_value)
+        current_value = max(minimum_value, min(current_value, maximum_value))
+        extra["steps"] = steps
+        extra["value"] = current_value - minimum_value
 
     return WidgetSpec(
         qt_class=qt_class,
@@ -913,6 +1068,67 @@ def build_widget_call(widget: WidgetSpec, container_frame: Optional[str] = None)
             args.append(f"Function={widget.handler_name}")
         return _format_call("win.add_spin_button", args)
 
+    if widget.qt_class == "QComboBox":
+        data = widget.extra.get("data", [])
+        args = [
+            f"Name={quote(widget.name)}",
+            f"Position=[{x}, {y}]",
+            f"Data={repr(data)}",
+            f"Size=[{width}, {height}]",
+        ]
+        if "start" in widget.extra:
+            args.append(f"Start={widget.extra['start']}")
+        if effective_frame:
+            args.append(f"Frame={quote(effective_frame)}")
+        if widget.tooltip:
+            args.append(f"Tooltip={quote(widget.tooltip)}")
+        if widget.signal:
+            args.append(f"Signal={widget.signal}")
+        if widget.handler_name:
+            args.append(f"Function={widget.handler_name}")
+        return _format_call("win.add_combo_box", args)
+
+    if widget.qt_class == "QSlider":
+        orientation = str(widget.extra.get("orientation", "horizontal"))
+        args = [
+            f"Name={quote(widget.name)}",
+            f"Position=[{x}, {y}]",
+            f"Orientation={quote(orientation)}",
+            f"Size=[{width}, {height}]",
+        ]
+        for key, label in (("start", "Start"), ("minimum", "Minimum"), ("maximum", "Maximum"), ("step", "Step")):
+            if key in widget.extra:
+                args.append(f"{label}={widget.extra[key]}")
+        if effective_frame:
+            args.append(f"Frame={quote(effective_frame)}")
+        if widget.tooltip:
+            args.append(f"Tooltip={quote(widget.tooltip)}")
+        if widget.signal:
+            args.append(f"Signal={widget.signal}")
+        if widget.handler_name:
+            args.append(f"Function={widget.handler_name}")
+        return _format_call("win.add_slider", args)
+
+    if widget.qt_class == "QProgressBar":
+        orientation = str(widget.extra.get("orientation", "horizontal"))
+        args = [
+            f"Name={quote(widget.name)}",
+            f"Position=[{x}, {y}]",
+            f"Size=[{width}, {height}]",
+            f"Orient={quote(orientation)}",
+        ]
+        if "steps" in widget.extra:
+            args.append(f"Steps={widget.extra['steps']}")
+        if effective_frame:
+            args.append(f"Frame={quote(effective_frame)}")
+        if widget.tooltip:
+            args.append(f"Tooltip={quote(widget.tooltip)}")
+        if widget.signal:
+            args.append(f"Signal={widget.signal}")
+        if widget.handler_name:
+            args.append(f"Function={widget.handler_name}")
+        return _format_call("win.add_progress_bar", args)
+
     if widget.qt_class == "QFrame":
         args = [
             f"Name={quote(widget.name)}",
@@ -987,6 +1203,8 @@ def _render_frame_block(
         else:
             last_groupbox_comment = None
         lines.append(build_widget_call(child, container_frame=default_frame))
+        if child.qt_class == "QProgressBar" and "value" in child.extra:
+            lines.append(f"win.set_value({quote(child.name)}, 'Value', {child.extra['value']})")
 
 
 def _render_grouped_widgets(
@@ -1020,6 +1238,8 @@ def _render_grouped_widgets(
                 lines.append("# Widgets outside frames")
             outside_header_emitted = True
         lines.append(build_widget_call(item, container_frame=default_frame))
+        if item.qt_class == "QProgressBar" and "value" in item.extra:
+            lines.append(f"win.set_value({quote(item.name)}, 'Value', {item.extra['value']})")
 
     if outside_header_emitted:
         lines.append("")
@@ -1147,8 +1367,15 @@ def render_python(
                 args = [
                     f"Name={quote(item.name)}",
                     f"Menu={quote(menu.name)}",
-                    f"Title={quote(item.title)}",
                 ]
+                if item.item_type != "item":
+                    args.append(f"Type={quote(item.item_type)}")
+                if item.title:
+                    args.append(f"Title={quote(item.title)}")
+                if item.tooltip:
+                    args.append(f"Tooltip={quote(item.tooltip)}")
+                if item.icon:
+                    args.append(f"Icon={quote(item.icon)}")
                 if item.signal:
                     args.append(f"Signal={item.signal}")
                 if item.handler_name:
@@ -1187,6 +1414,8 @@ def render_python(
                     lines.append("# Widgets outside frames")
                 outside_header_emitted = True
             lines.append(build_widget_call(item))
+            if item.qt_class == "QProgressBar" and "value" in item.extra:
+                lines.append(f"win.set_value({quote(item.name)}, 'Value', {item.extra['value']})")
             continue
 
         _render_notebook_block(lines, item, widgets)

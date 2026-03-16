@@ -149,6 +149,136 @@ def test_convert_static_ui_qaction_triggered_maps_to_menu_signal(tmp_path: Path)
     _unit_passed("qaction triggered signal maps to menu event")
 
 
+def test_convert_static_ui_priority1_widgets_are_rendered(tmp_path: Path) -> None:
+    ui_path = tmp_path / "prio1_widgets.ui"
+    ui_path.write_text(
+        """<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<ui version=\"4.0\">
+ <class>MainWindow</class>
+ <widget class=\"QMainWindow\" name=\"MainWindow\">
+  <property name=\"geometry\"><rect><x>0</x><y>0</y><width>480</width><height>260</height></rect></property>
+  <widget class=\"QWidget\" name=\"centralwidget\">
+   <widget class=\"QComboBox\" name=\"comboProfiles\">
+    <property name=\"geometry\"><rect><x>20</x><y>20</y><width>120</width><height>29</height></rect></property>
+    <property name=\"currentIndex\"><number>1</number></property>
+    <item><property name=\"text\"><string>Default</string></property></item>
+    <item><property name=\"text\"><string>Gaming</string></property></item>
+   </widget>
+   <widget class=\"QSlider\" name=\"horizontalSlider\">
+    <property name=\"geometry\"><rect><x>170</x><y>28</y><width>160</width><height>16</height></rect></property>
+    <property name=\"orientation\"><enum>Qt::Orientation::Horizontal</enum></property>
+    <property name=\"minimum\"><number>10</number></property>
+    <property name=\"maximum\"><number>90</number></property>
+    <property name=\"value\"><number>24</number></property>
+   </widget>
+   <widget class=\"QFrame\" name=\"frame_Sound\">
+    <property name=\"geometry\"><rect><x>20</x><y>70</y><width>80</width><height>170</height></rect></property>
+    <widget class=\"QSlider\" name=\"verticalSlider\">
+     <property name=\"geometry\"><rect><x>25</x><y>10</y><width>16</width><height>140</height></rect></property>
+     <property name=\"orientation\"><enum>Qt::Orientation::Vertical</enum></property>
+     <property name=\"value\"><number>55</number></property>
+    </widget>
+   </widget>
+   <widget class=\"QLabel\" name=\"label_frame_Sound\">
+    <property name=\"geometry\"><rect><x>28</x><y>60</y><width>48</width><height>16</height></rect></property>
+    <property name=\"text\"><string>Sound</string></property>
+   </widget>
+   <widget class=\"QProgressBar\" name=\"progressBar\">
+    <property name=\"geometry\"><rect><x>140</x><y>120</y><width>260</width><height>32</height></rect></property>
+    <property name=\"minimum\"><number>0</number></property>
+    <property name=\"maximum\"><number>100</number></property>
+    <property name=\"value\"><number>24</number></property>
+   </widget>
+  </widget>
+ </widget>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>comboProfiles</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>dummy()</slot>
+  </connection>
+  <connection>
+   <sender>horizontalSlider</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>dummy()</slot>
+  </connection>
+  <connection>
+   <sender>verticalSlider</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>dummy()</slot>
+  </connection>
+ </connections>
+</ui>
+""",
+        encoding="utf-8",
+    )
+
+    builder = _load_builder_module()
+    generated = builder.convert_ui_to_simplewx(ui_path)
+
+    assert "win.add_combo_box(" in generated
+    assert "Data=['Default', 'Gaming']" in generated
+    assert "Start=1" in generated
+    assert "Signal=wx.EVT_COMBOBOX" in generated
+    assert "win.add_slider(" in generated
+    assert "Orientation='horizontal'" in generated
+    assert "Orientation='vertical'" in generated
+    assert "Signal=wx.EVT_SLIDER" in generated
+    assert "win.add_progress_bar(" in generated
+    assert "Steps=100" in generated
+    assert "win.set_value('progressBar', 'Value', 24)" in generated
+    _unit_passed("priority 1 widgets render with signals and values")
+
+
+def test_convert_static_ui_menu_separator_and_icons_are_rendered(tmp_path: Path) -> None:
+    ui_path = tmp_path / "menu_separator_icons.ui"
+    ui_path.write_text(
+        """<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<ui version=\"4.0\">
+ <class>MainWindow</class>
+ <widget class=\"QMainWindow\" name=\"MainWindow\">
+  <property name=\"geometry\"><rect><x>0</x><y>0</y><width>320</width><height>200</height></rect></property>
+  <widget class=\"QWidget\" name=\"centralwidget\"/>
+  <widget class=\"QMenuBar\" name=\"menubar\">
+   <property name=\"geometry\"><rect><x>0</x><y>0</y><width>320</width><height>24</height></rect></property>
+   <widget class=\"QMenu\" name=\"menuFile\">
+    <property name=\"title\"><string>File</string></property>
+    <addaction name=\"actionNew\"/>
+    <addaction name=\"separator\"/>
+    <addaction name=\"actionQuit\"/>
+   </widget>
+  </widget>
+  <action name=\"actionNew\">
+   <property name=\"icon\"><iconset theme=\"document-new\"/></property>
+   <property name=\"text\"><string>New</string></property>
+   <property name=\"toolTip\"><string>Create new file</string></property>
+  </action>
+  <action name=\"actionQuit\">
+   <property name=\"icon\"><iconset theme=\"application-exit\"/></property>
+   <property name=\"text\"><string>Quit</string></property>
+  </action>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
+""",
+        encoding="utf-8",
+    )
+
+    builder = _load_builder_module()
+    generated = builder.convert_ui_to_simplewx(ui_path)
+
+    assert "Tooltip='Create new file'" in generated
+    assert "Icon='gtk-new'" in generated
+    assert "Icon='gtk-quit'" in generated
+    assert "Type='separator'" in generated
+    _unit_passed("menu separators and icons are rendered")
+
+
 def test_convert_static_ui_qframe_maps_to_add_frame(tmp_path: Path) -> None:
     ui_path = tmp_path / "frame_only.ui"
     ui_path.write_text(

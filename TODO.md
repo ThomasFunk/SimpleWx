@@ -26,8 +26,8 @@
 	- `translate`
 
 - [ ] swx-builder: remaining Qt widget mappings (prioritised)
-	- [ ] Priority 1 (basic): `QComboBox`, `QSlider`, `QProgressBar`
-	- [ ] Priority 2 (basic): `QFrame` (`HLine` / `VLine` -> `Separator`)
+	- [x] Priority 1 (basic): `QComboBox`, `QSlider`, `QProgressBar`
+	- [x] Priority 2 (basic): `QFrame` (`HLine` / `VLine` -> `Separator`)
 	- [ ] Priority 3: `QTreeWidget`, `QTableWidget`, `QListView`, `QTableView`
 	- [ ] Priority 4: `QSplitter`, `QToolBar`
 	- [ ] Priority 5: `QDateTimeEdit`, `QFontComboBox` (`QDateEdit`/`QTimeEdit` already covered)

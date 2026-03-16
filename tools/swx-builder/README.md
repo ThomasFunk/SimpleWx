@@ -17,6 +17,9 @@ Supported widget mapping (current subset):
 - `QTabWidget` -> `add_notebook` + `add_nb_page`
 - `QTextEdit` -> `add_text_view`
 - `QSpinBox` -> `add_spin_button`
+- `QComboBox` -> `add_combo_box`
+- `QSlider` -> `add_slider`
+- `QProgressBar` -> `add_progress_bar`
 - `QMenuBar` / `QMenu` / `QAction` -> `add_menu_bar` / `add_menu` / `add_menu_item`
 
 Explicitly not supported:
@@ -35,6 +38,8 @@ Special handling:
 - `QLabel` widgets named `label_<frame_name>` are consumed as frame titles instead of being emitted as standalone labels.
 - `QTabWidget` pages are emitted as notebook pages; widgets on each tab are emitted with `Frame=<tab_page_name>`.
 - Supported Qt connections are mapped to matching wx/SimpleWx events where possible (for example `QPushButton.clicked()` -> `wx.EVT_BUTTON`, `QAction.triggered()` -> `wx.EVT_MENU`).
+- Menu separators are emitted as `add_menu_item(..., Type="separator")`.
+- Common themed Qt action icons like `document-open`, `document-save`, `document-new`, `application-exit` are mapped to matching SimpleWx/wx stock icon names.
 - On GTK, `wx.SpinCtrl` often needs more width than a narrow Qt `QSpinBox` geometry to render cleanly.
   - The builder enforces a minimum generated spin width of about `80px`.
   - If a label is placed directly to the right of a spin control, keep enough horizontal spare space so the label is not overlapped.
