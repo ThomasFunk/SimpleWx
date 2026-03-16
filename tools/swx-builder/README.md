@@ -50,6 +50,16 @@ Convert a form:
 ./venv/bin/python tools/swx-builder/swx-builder.py -i path/to/form.ui
 ```
 
+Optional metadata header options:
+
+```bash
+./venv/bin/python tools/swx-builder/swx-builder.py -i path/to/form.ui -a swxbuilder -v 0.1.0 -d 2026/03/16
+```
+
+- `-a` / `--author`: author string in generated header (default: `swxbuilder`)
+- `-v` / `--version`: version string in generated header (default: `0.1.0`)
+- `-d` / `--date`: date string in generated header (default: current date, format `YYYY/MM/DD`)
+
 This creates `path/to/form_swx.py` by default (same directory as input).
 
 Set an explicit output file or directory:

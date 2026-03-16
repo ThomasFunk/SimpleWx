@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+
+__author__ = 'swxbuilder'
+__date__ = "2026/03/16"
+__version__ = "0.1.0"
+
 from simplewx import SimpleWx as simplewx
 
 # Main Window 'MainWindow'

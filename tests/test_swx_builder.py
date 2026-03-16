@@ -2,6 +2,7 @@
 
 from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
+import re
 import sys
 
 import pytest
@@ -34,7 +35,10 @@ def test_convert_static_ui_matches_expected_reference() -> None:
     generated = builder.convert_ui_to_simplewx(sample_path)
     expected = expected_path.read_text(encoding="utf-8")
 
-    assert generated == expected
+    generated_norm = re.sub(r'__date__\s*=\s*"\d{4}/\d{2}/\d{2}"', '__date__ = "<DATE>"', generated)
+    expected_norm = re.sub(r'__date__\s*=\s*"\d{4}/\d{2}/\d{2}"', '__date__ = "<DATE>"', expected)
+
+    assert generated_norm == expected_norm
     _unit_passed("static ui conversion matches expected output")
 
 
@@ -58,6 +62,9 @@ def test_convert_static_ui_default_mode_sets_base_zero() -> None:
     generated = builder.convert_ui_to_simplewx(sample_path)
 
     assert "Base=0" in generated
+    assert "__author__ = 'swxbuilder'" in generated
+    assert '__version__ = "0.1.0"' in generated
+    assert re.search(r'__date__\s*=\s*"\d{4}/\d{2}/\d{2}"', generated) is not None
     _unit_passed("default builder mode emits Base=0 in new_window")
 
 

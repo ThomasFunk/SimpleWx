@@ -1,7 +1,12 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+__author__ = 'Thomas Funk'
+__coauthors__ = 'Github Copilot'
+__date__ = "2026/03/16"
+
 import argparse
+import datetime
 import sys
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
@@ -986,10 +991,20 @@ def render_python(
     menubar_name: Optional[str],
     menus: List[MenuSpec],
     dev_mode: bool = True,
+    author: str = "swxbuilder",
+    version: str = "0.1.0",
+    build_date: Optional[str] = None,
 ) -> str:
     # Build the final Python source text from the parsed data.
+    resolved_date = (build_date or datetime.date.today().strftime("%Y/%m/%d")).strip()
+
     lines: List[str] = []
     lines.append("#!/usr/bin/env python3")
+    lines.append("")
+    lines.append(f"__author__ = {quote(author)}")
+    lines.append(f'__date__ = "{resolved_date}"')
+    lines.append(f'__version__ = "{version}"')
+    lines.append("")
     lines.append("from simplewx import SimpleWx as simplewx")
     lines.append("")
 
@@ -1091,7 +1106,13 @@ def render_python(
     return "\n".join(lines)
 
 
-def convert_ui_to_simplewx(input_path: Path, dev_mode: bool = True) -> str:
+def convert_ui_to_simplewx(
+    input_path: Path,
+    dev_mode: bool = True,
+    author: str = "swxbuilder",
+    version: str = "0.1.0",
+    build_date: Optional[str] = None,
+) -> str:
     # Top-level conversion entry point for Qt `.ui` files.
     try:
         tree = ET.parse(input_path)
@@ -1114,7 +1135,18 @@ def convert_ui_to_simplewx(input_path: Path, dev_mode: bool = True) -> str:
     widgets = _apply_frame_title_labels(widgets)
     widgets = _assign_widgets_to_frames(widgets)
     widgets = _adjust_spinbox_min_size_and_adjacent_labels(widgets)
-    return render_python(window, widgets, notebooks, handlers, menubar_name, menus, dev_mode=dev_mode)
+    return render_python(
+        window,
+        widgets,
+        notebooks,
+        handlers,
+        menubar_name,
+        menus,
+        dev_mode=dev_mode,
+        author=author,
+        version=version,
+        build_date=build_date,
+    )
 
 
 def convert_fbp_to_simplewx(input_path: Path) -> str:
@@ -1141,10 +1173,27 @@ def build_arg_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
-        "-d",
         "--dev",
         action="store_true",
         help="Kompatibilitätsflag: Base=0 ist bereits Standard im generierten new_window()-Aufruf.",
+    )
+    parser.add_argument(
+        "-a",
+        "--author",
+        default="swxbuilder",
+        help="Autor für den Header im generierten Script (Default: swxbuilder).",
+    )
+    parser.add_argument(
+        "-v",
+        "--version",
+        default="0.1.0",
+        help="Version für den Header im generierten Script (Default: 0.1.0).",
+    )
+    parser.add_argument(
+        "-d",
+        "--date",
+        default=None,
+        help="Datum für den Header im Format YYYY/MM/DD (Default: aktuelles Datum).",
     )
     return parser
 
@@ -1177,7 +1226,13 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     # Run the conversion and report errors in a user-friendly way.
     try:
-        code = convert_ui_to_simplewx(input_path)
+        code = convert_ui_to_simplewx(
+            input_path,
+            dev_mode=True,
+            author=str(args.author),
+            version=str(args.version),
+            build_date=str(args.date).strip() if args.date is not None else None,
+        )
     except BuilderError as exc:
         print(f"Abbruch: {exc}", file=sys.stderr)
         return 1
