@@ -5,6 +5,7 @@ import argparse
 import sys
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
+from dataclasses import field
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -40,6 +41,26 @@ class WidgetSpec:
     frame_title_height: int = 0
     # Radio group name extracted from a containing QGroupBox, if present.
     group: Optional[str] = None
+    # Logical container scope (e.g. notebook page name) used for frame matching.
+    container: Optional[str] = None
+    # Additional widget-specific metadata for renderer mappings.
+    extra: Dict[str, str] = field(default_factory=dict)
+
+
+@dataclass
+class NotebookPageSpec:
+    name: str
+    title: str
+    notebook: str
+    position_number: int
+
+
+@dataclass
+class NotebookSpec:
+    name: str
+    position: Tuple[int, int]
+    size: Tuple[int, int]
+    pages: List[NotebookPageSpec]
 
 
 # Represents a single menu item from the QMenu/QAction structure.
@@ -65,6 +86,8 @@ SUPPORTED_WIDGET_CLASSES = {
     "QCheckBox",
     "QRadioButton",
     "QFrame",
+    "QTextEdit",
+    "QSpinBox",
 }
 
 
@@ -292,10 +315,149 @@ def _iter_supported_widgets(
             gb_title = _property_string(child, "title") or (child.get("name") or "")
             gb_group = sanitize_name(gb_title, "group", 0) if gb_title else _group_name
             items.extend(_iter_supported_widgets(child, gb_ox, gb_oy, gb_group))
+        elif child_class == "QTabWidget":
+            # Notebook widgets are parsed in a dedicated pass so page scoping
+            # can be preserved in the generated output.
+            continue
         else:
             # Any other non-supported container: recurse without changing offsets.
             items.extend(_iter_supported_widgets(child, _offset_x, _offset_y, _group_name))
     return items
+
+
+def _widget_from_element(
+    widget_el: ET.Element,
+    handlers: Dict[str, str],
+    running_index: int,
+    offset_x: int = 0,
+    offset_y: int = 0,
+    group_name: Optional[str] = None,
+    container: Optional[str] = None,
+) -> WidgetSpec:
+    qt_class = (widget_el.get("class") or "").strip()
+    raw_name = (widget_el.get("name") or "").strip()
+    widget_name = sanitize_name(raw_name, "widget", running_index)
+
+    geometry = _property_rect(widget_el, "geometry", widget_name)
+    if geometry is None:
+        raise BuilderError(
+            f"Widget '{widget_name}' ({qt_class}) hat keine geometry-Property. "
+            "Für statische Qt-Layouts sind absolute Koordinaten zwingend erforderlich."
+        )
+
+    raw_x, raw_y, width, height = geometry
+    x = raw_x + offset_x
+    y = raw_y + offset_y
+
+    text = _property_string(widget_el, "text") or _property_string(widget_el, "title") or ""
+    tooltip = _property_string(widget_el, "toolTip")
+    checked = _property_bool(widget_el, "checked") if qt_class in {"QCheckBox", "QRadioButton"} else 0
+    handler_name = handlers.get(widget_name)
+
+    extra: Dict[str, str] = {}
+    if qt_class == "QTextEdit":
+        text_view_text = _property_string(widget_el, "plainText") or _property_string(widget_el, "html") or ""
+        if text_view_text:
+            extra["text"] = text_view_text
+    if qt_class == "QSpinBox":
+        spin_value = _property_string(widget_el, "value")
+        if spin_value is not None and spin_value.strip() != "":
+            extra["start"] = spin_value.strip()
+
+    return WidgetSpec(
+        qt_class=qt_class,
+        name=widget_name,
+        position=(x, y),
+        size=(width, height),
+        title=text,
+        tooltip=tooltip,
+        checked=checked,
+        handler_name=handler_name,
+        group=group_name,
+        container=container,
+        extra=extra,
+    )
+
+
+def _tab_page_title(page_widget: ET.Element, fallback: str) -> str:
+    for attr in page_widget.findall("attribute"):
+        if (attr.get("name") or "").strip() == "title":
+            if len(attr) > 0:
+                title = "".join(attr[0].itertext()).strip()
+                if title:
+                    return title
+            raw = "".join(attr.itertext()).strip()
+            if raw:
+                return raw
+    return fallback
+
+
+def parse_notebooks(root: ET.Element, handlers: Dict[str, str]) -> Tuple[List[NotebookSpec], List[WidgetSpec]]:
+    main_widget = root.find("./widget[@class='QMainWindow']")
+    if main_widget is None:
+        raise BuilderError("Keine QMainWindow-Definition gefunden. Erwartet wird eine Qt-Designer .ui Datei.")
+
+    notebooks: List[NotebookSpec] = []
+    page_widgets: List[WidgetSpec] = []
+    running_index = 1
+
+    for notebook_el in main_widget.findall(".//widget[@class='QTabWidget']"):
+        raw_name = (notebook_el.get("name") or "").strip()
+        notebook_name = sanitize_name(raw_name, "notebook", len(notebooks) + 1)
+        geometry = _property_rect(notebook_el, "geometry", notebook_name)
+        if geometry is None:
+            raise BuilderError(
+                f"Widget '{notebook_name}' (QTabWidget) hat keine geometry-Property. "
+                "Für statische Qt-Layouts sind absolute Koordinaten zwingend erforderlich."
+            )
+
+        x, y, width, height = geometry
+        pages: List[NotebookPageSpec] = []
+
+        page_index = 0
+        for page_el in notebook_el.findall("widget"):
+            if (page_el.get("class") or "").strip() != "QWidget":
+                continue
+
+            page_raw_name = (page_el.get("name") or "").strip()
+            page_name = sanitize_name(page_raw_name, f"{notebook_name}_page", page_index + 1)
+            page_title = _tab_page_title(page_el, page_name)
+
+            pages.append(
+                NotebookPageSpec(
+                    name=page_name,
+                    title=page_title,
+                    notebook=notebook_name,
+                    position_number=page_index,
+                )
+            )
+
+            for widget_el, offset_x, offset_y, group_name in _iter_supported_widgets(page_el):
+                page_widgets.append(
+                    _widget_from_element(
+                        widget_el,
+                        handlers,
+                        running_index,
+                        offset_x=offset_x,
+                        offset_y=offset_y,
+                        group_name=group_name,
+                        container=page_name,
+                    )
+                )
+                running_index += 1
+
+            page_index += 1
+
+        notebooks.append(
+            NotebookSpec(
+                name=notebook_name,
+                position=(x, y),
+                size=(width, height),
+                pages=pages,
+            )
+        )
+
+    return notebooks, page_widgets
 
 
 def _apply_frame_title_labels(widgets: List[WidgetSpec]) -> List[WidgetSpec]:
@@ -308,6 +470,9 @@ def _apply_frame_title_labels(widgets: List[WidgetSpec]) -> List[WidgetSpec]:
     """
     frame_by_name: Dict[str, WidgetSpec] = {
         widget.name: widget for widget in widgets if widget.qt_class == "QFrame"
+    }
+    frame_by_name_lower: Dict[str, WidgetSpec] = {
+        widget.name.lower(): widget for widget in widgets if widget.qt_class == "QFrame"
     }
 
     consumed_labels: set[str] = set()
@@ -361,6 +526,8 @@ def _apply_frame_title_labels(widgets: List[WidgetSpec]) -> List[WidgetSpec]:
         frame_widget: Optional[WidgetSpec] = None
         for target_frame_name in _candidate_frame_names(widget.name):
             frame_widget = frame_by_name.get(target_frame_name)
+            if frame_widget is None:
+                frame_widget = frame_by_name_lower.get(target_frame_name.lower())
             if frame_widget is not None:
                 break
         if frame_widget is None:
@@ -403,6 +570,8 @@ def _assign_widgets_to_frames(widgets: List[WidgetSpec]) -> List[WidgetSpec]:
         # In that case, choose the smallest matching frame below.
         candidates: List[WidgetSpec] = []
         for frame in frames:
+            if frame.container != widget.container:
+                continue
             fx, fy = frame.position
             fw, fh = frame.size
             if wx >= fx and wy >= fy and (wx + ww) <= (fx + fw) and (wy + wh) <= (fy + fh):
@@ -462,50 +631,19 @@ def parse_widgets(root: ET.Element, handlers: Dict[str, str]) -> List[WidgetSpec
 
     # First read all widgets with their absolute geometry.
     for widget_el, offset_x, offset_y, group_name in _iter_supported_widgets(main_widget):
-        qt_class = (widget_el.get("class") or "").strip()
-        raw_name = (widget_el.get("name") or "").strip()
-        widget_name = sanitize_name(raw_name, "widget", running_index)
-
-        geometry = _property_rect(widget_el, "geometry", widget_name)
-        if geometry is None:
-            raise BuilderError(
-                f"Widget '{widget_name}' ({qt_class}) hat keine geometry-Property. "
-                "Für statische Qt-Layouts sind absolute Koordinaten zwingend erforderlich."
-            )
-
-        raw_x, raw_y, width, height = geometry
-        # Add accumulated parent-container offsets (e.g. from a QGroupBox) so
-        # all positions are expressed relative to the centralwidget.
-        x = raw_x + offset_x
-        y = raw_y + offset_y
-
-        # QFrame usually has no `text`, but some variants expose a `title`.
-        # Accept both so no useful captions are lost.
-        text = _property_string(widget_el, "text") or _property_string(widget_el, "title") or ""
-        tooltip = _property_string(widget_el, "toolTip")
-        checked = _property_bool(widget_el, "checked") if qt_class in {"QCheckBox", "QRadioButton"} else 0
-        handler_name = handlers.get(widget_name)
-
         widgets.append(
-            WidgetSpec(
-                qt_class=qt_class,
-                name=widget_name,
-                position=(x, y),
-                size=(width, height),
-                title=text,
-                tooltip=tooltip,
-                checked=checked,
-                handler_name=handler_name,
-                group=group_name,
+            _widget_from_element(
+                widget_el,
+                handlers,
+                running_index,
+                offset_x=offset_x,
+                offset_y=offset_y,
+                group_name=group_name,
+                container=None,
             )
         )
         running_index += 1
 
-    # Then run two semantic post-processing steps:
-    # 1. turn special QLabel captions into actual frame titles
-    # 2. assign widgets to frames based on geometry
-    widgets = _apply_frame_title_labels(widgets)
-    widgets = _assign_widgets_to_frames(widgets)
     return widgets
 
 
@@ -527,10 +665,11 @@ def _format_call(function_name: str, args: List[str]) -> str:
     return "\n".join(lines)
 
 
-def build_widget_call(widget: WidgetSpec) -> str:
+def build_widget_call(widget: WidgetSpec, container_frame: Optional[str] = None) -> str:
     # Translate one parsed widget into exactly one SimpleWx call.
     x, y = widget.position
     width, height = widget.size if widget.size is not None else (120, 28)
+    effective_frame = widget.frame if widget.frame else container_frame
 
     if widget.qt_class == "QLabel":
         title = widget.title or widget.name
@@ -539,8 +678,8 @@ def build_widget_call(widget: WidgetSpec) -> str:
             f"Position=[{x}, {y}]",
             f"Title={quote(title)}",
         ]
-        if widget.frame:
-            args.append(f"Frame={quote(widget.frame)}")
+        if effective_frame:
+            args.append(f"Frame={quote(effective_frame)}")
         if widget.tooltip:
             args.append(f"Tooltip={quote(widget.tooltip)}")
         return _format_call("win.add_label", args)
@@ -553,8 +692,8 @@ def build_widget_call(widget: WidgetSpec) -> str:
             f"Title={quote(title)}",
             f"Size=[{width}, {height}]",
         ]
-        if widget.frame:
-            args.append(f"Frame={quote(widget.frame)}")
+        if effective_frame:
+            args.append(f"Frame={quote(effective_frame)}")
         if widget.tooltip:
             args.append(f"Tooltip={quote(widget.tooltip)}")
         if widget.handler_name:
@@ -569,8 +708,8 @@ def build_widget_call(widget: WidgetSpec) -> str:
         ]
         if widget.title:
             args.append(f"Title={quote(widget.title)}")
-        if widget.frame:
-            args.append(f"Frame={quote(widget.frame)}")
+        if effective_frame:
+            args.append(f"Frame={quote(effective_frame)}")
         if widget.tooltip:
             args.append(f"Tooltip={quote(widget.tooltip)}")
         return _format_call("win.add_entry", args)
@@ -583,8 +722,8 @@ def build_widget_call(widget: WidgetSpec) -> str:
             f"Title={quote(title)}",
             f"Active={widget.checked}",
         ]
-        if widget.frame:
-            args.append(f"Frame={quote(widget.frame)}")
+        if effective_frame:
+            args.append(f"Frame={quote(effective_frame)}")
         if widget.tooltip:
             args.append(f"Tooltip={quote(widget.tooltip)}")
         return _format_call("win.add_check_button", args)
@@ -594,7 +733,7 @@ def build_widget_call(widget: WidgetSpec) -> str:
         # Radio buttons always need a group in SimpleWx.
         # Use the QGroupBox title as the group when available; otherwise fall
         # back to a frame-specific or global default name.
-        default_group = widget.group or (f"group_{widget.frame}" if widget.frame else "group_main")
+        default_group = widget.group or (f"group_{effective_frame}" if effective_frame else "group_main")
         args = [
             f"Name={quote(widget.name)}",
             f"Position=[{x}, {y}]",
@@ -602,11 +741,39 @@ def build_widget_call(widget: WidgetSpec) -> str:
             f"Group={quote(default_group)}",
             f"Active={widget.checked}",
         ]
-        if widget.frame:
-            args.append(f"Frame={quote(widget.frame)}")
+        if effective_frame:
+            args.append(f"Frame={quote(effective_frame)}")
         if widget.tooltip:
             args.append(f"Tooltip={quote(widget.tooltip)}")
         return _format_call("win.add_radio_button", args)
+
+    if widget.qt_class == "QTextEdit":
+        args = [
+            f"Name={quote(widget.name)}",
+            f"Position=[{x}, {y}]",
+            f"Size=[{width}, {height}]",
+        ]
+        if "text" in widget.extra:
+            args.append(f"Text={quote(widget.extra['text'])}")
+        if effective_frame:
+            args.append(f"Frame={quote(effective_frame)}")
+        if widget.tooltip:
+            args.append(f"Tooltip={quote(widget.tooltip)}")
+        return _format_call("win.add_text_view", args)
+
+    if widget.qt_class == "QSpinBox":
+        args = [
+            f"Name={quote(widget.name)}",
+            f"Position=[{x}, {y}]",
+            f"Size=[{width}, {height}]",
+        ]
+        if "start" in widget.extra:
+            args.append(f"Start={widget.extra['start']}")
+        if effective_frame:
+            args.append(f"Frame={quote(effective_frame)}")
+        if widget.tooltip:
+            args.append(f"Tooltip={quote(widget.tooltip)}")
+        return _format_call("win.add_spin_button", args)
 
     if widget.qt_class == "QFrame":
         args = [
@@ -616,6 +783,8 @@ def build_widget_call(widget: WidgetSpec) -> str:
         ]
         if widget.title:
             args.append(f"Title={quote(widget.title)}")
+        if effective_frame:
+            args.append(f"Frame={quote(effective_frame)}")
         if widget.tooltip:
             args.append(f"Tooltip={quote(widget.tooltip)}")
         return _format_call("win.add_frame", args)
@@ -636,13 +805,56 @@ def _widget_comment_title(widget: WidgetSpec) -> str:
     return widget.title if widget.title else widget.name
 
 
+def _render_grouped_widgets(
+    lines: List[str],
+    widgets: List[WidgetSpec],
+    default_frame: Optional[str] = None,
+) -> None:
+    frames = sorted(
+        [widget for widget in widgets if widget.qt_class == "QFrame"],
+        key=_widget_sort_key,
+    )
+    frame_names = {frame.name for frame in frames}
+
+    children_by_frame: Dict[str, List[WidgetSpec]] = {frame.name: [] for frame in frames}
+    outside_widgets: List[WidgetSpec] = []
+
+    for widget in widgets:
+        if widget.qt_class == "QFrame":
+            continue
+        if widget.frame and widget.frame in frame_names:
+            children_by_frame[widget.frame].append(widget)
+        else:
+            outside_widgets.append(widget)
+
+    for frame in frames:
+        lines.append(f"# Frame {quote(_widget_comment_title(frame))}")
+        lines.append(build_widget_call(frame, container_frame=default_frame))
+
+        frame_children = sorted(children_by_frame.get(frame.name, []), key=_widget_sort_key)
+        for child in frame_children:
+            lines.append(build_widget_call(child, container_frame=default_frame))
+        lines.append("")
+
+    outside_widgets = sorted(outside_widgets, key=_widget_sort_key)
+    if outside_widgets:
+        if all(widget.qt_class == "QPushButton" for widget in outside_widgets):
+            lines.append("# Buttons at the bottom")
+        else:
+            lines.append("# Widgets outside frames")
+        for widget in outside_widgets:
+            lines.append(build_widget_call(widget, container_frame=default_frame))
+        lines.append("")
+
+
 def render_python(
     window: WindowSpec,
     widgets: List[WidgetSpec],
+    notebooks: List[NotebookSpec],
     handlers: Dict[str, str],
     menubar_name: Optional[str],
     menus: List[MenuSpec],
-    dev_mode: bool = False,
+    dev_mode: bool = True,
 ) -> str:
     # Build the final Python source text from the parsed data.
     lines: List[str] = []
@@ -703,40 +915,40 @@ def render_python(
                 lines.append(_format_call("win.add_menu_item", args))
         lines.append("")
 
-    frames = sorted(
-        [widget for widget in widgets if widget.qt_class == "QFrame"],
-        key=_widget_sort_key,
-    )
-    frame_names = {frame.name for frame in frames}
+    main_widgets = [widget for widget in widgets if widget.container is None]
+    _render_grouped_widgets(lines, main_widgets)
 
-    children_by_frame: Dict[str, List[WidgetSpec]] = {frame.name: [] for frame in frames}
-    outside_widgets: List[WidgetSpec] = []
+    notebooks_sorted = sorted(notebooks, key=lambda nb: (nb.position[1] // 15, nb.position[0], nb.name))
+    for notebook in notebooks_sorted:
+        lines.append(f"# Notebook {quote(notebook.name)}")
+        lines.append(
+            _format_call(
+                "win.add_notebook",
+                [
+                    f"Name={quote(notebook.name)}",
+                    f"Position=[{notebook.position[0]}, {notebook.position[1]}]",
+                    f"Size=[{notebook.size[0]}, {notebook.size[1]}]",
+                ],
+            )
+        )
 
-    for widget in widgets:
-        if widget.qt_class == "QFrame":
-            continue
-        if widget.frame and widget.frame in frame_names:
-            children_by_frame[widget.frame].append(widget)
-        else:
-            outside_widgets.append(widget)
+        pages_sorted = sorted(notebook.pages, key=lambda page: page.position_number)
+        for page in pages_sorted:
+            lines.append(
+                _format_call(
+                    "win.add_nb_page",
+                    [
+                        f"Name={quote(page.name)}",
+                        f"Notebook={quote(notebook.name)}",
+                        f"Title={quote(page.title)}",
+                        f"PositionNumber={page.position_number}",
+                    ],
+                )
+            )
 
-    for frame in frames:
-        lines.append(f"# Frame {quote(_widget_comment_title(frame))}")
-        lines.append(build_widget_call(frame))
+            page_widget_items = [widget for widget in widgets if widget.container == page.name]
+            _render_grouped_widgets(lines, page_widget_items, default_frame=page.name)
 
-        frame_children = sorted(children_by_frame.get(frame.name, []), key=_widget_sort_key)
-        for child in frame_children:
-            lines.append(build_widget_call(child))
-        lines.append("")
-
-    outside_widgets = sorted(outside_widgets, key=_widget_sort_key)
-    if outside_widgets:
-        if all(widget.qt_class == "QPushButton" for widget in outside_widgets):
-            lines.append("# Buttons at the bottom")
-        else:
-            lines.append("# Widgets outside frames")
-        for widget in outside_widgets:
-            lines.append(build_widget_call(widget))
         lines.append("")
 
     lines.append("if __name__ == '__main__':")
@@ -746,7 +958,7 @@ def render_python(
     return "\n".join(lines)
 
 
-def convert_ui_to_simplewx(input_path: Path, dev_mode: bool = False) -> str:
+def convert_ui_to_simplewx(input_path: Path, dev_mode: bool = True) -> str:
     # Top-level conversion entry point for Qt `.ui` files.
     try:
         tree = ET.parse(input_path)
@@ -763,8 +975,12 @@ def convert_ui_to_simplewx(input_path: Path, dev_mode: bool = False) -> str:
     handlers = parse_connections(root)
     menubar_name, menus, menu_height = parse_menus(main_widget, handlers)
     window = parse_window(main_widget, menu_height=menu_height)
+    notebooks, notebook_widgets = parse_notebooks(root, handlers)
     widgets = parse_widgets(root, handlers)
-    return render_python(window, widgets, handlers, menubar_name, menus, dev_mode=dev_mode)
+    widgets.extend(notebook_widgets)
+    widgets = _apply_frame_title_labels(widgets)
+    widgets = _assign_widgets_to_frames(widgets)
+    return render_python(window, widgets, notebooks, handlers, menubar_name, menus, dev_mode=dev_mode)
 
 
 def convert_fbp_to_simplewx(input_path: Path) -> str:
@@ -794,7 +1010,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
         "-d",
         "--dev",
         action="store_true",
-        help="Dev-Modus: setzt Base=0 im generierten new_window()-Aufruf.",
+        help="Kompatibilitätsflag: Base=0 ist bereits Standard im generierten new_window()-Aufruf.",
     )
     return parser
 
@@ -827,7 +1043,7 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     # Run the conversion and report errors in a user-friendly way.
     try:
-        code = convert_ui_to_simplewx(input_path, dev_mode=bool(args.dev))
+        code = convert_ui_to_simplewx(input_path)
     except BuilderError as exc:
         print(f"Abbruch: {exc}", file=sys.stderr)
         return 1

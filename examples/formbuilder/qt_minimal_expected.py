@@ -3,7 +3,13 @@ from simplewx import SimpleWx as simplewx
 
 # Main Window 'MainWindow'
 win = simplewx()
-win.new_window(Name='MainWindow', Title='MainWindow', Size=[340, 200], Statusbar=1)
+win.new_window(
+    Name='MainWindow',
+    Title='MainWindow',
+    Base=0,
+    Size=[340, 200],
+    Statusbar=1,
+)
 
 def on_pushButton_clicked(_event):
     pass

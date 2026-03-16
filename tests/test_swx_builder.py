@@ -50,15 +50,15 @@ def test_convert_dynamic_ui_fails_on_layout() -> None:
     _unit_passed("dynamic/layout ui rejected with clear error")
 
 
-def test_convert_static_ui_dev_mode_sets_base_zero() -> None:
+def test_convert_static_ui_default_mode_sets_base_zero() -> None:
     root = Path(__file__).resolve().parent.parent
     sample_path = root / "examples" / "formbuilder" / "qt_minimal.ui"
 
     builder = _load_builder_module()
-    generated = builder.convert_ui_to_simplewx(sample_path, dev_mode=True)
+    generated = builder.convert_ui_to_simplewx(sample_path)
 
     assert "Base=0" in generated
-    _unit_passed("dev mode emits Base=0 in new_window")
+    _unit_passed("default builder mode emits Base=0 in new_window")
 
 
 def test_convert_static_ui_qframe_maps_to_add_frame(tmp_path: Path) -> None:
@@ -354,3 +354,102 @@ def test_convert_static_ui_qgroupbox_radio_offset_and_group(tmp_path: Path) -> N
     assert "Position=[20, 20]" in generated
     assert "Group='group_frame_Composite_Manager'" in generated
     _unit_passed("qgroupbox radio offset/group works without changing legacy behavior")
+
+
+def test_convert_static_ui_qtabwidget_maps_to_notebook_pages(tmp_path: Path) -> None:
+    ui_path = tmp_path / "notebook_pages.ui"
+    ui_path.write_text(
+        """<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<ui version=\"4.0\">
+ <class>MainWindow</class>
+ <widget class=\"QMainWindow\" name=\"MainWindow\">
+  <property name=\"geometry\">
+   <rect><x>0</x><y>0</y><width>420</width><height>320</height></rect>
+  </property>
+  <widget class=\"QWidget\" name=\"centralwidget\">
+   <widget class=\"QTabWidget\" name=\"tabWidget\">
+    <property name=\"geometry\">
+     <rect><x>10</x><y>10</y><width>390</width><height>240</height></rect>
+    </property>
+    <widget class=\"QWidget\" name=\"tab_one\">
+     <attribute name=\"title\"><string>One</string></attribute>
+     <widget class=\"QLabel\" name=\"label_one\">
+      <property name=\"geometry\"><rect><x>20</x><y>20</y><width>80</width><height>20</height></rect></property>
+      <property name=\"text\"><string>Hello</string></property>
+     </widget>
+    </widget>
+    <widget class=\"QWidget\" name=\"tab_two\">
+     <attribute name=\"title\"><string>Two</string></attribute>
+     <widget class=\"QTextEdit\" name=\"textEdit\">
+      <property name=\"geometry\"><rect><x>15</x><y>10</y><width>120</width><height>90</height></rect></property>
+      <property name=\"plainText\"><string>abc</string></property>
+     </widget>
+    </widget>
+    <widget class=\"QWidget\" name=\"tab_three\">
+     <attribute name=\"title\"><string>Three</string></attribute>
+     <widget class=\"QSpinBox\" name=\"spinBox_Counter\">
+      <property name=\"geometry\"><rect><x>25</x><y>30</y><width>70</width><height>24</height></rect></property>
+      <property name=\"value\"><number>7</number></property>
+     </widget>
+    </widget>
+   </widget>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
+""",
+        encoding="utf-8",
+    )
+
+    builder = _load_builder_module()
+    generated = builder.convert_ui_to_simplewx(ui_path)
+
+    assert "win.add_notebook(" in generated
+    assert "Name='tabWidget'" in generated
+    assert "win.add_nb_page(Name='tab_one', Notebook='tabWidget', Title='One', PositionNumber=0)" in generated
+    assert "win.add_nb_page(Name='tab_two', Notebook='tabWidget', Title='Two', PositionNumber=1)" in generated
+    assert "win.add_nb_page(Name='tab_three', Notebook='tabWidget', Title='Three', PositionNumber=2)" in generated
+    assert "win.add_label(Name='label_one', Position=[20, 20], Title='Hello', Frame='tab_one')" in generated
+    assert "win.add_text_view(" in generated
+    assert "Name='textEdit'" in generated
+    assert "Frame='tab_two'" in generated
+    assert "win.add_spin_button(" in generated
+    assert "Name='spinBox_Counter'" in generated
+    assert "Start=7" in generated
+    assert "Frame='tab_three'" in generated
+    _unit_passed("qtabwidget maps to notebook pages with page-contained widgets")
+
+
+def test_convert_static_ui_frame_label_mapping_is_case_insensitive(tmp_path: Path) -> None:
+    ui_path = tmp_path / "frame_case_label.ui"
+    ui_path.write_text(
+        """<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<ui version=\"4.0\">
+ <class>MainWindow</class>
+ <widget class=\"QMainWindow\" name=\"MainWindow\">
+  <property name=\"geometry\"><rect><x>0</x><y>0</y><width>320</width><height>220</height></rect></property>
+  <widget class=\"QWidget\" name=\"centralwidget\">
+   <widget class=\"QFrame\" name=\"frame_Groups\">
+    <property name=\"geometry\"><rect><x>10</x><y>20</y><width>180</width><height>100</height></rect></property>
+   </widget>
+   <widget class=\"QLabel\" name=\"label_frame_groups\">
+    <property name=\"geometry\"><rect><x>20</x><y>9</y><width>80</width><height>21</height></rect></property>
+    <property name=\"text\"><string>Groups</string></property>
+   </widget>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
+""",
+        encoding="utf-8",
+    )
+
+    builder = _load_builder_module()
+    generated = builder.convert_ui_to_simplewx(ui_path)
+
+    assert "win.add_frame(Name='frame_Groups'" in generated
+    assert "Title='Groups'" in generated
+    assert "win.add_label(Name='label_frame_groups'" not in generated
+    _unit_passed("frame title label mapping handles case differences")

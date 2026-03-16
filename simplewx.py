@@ -3147,11 +3147,6 @@ class SimpleWx:
         if not isinstance(content_panel, wx.Window):
             return
 
-        # resize StaticBox to cover the entire frame panel
-        panel_size = outer_panel.GetClientSize()
-        if isinstance(static_box, wx.StaticBox):
-            static_box.SetSize(panel_size)
-
         # Internally shift the full frame upward by half the default font
         # height so the overlay title sits centered on the top border line,
         # while the public frame position remains unchanged.
@@ -3163,6 +3158,22 @@ class SimpleWx:
                     half_default_font_px = max(1, int(round(font_height_px / 2)))
             except Exception:
                 pass
+
+        # Compensate the upward shift with extra height so the visible bottom
+        # border remains at the requested Y+Height position.
+        current_size = outer_panel.GetSize()
+        target_width = int(current_size.GetWidth())
+        target_height = int(current_size.GetHeight())
+        if frame_object.width is not None:
+            target_width = self._scale(int(frame_object.width))
+        if frame_object.height is not None:
+            target_height = self._scale(int(frame_object.height)) + half_default_font_px
+        outer_panel.SetSize((max(1, target_width), max(1, target_height)))
+
+        # resize StaticBox to cover the full compensated frame panel
+        panel_size = outer_panel.GetClientSize()
+        if isinstance(static_box, wx.StaticBox):
+            static_box.SetSize(panel_size)
 
         nominal_x = self._scale(frame_object.pos_x)
         nominal_y = self._scale(frame_object.pos_y)
@@ -7483,6 +7494,16 @@ class SimpleWx:
         # add geometry if defined (scale at wx boundary only)
         if object_entry.width is not None and object_entry.height is not None:
             scaled_width, scaled_height = self._scale_pair(object_entry.width, object_entry.height)
+            if has_statusbar:
+                statusbar_height = 0
+                try:
+                    current_bar = frame.GetStatusBar()
+                    if isinstance(current_bar, wx.StatusBar):
+                        statusbar_height = max(0, int(current_bar.GetSize().GetHeight()))
+                except Exception:
+                    statusbar_height = 0
+                if statusbar_height > 0:
+                    scaled_height = max(1, int(scaled_height) - statusbar_height)
             frame.SetClientSize(scaled_width, scaled_height)
             self._sync_main_content_container_size()
 
