@@ -4,7 +4,7 @@ from __future__ import annotations
 __author__ = 'Thomas Funk'
 __coauthors__ = 'Github Copilot & Gemini'
 __date__ = "2026/03/17"
-__version__ = "0.5.1"
+__version__ = "0.5.2"
 
 from dataclasses import dataclass, field
 from typing import Optional, Any, Dict, Callable
@@ -3403,6 +3403,25 @@ class SimpleWx:
         if panel is not None:
             panel.SetPosition((0, 0))
             panel.SetSize(root_panel.GetClientSize())
+
+            # Recent fix: keep the scrolled virtual size based on actual child
+            # geometry so shrinking the main window produces scrollbars instead
+            # of collapsing the scrollable area to the visible client size.
+            if isinstance(panel, wx.ScrolledWindow):
+                required_width = 1
+                required_height = 1
+                for child in panel.GetChildren():
+                    if not isinstance(child, wx.Window) or not child.IsShown():
+                        continue
+                    child_pos = child.GetPosition()
+                    child_size = child.GetSize()
+                    required_width = max(required_width, int(child_pos.x) + max(1, int(child_size.GetWidth())))
+                    required_height = max(required_height, int(child_pos.y) + max(1, int(child_size.GetHeight())))
+
+                client_size = panel.GetClientSize()
+                virtual_width = max(int(client_size.GetWidth()), required_width)
+                virtual_height = max(int(client_size.GetHeight()), required_height)
+                panel.SetVirtualSize((virtual_width, virtual_height))
 
     def show_error(self, object_or_msg: Any, msg: Optional[str] = None) -> None:
         """

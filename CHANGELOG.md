@@ -14,6 +14,17 @@ The format is based on Keep a Changelog.
 
 ## [Unreleased]
 
+## [0.5.2] - 2026-03-17
+
+### Changed
+
+- Bumped library metadata in `simplewx.py` to `__version__ = "0.5.2"`.
+- Updated the README headline version from `0.5.1` to `0.5.2`.
+
+### Fixed
+
+- Fixed scroll range handling in `simplewx.py` for non-fixed main windows by preserving the `wx.ScrolledWindow` virtual size from actual child geometry, so shrinking the frame shows scrollbars again.
+
 ## [0.5.1] - 2026-03-17
 
 ### Added
