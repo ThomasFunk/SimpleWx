@@ -12,6 +12,7 @@ import datetime
 import gettext
 import os
 import re
+import sys
 import wx
 import wx.adv
 import wx.dataview as wxdataview
@@ -2158,9 +2159,17 @@ class SimpleWx:
 
         # progressbar values
         if object_entry.type == "ProgressBar":
+            debug_enabled = bool(int(data.get("debug", 0)))
+
+            def _dbg(message: str) -> None:
+                if not debug_enabled:
+                    return
+                print(f"[{self.name}->{object_entry.name}][pbar-debug] {message}", flush=True)
+
             if "mode" in params:
                 mode_value = str(params.pop("mode") or "percent").lower()
                 data["mode"] = mode_value if mode_value in ("percent", "pulse") else "percent"
+                _dbg(f"set mode={data['mode']}")
             if "steps" in params:
                 steps = int(params.pop("steps"))
                 if steps <= 0:
@@ -2169,19 +2178,25 @@ class SimpleWx:
                 current_value = int(data.get("value", 0))
                 current_value = max(0, min(current_value, steps))
                 data["value"] = current_value
+                _dbg(f"set steps={steps}, clamped value={current_value}")
             if "orientation" in params:
                 orient_value = str(params.pop("orientation") or "horizontal").lower()
                 data["orientation"] = "vertical" if orient_value.startswith("v") else "horizontal"
+                _dbg(f"set orientation={data['orientation']}")
             if "orient" in params:
                 orient_value = str(params.pop("orient") or "horizontal").lower()
                 data["orientation"] = "vertical" if orient_value.startswith("v") else "horizontal"
+                _dbg(f"set orient={data['orientation']}")
             if "timer" in params:
                 data["timer"] = max(1, int(params.pop("timer")))
+                _dbg(f"set timer={data['timer']}")
             if "align" in params:
                 align_value = str(params.pop("align") or "left").lower()
                 data["align"] = align_value if align_value in ("left", "right") else "left"
+                _dbg(f"set align={data['align']}")
             if "showpercent" in params:
                 data["showpercent"] = 1 if int(params.pop("showpercent") or 0) else 0
+                _dbg(f"set showpercent={data['showpercent']}")
 
             if "fraction" in params:
                 fraction = float(params.pop("fraction"))
@@ -2189,6 +2204,7 @@ class SimpleWx:
                 steps = max(1, int(data.get("steps", 100)))
                 value = int(round(fraction * steps))
                 data["value"] = value
+                _dbg(f"set fraction={fraction:.3f} -> value={value}/{steps}")
 
             if "start" in params:
                 params["active"] = params.pop("start")
@@ -2199,6 +2215,7 @@ class SimpleWx:
                 steps = max(1, int(data.get("steps", 100)))
                 value = max(0, min(value, steps))
                 data["value"] = value
+                _dbg(f"set active/value={value}/{steps}")
 
             self._layout_progress_bar_fill(object_entry.name)
 
@@ -3175,7 +3192,10 @@ class SimpleWx:
             target_width = self._scale(int(frame_object.width))
         if frame_object.height is not None:
             target_height = self._scale(int(frame_object.height)) + half_default_font_px
-        outer_panel.SetSize((max(1, target_width), max(1, target_height)))
+        desired_width = max(1, int(target_width))
+        desired_height = max(1, int(target_height))
+        if int(current_size.GetWidth()) != desired_width or int(current_size.GetHeight()) != desired_height:
+            outer_panel.SetSize((desired_width, desired_height))
 
         # resize StaticBox to cover the full compensated frame panel
         panel_size = outer_panel.GetClientSize()
@@ -3184,7 +3204,9 @@ class SimpleWx:
 
         nominal_x = self._scale(frame_object.pos_x)
         nominal_y = self._scale(frame_object.pos_y)
-        outer_panel.SetPosition((nominal_x, nominal_y - half_default_font_px))
+        desired_pos = (int(nominal_x), int(nominal_y - half_default_font_px))
+        if tuple(outer_panel.GetPosition()) != desired_pos:
+            outer_panel.SetPosition(desired_pos)
 
         # Do not add any extra content insets here; child coordinates are
         # already emitted explicitly by the importer.
@@ -9085,6 +9107,7 @@ class SimpleWx:
             "imagesize": 16,        # Default tab icon size in pixels
             "image_index_map": {},  # Mapping of image path -> ImageList index
             "imagelist": None,      # wx.ImageList instance (created on demand)
+            "_syncing_geometry": 0,
         }
 
         def _on_notebook_page_changed(event: wx.BookCtrlEvent, notebook_name: str = object_entry.name) -> None:
@@ -9092,7 +9115,9 @@ class SimpleWx:
             notebook_obj = self.get_object(notebook_name)
             if isinstance(notebook_obj.data, dict) and notebook_obj.ref is not None:
                 # Persist the index of the newly selected page
-                notebook_obj.data["currentpage"] = int(notebook_obj.ref.GetSelection())
+                selected = int(notebook_obj.ref.GetSelection())
+                notebook_obj.data["currentpage"] = selected
+                wx.CallAfter(_sync_notebook_geometry, notebook_name, f"page-changed={selected}")
             event.Skip()
 
         def _on_notebook_motion(event: wx.MouseEvent, notebook_name: str = object_entry.name) -> None:
@@ -9175,10 +9200,73 @@ class SimpleWx:
             else:
                 event.Skip()
 
+        notebook_debug_flag = os.environ.get("SWX_NOTEBOOK_DEBUG", "0").strip().lower()
+        notebook_debug_enabled = notebook_debug_flag in {"1", "true", "yes", "on"}
+
+        def _nb_dbg(message: str, notebook_name: str = object_entry.name) -> None:
+            if not notebook_debug_enabled:
+                return
+            print(f"[{self.name}->{notebook_name}][nb-debug] {message}", flush=True)
+
+        def _sync_notebook_geometry(notebook_name: str = object_entry.name, reason: str = "event") -> None:
+            notebook_obj = self.get_object(notebook_name)
+            notebook_ref = notebook_obj.ref
+            notebook_data = notebook_obj.data if isinstance(notebook_obj.data, dict) else {}
+
+            if not isinstance(notebook_ref, wx.Notebook):
+                return
+            if notebook_obj.width is None or notebook_obj.height is None:
+                return
+            if int(notebook_data.get("_syncing_geometry", 0)):
+                _nb_dbg(f"{reason}: skip while syncing")
+                return
+
+            expected_pos = (self._scale(int(notebook_obj.pos_x)), self._scale(int(notebook_obj.pos_y)))
+            expected_size = (self._scale(int(notebook_obj.width)), self._scale(int(notebook_obj.height)))
+
+            current_pos = tuple(notebook_ref.GetPosition())
+            current_size_obj = notebook_ref.GetSize()
+            current_size = (int(current_size_obj.GetWidth()), int(current_size_obj.GetHeight()))
+
+            needs_pos = current_pos != expected_pos
+            needs_size = current_size != expected_size
+            if not needs_pos and not needs_size:
+                return
+
+            _nb_dbg(
+                f"{reason}: drift pos={current_pos}->{expected_pos}, "
+                f"size={current_size}->{expected_size}, fix_pos={1 if needs_pos else 0}, "
+                f"fix_size={1 if needs_size else 0}"
+            )
+
+            notebook_data["_syncing_geometry"] = 1
+            notebook_obj.data = notebook_data
+            try:
+                if needs_size:
+                    notebook_ref.SetSize(expected_size)
+                if needs_pos:
+                    notebook_ref.SetPosition(expected_pos)
+            finally:
+                notebook_data = notebook_obj.data if isinstance(notebook_obj.data, dict) else {}
+                notebook_data["_syncing_geometry"] = 0
+                notebook_obj.data = notebook_data
+
+            fixed_pos = tuple(notebook_ref.GetPosition())
+            fixed_size_obj = notebook_ref.GetSize()
+            fixed_size = (int(fixed_size_obj.GetWidth()), int(fixed_size_obj.GetHeight()))
+            _nb_dbg(f"{reason}: after-fix pos={fixed_pos}, size={fixed_size}")
+
+        def _enforce_notebook_geometry(event: wx.Event, notebook_name: str = object_entry.name) -> None:
+            event_type = int(event.GetEventType()) if hasattr(event, "GetEventType") else -1
+            _sync_notebook_geometry(notebook_name, f"event={event_type}")
+            event.Skip()
+
         # Register event handlers for page changes, middle-click, and mouse motion on the notebook
         notebook.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, _on_notebook_page_changed)
         notebook.Bind(wx.EVT_MIDDLE_DOWN, _on_notebook_middle_click)
         notebook.Bind(wx.EVT_MOTION, _on_notebook_motion)
+        notebook.Bind(wx.EVT_SIZE, _enforce_notebook_geometry)
+        notebook.Bind(wx.EVT_MOVE, _enforce_notebook_geometry)
 
         # Apply common widget properties (position, size, tooltip, callback, …)
         self._set_commons(object_entry.name, **params)
@@ -9804,7 +9892,9 @@ class SimpleWx:
         }
 
         def _on_treeview_size(event: wx.Event, host: wx.ScrolledWindow = scrolled_window, ctrl: wx.TreeCtrl = treeview) -> None:
-            ctrl.SetSize(host.GetClientSize())
+            target_size = host.GetClientSize()
+            if ctrl.GetSize() != target_size:
+                ctrl.SetSize(target_size)
             event.Skip()
 
         scrolled_window.Bind(wx.EVT_SIZE, _on_treeview_size)
@@ -10115,7 +10205,9 @@ class SimpleWx:
             height = int(client_size.GetHeight())
             if width < 2 or height < 2:
                 return
-            ctrl.SetSize(wx.Size(width, height))
+            target_size = wx.Size(width, height)
+            if ctrl.GetSize() != target_size:
+                ctrl.SetSize(target_size)
 
         def _on_listview_size(event: wx.Event, host: wx.ScrolledWindow = scrolled_window, ctrl: wx.ListCtrl = listview) -> None:
             _apply_listview_size(host, ctrl)
@@ -11290,6 +11382,138 @@ class SimpleWx:
         object_entry = self.get_object(Name)
         if object_entry.type != "ProgressBar" or object_entry.ref is None:
             return
+        data = object_entry.data if isinstance(object_entry.data, dict) else {}
+
+        debug_enabled = bool(int(data.get("debug", 0)))
+
+        def _dbg(message: str) -> None:
+            if not debug_enabled:
+                return
+            print(f"[{self.name}->{Name}][pbar-debug] {message}", flush=True)
+
+        if isinstance(object_entry.ref, wx.Gauge):
+            gauge = object_entry.ref
+            native_label = data.get("native_label")
+            native_underlay = data.get("native_underlay")
+            native_gap = int(data.get("native_label_gap", self._scale(6)))
+            native_label_width = int(data.get("native_label_width", 0))
+            native_label_offset = int(data.get("native_label_offset", 0))
+            native_track_height = int(data.get("native_track_height", self._scale(20)))
+            native_underlay_extra_h = int(data.get("native_underlay_extra_h", self._scale(3)))
+            if native_label_width <= 0:
+                native_label_width = self._scale(32)
+
+            total_w = self._scale(int(object_entry.width)) if object_entry.width is not None else int(gauge.GetSize().GetWidth())
+            total_h = self._scale(int(object_entry.height)) if object_entry.height is not None else int(gauge.GetSize().GetHeight())
+            total_w = max(1, int(total_w))
+            total_h = max(1, int(total_h))
+            base_pos = (self._scale(int(object_entry.pos_x)), self._scale(int(object_entry.pos_y)))
+
+            if isinstance(native_underlay, wx.Panel):
+                if tuple(native_underlay.GetPosition()) != base_pos:
+                    native_underlay.SetPosition(base_pos)
+                underlay_size = (total_w, total_h + native_underlay_extra_h)
+                if tuple(native_underlay.GetSize()) != underlay_size:
+                    native_underlay.SetSize(underlay_size)
+                if not native_underlay.IsShown():
+                    native_underlay.Show(True)
+                gauge_pos_base = (0, 0)
+            else:
+                gauge_pos_base = base_pos
+
+            mode = str(data.get("mode", "percent")).lower()
+            if mode == "pulse":
+                try:
+                    gauge.Pulse()
+                except Exception:
+                    pass
+                if isinstance(native_label, wx.StaticText):
+                    native_label.SetLabel("...")
+                _dbg("layout(native): pulse")
+                return
+
+            steps = max(1, int(data.get("steps", 100)))
+            value = max(0, min(int(data.get("value", 0)), steps))
+            if int(gauge.GetRange()) != steps:
+                gauge.SetRange(steps)
+                _dbg(f"layout(native): set range={steps}")
+            if int(gauge.GetValue()) != value:
+                gauge.SetValue(value)
+                _dbg(f"layout(native): set value={value}/{steps}")
+
+            if isinstance(native_label, wx.StaticText):
+                show_percent = int(data.get("showpercent", 1))
+                pct = int(round((value / steps) * 100))
+                label_text = f"{pct}%"
+                if native_label.GetLabel() != label_text:
+                    native_label.SetLabel(label_text)
+
+                gauge_pos = gauge_pos_base
+
+                if show_percent:
+                    label_best = native_label.GetBestSize()
+                    label_h = max(1, int(label_best.GetHeight()))
+                    reserve_w = max(native_label_width, int(label_best.GetWidth()))
+
+                    if str(data.get("orientation", "horizontal")) == "vertical":
+                        gauge_target_pos = (int(gauge_pos[0]), int(gauge_pos[1] + label_h + native_gap))
+                        gauge_target_size = (total_w, max(1, total_h - label_h - native_gap))
+                        label_target_pos = (int(gauge_pos[0] + max(0, (total_w - reserve_w) // 2)), int(gauge_pos[1]))
+                        label_target_size = (reserve_w, label_h)
+                    else:
+                        gauge_target_pos = (int(gauge_pos[0]), int(gauge_pos[1]))
+                        gauge_target_size = (max(1, total_w - reserve_w - native_gap), total_h)
+                        ascent = label_h
+                        descent = 0
+                        try:
+                            text_dc = wx.ClientDC(native_label)
+                            text_dc.SetFont(native_label.GetFont())
+                            _tw, _th, text_descent, _ext = text_dc.GetFullTextExtent(label_text)
+                            descent = max(0, int(text_descent))
+                            ascent = max(1, int(label_h - descent))
+                        except Exception:
+                            ascent = label_h
+
+                        gauge_bottom_y = int(gauge_target_pos[1] + gauge_target_size[1])
+                        label_target_y = int(gauge_bottom_y - ascent + native_label_offset)
+                        label_target_pos = (
+                            int(gauge_target_pos[0] + total_w + native_gap - reserve_w),
+                            label_target_y,
+                        )
+                        label_target_size = (reserve_w, label_h)
+
+                    if tuple(gauge.GetSize()) != gauge_target_size:
+                        gauge.SetSize(gauge_target_size)
+                    if tuple(gauge.GetPosition()) != gauge_target_pos:
+                        gauge.SetPosition(gauge_target_pos)
+                    if tuple(native_label.GetPosition()) != label_target_pos:
+                        native_label.SetPosition(label_target_pos)
+                    if tuple(native_label.GetSize()) != label_target_size:
+                        native_label.SetSize(label_target_size)
+                    if not native_label.IsShown():
+                        native_label.Show(True)
+                else:
+                    gauge_target_size = (total_w, total_h)
+                    if tuple(gauge.GetSize()) != gauge_target_size:
+                        gauge.SetSize(gauge_target_size)
+                    if native_label.IsShown():
+                        native_label.Show(False)
+                gauge.Show(True)
+                if isinstance(native_label, wx.StaticText):
+                    native_label.Raise()
+            return
+
+        if debug_enabled:
+            state = (
+                int(data.get("value", 0)),
+                int(data.get("steps", 100)),
+                str(data.get("orientation", "horizontal")),
+            )
+            if data.get("_debug_last_layout") != state:
+                data["_debug_last_layout"] = state
+                object_entry.data = data
+                _dbg(f"layout(owner-draw): value={state[0]}/{state[1]}, orient={state[2]}")
+
         object_entry.ref.Refresh()
 
     def add_progress_bar(
@@ -11409,18 +11633,95 @@ class SimpleWx:
         timer = max(1, int(params.get("timer") or 100))
 
         provisional_parent = self.container if self.container is not None else self._get_container(self.default_container_name)
-        host_panel = wx.Panel(
-            provisional_parent,
-            wx.ID_ANY,
-            pos=(0, 0),
-            size=wx.DefaultSize,
-            style=wx.BORDER_THEME,
-        )
-        # use owner-drawn painting to avoid GTK gauge height limits and
-        # transparency issues with child widgets
-        host_panel.SetBackgroundStyle(wx.BG_STYLE_PAINT)
 
-        object_entry.ref = host_panel
+        debug_flag = os.environ.get("SWX_PROGRESSBAR_DEBUG", "0").strip().lower()
+        debug_enabled = debug_flag in {"1", "true", "yes", "on"}
+        force_flag = os.environ.get("SWX_PROGRESSBAR_FORCE_OWNERDRAW", "0").strip().lower()
+        force_ownerdraw = force_flag in {"1", "true", "yes", "on"}
+
+        container_name = params.get("frame")
+        use_native_gauge = False
+        container_type = ""
+        if isinstance(container_name, str) and container_name in self.widgets:
+            try:
+                container_object = self.get_object(container_name)
+                container_type = str(container_object.type)
+                use_native_gauge = container_object.type == "NotebookPage"
+            except Exception:
+                pass
+
+        native_notebook_flag = os.environ.get("SWX_PROGRESSBAR_NOTEBOOK_NATIVE", "0").strip().lower()
+        native_notebook_preferred = native_notebook_flag in {"1", "true", "yes", "on"}
+        native_underlay_flag = os.environ.get("SWX_PROGRESSBAR_NATIVE_UNDERLAY", "0").strip().lower()
+        native_underlay_enabled = native_underlay_flag in {"1", "true", "yes", "on"}
+        debugger_attached = (sys.gettrace() is not None) or ("DEBUGPY_LAUNCHER_PORT" in os.environ)
+        if use_native_gauge and not (debugger_attached or native_notebook_preferred):
+            use_native_gauge = False
+        if force_ownerdraw:
+            use_native_gauge = False
+
+        def _dbg(message: str) -> None:
+            if not debug_enabled:
+                return
+            print(f"[{self.name}->{object_entry.name}][pbar-debug] {message}", flush=True)
+
+        _dbg(
+            "create: "
+            f"frame={container_name}, container_type={container_type or '-'}, "
+            f"mode={mode}, orient={orientation}, steps={steps}, "
+            f"native={1 if use_native_gauge else 0}, force_ownerdraw={1 if force_ownerdraw else 0}, "
+            f"debugger={1 if debugger_attached else 0}, notebook_native_pref={1 if native_notebook_preferred else 0}"
+        )
+
+        if use_native_gauge:
+            gauge_style = wx.GA_SMOOTH
+            if orientation == "vertical":
+                gauge_style |= wx.GA_VERTICAL
+            else:
+                gauge_style |= wx.GA_HORIZONTAL
+
+            gauge = wx.Gauge(
+                provisional_parent,
+                wx.ID_ANY,
+                range=steps,
+                pos=(0, 0),
+                size=wx.DefaultSize,
+                style=gauge_style,
+            )
+            gauge.SetValue(0)
+
+            requested_w = self._scale(int(object_entry.width)) if object_entry.width is not None else -1
+            requested_h = self._scale(int(object_entry.height)) if object_entry.height is not None else -1
+            best_before = gauge.GetBestSize()
+            if requested_h >= 32:
+                try:
+                    gauge.SetWindowVariant(wx.WINDOW_VARIANT_LARGE)
+                except Exception:
+                    pass
+            best_after = gauge.GetBestSize()
+            if requested_w > 0 and requested_h > 0:
+                requested_size = (requested_w, requested_h)
+                gauge.SetInitialSize(requested_size)
+                gauge.SetMinSize(requested_size)
+                gauge.SetSize(requested_size)
+                _dbg(f"native-size-request: requested={requested_w}x{requested_h}")
+
+            object_entry.ref = gauge
+            host_panel = None
+        else:
+            host_panel = wx.Panel(
+                provisional_parent,
+                wx.ID_ANY,
+                pos=(0, 0),
+                size=wx.DefaultSize,
+                style=wx.BORDER_NONE,
+            )
+            # use owner-drawn painting to avoid GTK gauge height limits and
+            # transparency issues with child widgets. Keep host borderless,
+            # border is rendered manually in EVT_PAINT to avoid GTK theme side-effects.
+            host_panel.SetBackgroundStyle(wx.BG_STYLE_PAINT)
+            object_entry.ref = host_panel
+
         object_entry.data = {
             "mode": mode,
             "steps": steps,
@@ -11429,90 +11730,192 @@ class SimpleWx:
             "align": align,
             "showpercent": show_percent,
             "value": 0,
+            "native": 1 if use_native_gauge else 0,
+            "debug": 1 if debug_enabled else 0,
+            "force_ownerdraw": 1 if force_ownerdraw else 0,
+            "_debug_last_layout": None,
+            "_debug_last_paint": None,
+            "_debug_last_size": None,
+            "_painting": 0,
+            "_layout_pending": 0,
+            "native_label": None,
+            "native_underlay": None,
+            "native_label_width": self._scale(32),
+            "native_label_gap": self._scale(6),
+            "native_label_offset": 0,
+            "native_track_height": self._scale(20),
+            "native_underlay_extra_h": self._scale(3),
         }
 
         def _on_progressbar_paint(event: wx.Event, progress_name: str = object_entry.name) -> None:
             obj = self.get_object(progress_name)
             d = obj.data if isinstance(obj.data, dict) else {}
             host = obj.ref
-            dc = wx.AutoBufferedPaintDC(host)
-            w, h = host.GetClientSize()
-            if w <= 1 or h <= 1:
+            if not isinstance(host, wx.Window):
+                return
+            if int(d.get("_painting", 0)):
                 return
 
-            pb_steps = max(1, int(d.get("steps", 100)))
-            pb_value = max(0, min(int(d.get("value", 0)), pb_steps))
-            pb_orient = str(d.get("orientation", "horizontal"))
+            d["_painting"] = 1
+            obj.data = d
+            try:
+                dc = wx.AutoBufferedPaintDC(host)
+                w, h = host.GetClientSize()
+                if w <= 1 or h <= 1:
+                    if int(d.get("debug", 0)):
+                        size_state = (int(w), int(h), "skip")
+                        if d.get("_debug_last_size") != size_state:
+                            d["_debug_last_size"] = size_state
+                            obj.data = d
+                            _dbg(f"paint: skip size={w}x{h}")
+                    return
 
-            # explicit frame
-            border_col = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNSHADOW)
-            dc.SetPen(wx.Pen(border_col, 1))
-            dc.SetBrush(wx.TRANSPARENT_BRUSH)
-            dc.DrawRectangle(0, 0, w, h)
+                pb_steps = max(1, int(d.get("steps", 100)))
+                pb_value = max(0, min(int(d.get("value", 0)), pb_steps))
+                pb_orient = str(d.get("orientation", "horizontal"))
 
-            # inner track background
-            inner_x = 1
-            inner_y = 1
-            inner_w = max(0, w - 2)
-            inner_h = max(0, h - 2)
-            bg_col = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE)
-            dc.SetBrush(wx.Brush(bg_col))
-            dc.SetPen(wx.TRANSPARENT_PEN)
-            dc.DrawRectangle(inner_x, inner_y, inner_w, inner_h)
+                if int(d.get("debug", 0)):
+                    paint_state = (int(w), int(h), int(pb_value), int(pb_steps), pb_orient)
+                    if d.get("_debug_last_paint") != paint_state:
+                        d["_debug_last_paint"] = paint_state
+                        obj.data = d
+                        _dbg(
+                            "paint: "
+                            f"size={w}x{h}, value={pb_value}/{pb_steps}, orient={pb_orient}, "
+                            f"showpct={int(d.get('showpercent', 1))}"
+                        )
 
-            # fill
-            fill_col = wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHT)
-            dc.SetBrush(wx.Brush(fill_col))
-            fill_x = inner_x
-            fill_y = inner_y
-            fill_w_draw = 0
-            fill_h_draw = 0
-            if pb_orient == "vertical" and inner_w > 0 and inner_h > 0:
-                fill_h = int(round((inner_h * pb_value) / pb_steps)) if pb_value > 0 else 0
-                if fill_h > 0:
-                    fill_x = inner_x
-                    fill_y = inner_y + inner_h - fill_h
-                    fill_w_draw = inner_w
-                    fill_h_draw = fill_h
-                    dc.DrawRectangle(fill_x, fill_y, fill_w_draw, fill_h_draw)
-            elif inner_w > 0 and inner_h > 0:
-                fill_w = int(round((inner_w * pb_value) / pb_steps)) if pb_value > 0 else 0
-                if fill_w > 0:
-                    fill_x = inner_x
-                    fill_y = inner_y
-                    fill_w_draw = fill_w
-                    fill_h_draw = inner_h
-                    dc.DrawRectangle(fill_x, fill_y, fill_w_draw, fill_h_draw)
+                border_col = wx.Colour(95, 95, 95)
+                dc.SetPen(wx.Pen(border_col, 1))
+                dc.SetBrush(wx.TRANSPARENT_BRUSH)
+                dc.DrawRectangle(0, 0, w, h)
 
-            # centered percentage text
-            if int(d.get("showpercent", 1)):
-                pct = int(round((pb_value / pb_steps) * 100))
-                text = f"{pct}%"
-                dc.SetFont(host.GetFont())
-                tw, th = dc.GetTextExtent(text)
-                text_x = max(0, (w - tw) // 2)
-                text_y = max(0, (h - th) // 2)
+                inner_x = 1
+                inner_y = 1
+                inner_w = max(0, w - 2)
+                inner_h = max(0, h - 2)
+                bg_col = wx.Colour(236, 236, 236)
+                dc.SetBrush(wx.Brush(bg_col))
+                dc.SetPen(wx.TRANSPARENT_PEN)
+                dc.DrawRectangle(inner_x, inner_y, inner_w, inner_h)
 
-                # base text color on track
-                dc.SetTextForeground(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
-                dc.DrawText(text, text_x, text_y)
+                fill_col = wx.Colour(42, 130, 218)
+                dc.SetBrush(wx.Brush(fill_col))
+                fill_x = inner_x
+                fill_y = inner_y
+                fill_w_draw = 0
+                fill_h_draw = 0
+                if pb_orient == "vertical" and inner_w > 0 and inner_h > 0:
+                    fill_h = int(round((inner_h * pb_value) / pb_steps)) if pb_value > 0 else 0
+                    if fill_h > 0:
+                        fill_x = inner_x
+                        fill_y = inner_y + inner_h - fill_h
+                        fill_w_draw = inner_w
+                        fill_h_draw = fill_h
+                        dc.DrawRectangle(fill_x, fill_y, fill_w_draw, fill_h_draw)
+                elif inner_w > 0 and inner_h > 0:
+                    fill_w = int(round((inner_w * pb_value) / pb_steps)) if pb_value > 0 else 0
+                    if fill_w > 0:
+                        fill_x = inner_x
+                        fill_y = inner_y
+                        fill_w_draw = fill_w
+                        fill_h_draw = inner_h
+                        dc.DrawRectangle(fill_x, fill_y, fill_w_draw, fill_h_draw)
 
-                # overwrite text part that lies on the fill with highlight text color
-                if fill_w_draw > 0 and fill_h_draw > 0:
-                    dc.SetClippingRegion(fill_x, fill_y, fill_w_draw, fill_h_draw)
-                    dc.SetTextForeground(wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHTTEXT))
+                if int(d.get("showpercent", 1)):
+                    pct = int(round((pb_value / pb_steps) * 100))
+                    text = f"{pct}%"
+                    dc.SetFont(host.GetFont())
+                    tw, th = dc.GetTextExtent(text)
+                    text_x = max(0, (w - tw) // 2)
+                    text_y = max(0, (h - th) // 2)
+                    dc.SetTextForeground(wx.Colour(25, 25, 25))
                     dc.DrawText(text, text_x, text_y)
-                    dc.DestroyClippingRegion()
+                    if fill_w_draw > 0 and fill_h_draw > 0:
+                        dc.SetClippingRegion(fill_x, fill_y, fill_w_draw, fill_h_draw)
+                        dc.SetTextForeground(wx.Colour(250, 250, 250))
+                        dc.DrawText(text, text_x, text_y)
+                        dc.DestroyClippingRegion()
+            finally:
+                latest = obj.data if isinstance(obj.data, dict) else {}
+                latest["_painting"] = 0
+                obj.data = latest
+
+        def _schedule_progressbar_layout(progress_name: str = object_entry.name) -> None:
+            obj = self.get_object(progress_name)
+            d = obj.data if isinstance(obj.data, dict) else {}
+            d["_layout_pending"] = 0
+            obj.data = d
+            self._layout_progress_bar_fill(progress_name)
 
         def _on_progressbar_size(event: wx.Event, progress_name: str = object_entry.name) -> None:
-            self._layout_progress_bar_fill(progress_name)
+            if debug_enabled:
+                obj = self.get_object(progress_name)
+                host = obj.ref
+                if isinstance(host, wx.Window):
+                    w, h = host.GetClientSize()
+                    d = obj.data if isinstance(obj.data, dict) else {}
+                    size_state = (int(w), int(h))
+                    if d.get("_debug_last_size") != size_state:
+                        d["_debug_last_size"] = size_state
+                        obj.data = d
+                        _dbg(f"size-event: client={w}x{h}")
+
+            obj = self.get_object(progress_name)
+            d = obj.data if isinstance(obj.data, dict) else {}
+            if not int(d.get("_layout_pending", 0)):
+                d["_layout_pending"] = 1
+                obj.data = d
+                wx.CallAfter(_schedule_progressbar_layout, progress_name)
             event.Skip()
 
-        host_panel.Bind(wx.EVT_PAINT, _on_progressbar_paint)
-        host_panel.Bind(wx.EVT_SIZE, _on_progressbar_size)
+        host_panel = object_entry.ref
+        if isinstance(host_panel, wx.Panel):
+            host_panel.Bind(wx.EVT_PAINT, _on_progressbar_paint)
+            host_panel.Bind(wx.EVT_SIZE, _on_progressbar_size)
+        elif isinstance(host_panel, wx.Gauge):
+            def _on_native_gauge_show(event: wx.ShowEvent, progress_name: str = object_entry.name) -> None:
+                obj = self.get_object(progress_name)
+                d = obj.data if isinstance(obj.data, dict) else {}
+                native_label = d.get("native_label")
+                if isinstance(native_label, wx.StaticText):
+                    native_label.Show(event.IsShown())
+                event.Skip()
+
+            host_panel.Bind(wx.EVT_SHOW, _on_native_gauge_show)
 
         self._set_commons(object_entry.name, **params)
         self._add_to_container(object_entry.name)
+
+        if use_native_gauge and show_percent and isinstance(object_entry.ref, wx.Gauge):
+            gauge_parent = object_entry.ref.GetParent()
+            if isinstance(gauge_parent, wx.Window):
+                if native_notebook_preferred or native_underlay_enabled:
+                    native_underlay = wx.Panel(
+                        gauge_parent,
+                        wx.ID_ANY,
+                        pos=(self._scale(int(object_entry.pos_x)), self._scale(int(object_entry.pos_y))),
+                        size=(
+                            self._scale(int(object_entry.width)) if object_entry.width is not None else 1,
+                            (self._scale(int(object_entry.height)) + self._scale(3)) if object_entry.height is not None else 1,
+                        ),
+                        style=wx.BORDER_NONE,
+                    )
+                    native_underlay.SetBackgroundColour(wx.Colour(236, 236, 236))
+                    native_underlay.Show(True)
+                    object_entry.ref.Reparent(native_underlay)
+                    object_entry.ref.SetPosition((0, 0))
+                    object_entry.data["native_underlay"] = native_underlay
+
+                label_parent = object_entry.data.get("native_underlay") if isinstance(object_entry.data.get("native_underlay"), wx.Window) else gauge_parent
+                native_label = wx.StaticText(label_parent, wx.ID_ANY, "100%")
+                native_label.Hide()
+                native_label_size = native_label.GetBestSize()
+                native_label_width = max(self._scale(32), int(native_label_size.GetWidth()))
+                native_label.SetSize((native_label_width, max(1, int(native_label_size.GetHeight()))))
+                object_entry.data["native_label"] = native_label
+                object_entry.data["native_label_width"] = native_label_width
+
         self._layout_progress_bar_fill(object_entry.name)
     def add_progressbar(
         self,

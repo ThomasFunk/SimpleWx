@@ -111,6 +111,12 @@ SUPPORTED_WIDGET_CLASSES = {
     "QComboBox",
     "QSlider",
     "QProgressBar",
+    "QListWidget",
+    "QListView",
+    "QTableWidget",
+    "QTableView",
+    "QTreeWidget",
+    "QTreeView",
 }
 
 MIN_SPINBOX_WIDTH = 80
@@ -181,6 +187,16 @@ def _property_enum(widget: ET.Element, name: str) -> Optional[str]:
             return stripped
     raw = "".join(prop.itertext()).strip()
     return raw if raw else None
+
+
+def _int_from_property(widget: ET.Element, name: str, default: int = 0) -> int:
+    raw = _property_number(widget, name)
+    if raw is None:
+        return default
+    try:
+        return int(round(float(raw.strip())))
+    except (TypeError, ValueError):
+        return default
 
 
 def _normalize_qt_resource_path(raw_path: str) -> str:
@@ -687,6 +703,41 @@ def _widget_from_element(
         current_value = max(minimum_value, min(current_value, maximum_value))
         extra["steps"] = steps
         extra["value"] = current_value - minimum_value
+    if qt_class in {"QListWidget", "QListView"}:
+        list_items: List[List[str]] = []
+        if qt_class == "QListWidget":
+            for item in widget_el.findall("item"):
+                item_text = _property_string(item, "text")
+                if item_text is not None:
+                    list_items.append([item_text])
+        extra["headers"] = ["Items"]
+        extra["data"] = list_items
+    if qt_class in {"QTableWidget", "QTableView"}:
+        columns = _int_from_property(widget_el, "columnCount", default=0)
+        rows = _int_from_property(widget_el, "rowCount", default=0)
+
+        headers: List[str] = []
+        for index, column in enumerate(widget_el.findall("column"), start=1):
+            header_text = _property_string(column, "text")
+            headers.append(header_text if header_text else f"Column {index}")
+
+        required_columns = max(columns, len(headers), 1)
+        while len(headers) < required_columns:
+            headers.append(f"Column {len(headers) + 1}")
+
+        table_data = [["" for _ in range(required_columns)] for _ in range(max(rows, 0))]
+        extra["headers"] = headers
+        extra["data"] = table_data
+    if qt_class in {"QTreeWidget", "QTreeView"}:
+        tree_headers: List[str] = []
+        for index, column in enumerate(widget_el.findall("column"), start=1):
+            header_text = _property_string(column, "text")
+            tree_headers.append(header_text if header_text else f"Column {index}")
+        if not tree_headers:
+            tree_headers = ["Tree"]
+        extra["headers"] = tree_headers
+        extra["data"] = []
+        extra["tree_type"] = "Tree"
     if qt_class == "QFrame":
         frame_shape = (_property_enum(widget_el, "frameShape") or "").lower()
         if "hline" in frame_shape:
@@ -1255,6 +1306,88 @@ def build_widget_call(widget: WidgetSpec, container_frame: Optional[str] = None)
             args.append(f"Function={widget.handler_name}")
         return _format_call("win.add_progress_bar", args)
 
+    if widget.qt_class in {"QListWidget", "QListView"}:
+        headers = widget.extra.get("headers", ["Items"])
+        data = widget.extra.get("data", [])
+        args = [
+            f"Name={quote(widget.name)}",
+            f"Position=[{x}, {y}]",
+            f"Headers={repr(headers)}",
+            f"Data={repr(data)}",
+            f"Size=[{width}, {height}]",
+        ]
+        if effective_frame:
+            args.append(f"Frame={quote(effective_frame)}")
+        if widget.tooltip:
+            args.append(f"Tooltip={quote(widget.tooltip)}")
+        if widget.signal:
+            args.append(f"Signal={widget.signal}")
+        if widget.handler_name:
+            args.append(f"Function={widget.handler_name}")
+        return _format_call("win.add_listview", args)
+
+    if widget.qt_class == "QTableWidget":
+        headers = widget.extra.get("headers", ["Column 1"])
+        data = widget.extra.get("data", [])
+        args = [
+            f"Name={quote(widget.name)}",
+            f"Position=[{x}, {y}]",
+            f"Size=[{width}, {height}]",
+            f"Headers={repr(headers)}",
+            f"Data={repr(data)}",
+        ]
+        if effective_frame:
+            args.append(f"Frame={quote(effective_frame)}")
+        if widget.tooltip:
+            args.append(f"Tooltip={quote(widget.tooltip)}")
+        if widget.signal:
+            args.append(f"Signal={widget.signal}")
+        if widget.handler_name:
+            args.append(f"Function={widget.handler_name}")
+        return _format_call("win.add_grid", args)
+
+    if widget.qt_class == "QTableView":
+        headers = widget.extra.get("headers", ["Column 1"])
+        data = widget.extra.get("data", [])
+        args = [
+            f"Name={quote(widget.name)}",
+            f"Position=[{x}, {y}]",
+            f"Size=[{width}, {height}]",
+            f"Headers={repr(headers)}",
+            f"Data={repr(data)}",
+        ]
+        if effective_frame:
+            args.append(f"Frame={quote(effective_frame)}")
+        if widget.tooltip:
+            args.append(f"Tooltip={quote(widget.tooltip)}")
+        if widget.signal:
+            args.append(f"Signal={widget.signal}")
+        if widget.handler_name:
+            args.append(f"Function={widget.handler_name}")
+        return _format_call("win.add_dataview", args)
+
+    if widget.qt_class in {"QTreeWidget", "QTreeView"}:
+        headers = widget.extra.get("headers", ["Tree"])
+        data = widget.extra.get("data", [])
+        tree_type = str(widget.extra.get("tree_type") or "Tree")
+        args = [
+            f"Name={quote(widget.name)}",
+            f"Type={quote(tree_type)}",
+            f"Position=[{x}, {y}]",
+            f"Size=[{width}, {height}]",
+            f"Headers={repr(headers)}",
+            f"Data={repr(data)}",
+        ]
+        if effective_frame:
+            args.append(f"Frame={quote(effective_frame)}")
+        if widget.tooltip:
+            args.append(f"Tooltip={quote(widget.tooltip)}")
+        if widget.signal:
+            args.append(f"Signal={widget.signal}")
+        if widget.handler_name:
+            args.append(f"Function={widget.handler_name}")
+        return _format_call("win.add_treeview", args)
+
     if widget.qt_class == "QFrame":
         separator_orientation = widget.extra.get("separator_orientation")
         if isinstance(separator_orientation, str) and separator_orientation in ("horizontal", "vertical"):
@@ -1432,6 +1565,7 @@ def _render_notebook_block(
         f"Name={quote(notebook.name)}",
         f"Position=[{notebook.position[0]}, {notebook.position[1]}]",
         f"Size=[{notebook.size[0]}, {notebook.size[1]}]",
+        "Scrollable=0",
     ]
     if notebook.signal:
         notebook_args.append(f"Signal={notebook.signal}")

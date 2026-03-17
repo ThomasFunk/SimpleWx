@@ -290,6 +290,88 @@ def test_convert_static_ui_menu_separator_and_icons_are_rendered(tmp_path: Path)
     _unit_passed("menu separators and icons are rendered")
 
 
+def test_convert_static_ui_priority3_view_widgets_are_rendered(tmp_path: Path) -> None:
+    ui_path = tmp_path / "prio3_views.ui"
+    ui_path.write_text(
+        """<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<ui version=\"4.0\">
+ <class>MainWindow</class>
+ <widget class=\"QMainWindow\" name=\"MainWindow\">
+  <property name=\"geometry\"><rect><x>0</x><y>0</y><width>620</width><height>420</height></rect></property>
+  <widget class=\"QWidget\" name=\"centralwidget\">
+   <widget class=\"QTabWidget\" name=\"tabWidget\">
+    <property name=\"geometry\"><rect><x>20</x><y>20</y><width>560</width><height>320</height></rect></property>
+    <widget class=\"QWidget\" name=\"tab_tree\">
+     <attribute name=\"title\"><string>Tree</string></attribute>
+     <widget class=\"QTreeWidget\" name=\"treeWidget\">
+      <property name=\"geometry\"><rect><x>10</x><y>10</y><width>500</width><height>240</height></rect></property>
+      <column><property name=\"text\"><string>Name</string></property></column>
+     </widget>
+    </widget>
+    <widget class=\"QWidget\" name=\"tab_table\">
+     <attribute name=\"title\"><string>Table</string></attribute>
+     <widget class=\"QTableWidget\" name=\"tableWidget\">
+      <property name=\"geometry\"><rect><x>10</x><y>10</y><width>500</width><height>240</height></rect></property>
+      <property name=\"rowCount\"><number>2</number></property>
+      <property name=\"columnCount\"><number>2</number></property>
+     </widget>
+    </widget>
+    <widget class=\"QWidget\" name=\"tab_list_widget\">
+     <attribute name=\"title\"><string>ListWidget</string></attribute>
+     <widget class=\"QListWidget\" name=\"listWidget\">
+      <property name=\"geometry\"><rect><x>10</x><y>10</y><width>500</width><height>240</height></rect></property>
+      <item><property name=\"text\"><string>Alpha</string></property></item>
+      <item><property name=\"text\"><string>Beta</string></property></item>
+     </widget>
+    </widget>
+    <widget class=\"QWidget\" name=\"tab_list_view\">
+     <attribute name=\"title\"><string>ListView</string></attribute>
+     <widget class=\"QListView\" name=\"listView\">
+      <property name=\"geometry\"><rect><x>10</x><y>10</y><width>500</width><height>240</height></rect></property>
+     </widget>
+    </widget>
+    <widget class=\"QWidget\" name=\"tab_tableview\">
+     <attribute name=\"title\"><string>TableView</string></attribute>
+     <widget class=\"QTableView\" name=\"tableView\">
+      <property name=\"geometry\"><rect><x>10</x><y>10</y><width>500</width><height>240</height></rect></property>
+     </widget>
+    </widget>
+    <widget class=\"QWidget\" name=\"tab_treeview\">
+     <attribute name=\"title\"><string>TreeView</string></attribute>
+     <widget class=\"QTreeView\" name=\"treeView\">
+      <property name=\"geometry\"><rect><x>10</x><y>10</y><width>500</width><height>240</height></rect></property>
+     </widget>
+    </widget>
+   </widget>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
+""",
+        encoding="utf-8",
+    )
+
+    builder = _load_builder_module()
+    generated = builder.convert_ui_to_simplewx(ui_path)
+
+    assert "win.add_treeview(" in generated
+    assert "Name='treeWidget'" in generated
+    assert "Headers=['Name']" in generated
+    assert "win.add_grid(" in generated
+    assert "Name='tableWidget'" in generated
+    assert "Headers=['Column 1', 'Column 2']" in generated
+    assert "Data=[['', ''], ['', '']]" in generated
+    assert "win.add_listview(" in generated
+    assert "Name='listWidget'" in generated
+    assert "Data=[['Alpha'], ['Beta']]" in generated
+    assert "Name='listView'" in generated
+    assert "win.add_dataview(" in generated
+    assert "Name='tableView'" in generated
+    assert "Name='treeView'" in generated
+    _unit_passed("priority 3 views map to simplewx data widgets")
+
+
 def test_convert_static_ui_qframe_hline_vline_map_to_separators(tmp_path: Path) -> None:
     ui_path = tmp_path / "frame_line_separators.ui"
     ui_path.write_text(

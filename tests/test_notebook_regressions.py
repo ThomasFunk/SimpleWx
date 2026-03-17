@@ -134,3 +134,37 @@ def test_notebook_event_wiring_regression(gui_window) -> None:
     _passed(scope, "Callback observed the selected page")
     assert win.get_object("book_events").data.get("currentpage") == 1
     _passed(scope, "Internal notebook metadata syncs current page")
+
+
+def test_notebook_progressbar_page_does_not_shift_geometry(gui_window) -> None:
+    scope = "Notebook progressbar"
+    win = gui_window(name="nb_progress")
+    win.add_notebook(Name="book_progress", Position=[20, 70], Size=[520, 270], Scrollable=0)
+    win.add_nb_page(Name="tab_sound", Notebook="book_progress", Title="Sound")
+    win.add_progress_bar(
+        Name="progress_sound",
+        Position=[140, 70],
+        Size=[341, 41],
+        Steps=100,
+        Frame="tab_sound",
+    )
+    win.set_value("progress_sound", "Value", 24)
+
+    win.add_nb_page(Name="tab_other", Notebook="book_progress", Title="Other")
+    win.add_label(Name="label_other", Position=[10, 10], Title="Other", Frame="tab_other")
+
+    notebook = win.get_widget("book_progress")
+    initial_pos = tuple(notebook.GetPosition())
+    initial_size = tuple(notebook.GetSize())
+
+    notebook.SetSelection(0)
+    wx.YieldIfNeeded()
+    notebook.SetSelection(1)
+    wx.YieldIfNeeded()
+    notebook.SetSelection(0)
+    wx.YieldIfNeeded()
+
+    assert tuple(notebook.GetPosition()) == initial_pos
+    _passed(scope, "Notebook position stays stable on tab switches")
+    assert tuple(notebook.GetSize()) == initial_size
+    _passed(scope, "Notebook size stays stable on progressbar page")

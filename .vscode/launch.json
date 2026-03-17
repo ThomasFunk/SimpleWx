@@ -5,6 +5,41 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Python: prio3_swx.py (wie Terminal)",
+            "type": "debugpy",
+            "request": "launch",
+            "python": "${workspaceFolder}/venv/bin/python",
+            "program": "${workspaceFolder}/tools/swx-builder/prio3_swx.py",
+            "cwd": "${workspaceFolder}",
+            "args": [],
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "redirectOutput": false,
+            "justMyCode": true,
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}",
+                "SWX_PROGRESSBAR_NOTEBOOK_NATIVE": "1"
+            }
+        },
+        {
+            "name": "Python: prio3_swx.py (owner-draw Test)",
+            "type": "debugpy",
+            "request": "launch",
+            "python": "${workspaceFolder}/venv/bin/python",
+            "program": "${workspaceFolder}/tools/swx-builder/prio3_swx.py",
+            "cwd": "${workspaceFolder}",
+            "args": [],
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "redirectOutput": false,
+            "justMyCode": true,
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}",
+                "SWX_PROGRESSBAR_FORCE_OWNERDRAW": "1",
+                "SWX_PROGRESSBAR_NOTEBOOK_NATIVE": "0"
+            }
+        },
+        {
             "name": "Python: Aktuelles File debuggen (SimpleWx)",
             "type": "debugpy",
             "request": "launch",
@@ -33,8 +68,7 @@
             "redirectOutput": false,
             "justMyCode": true,
             "env": {
-                "PYTHONPATH": "${workspaceFolder}:${env:PYTHONPATH}",
-                "WAYLAND_DISPLAY": "wayland-1"
+                "PYTHONPATH": "${workspaceFolder}:${env:PYTHONPATH}"
             }
         }
     ]

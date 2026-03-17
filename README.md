@@ -228,6 +228,29 @@ In current Data-Widget regression runs this pixman message can appear during seq
 while isolated single-widget runs may stay quiet; this further indicates backend-level rendering noise.
 
 
+DEBUGGING NOTEBOOK + PROGRESSBAR (LINUX/GTK)
+---------------------------------------------
+
+For manual GUIs and swx-builder generated GUIs, the following environment flags are useful when troubleshooting Notebook/ProgressBar behavior:
+
+- `SWX_PROGRESSBAR_DEBUG=1`
+  - enables concise progress-bar debug output (`create`, `layout`, `paint`, `size`)
+- `SWX_NOTEBOOK_DEBUG=1`
+  - enables notebook geometry drift/fix logs
+- `SWX_PROGRESSBAR_NOTEBOOK_NATIVE=1`
+  - forces native `wx.Gauge` for progress bars on notebook pages (stable fallback for GTK/debug runs)
+- `SWX_PROGRESSBAR_FORCE_OWNERDRAW=1`
+  - forces owner-draw progress bar, even on notebook pages
+
+Examples:
+
+    SWX_PROGRESSBAR_DEBUG=1 SWX_NOTEBOOK_DEBUG=1 python your_gui.py
+
+    SWX_PROGRESSBAR_NOTEBOOK_NATIVE=1 python your_gui.py
+
+    SWX_PROGRESSBAR_FORCE_OWNERDRAW=1 SWX_PROGRESSBAR_DEBUG=1 python your_gui.py
+
+
 DOCUMENTATION
 -------------
 
