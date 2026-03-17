@@ -3,8 +3,8 @@ from __future__ import annotations
 
 __author__ = 'Thomas Funk'
 __coauthors__ = 'Github Copilot & Gemini'
-__date__ = "2026/03/11"
-__version__ = "0.5.0"
+__date__ = "2026/03/17"
+__version__ = "0.5.1"
 
 from dataclasses import dataclass, field
 from typing import Optional, Any, Dict, Callable
@@ -3307,6 +3307,11 @@ class SimpleWx:
         widget = object_entry.ref
         if widget is None:
             self.internal_die(name, "No widget reference available!")
+
+        # Recent fix: toolbars/menubars are managed by the top-level frame.
+        # Repositioning them like regular child widgets can hide/misplace them.
+        if object_entry.type in ("ToolBar", "MenuBar"):
+            return
 
         # start with original (unscaled) source position
         src_x = object_entry.pos_x
@@ -6919,10 +6924,11 @@ class SimpleWx:
         style = wx.TB_VERTICAL if orientation == "vertical" else wx.TB_HORIZONTAL
         style |= wx.TB_FLAT | wx.TB_NODIVIDER
 
-        # create native toolbar with provisional parent and deferred placement
-        provisional_parent = self.container if self.container is not None else self._get_container(self.default_container_name)
+        # Recent fix: parent toolbar to the frame (not the scrollable content panel)
+        # so wx can render it as a native top toolbar.
+        toolbar_parent = self.main_window if self.main_window is not None else self._get_container(self.default_container_name)
         toolbar = wx.ToolBar(
-            provisional_parent,
+            toolbar_parent,
             wx.ID_ANY,
             pos=(0, 0),
             size=wx.DefaultSize,
@@ -6943,6 +6949,10 @@ class SimpleWx:
             self._set_toolbar_tools(object_entry.name, list(source_tools))
         else:
             toolbar.Realize()
+
+        # Register explicitly as frame toolbar (required for correct native layout).
+        if isinstance(toolbar_parent, wx.Frame):
+            toolbar_parent.SetToolBar(toolbar)
 
         # keep active tool metadata in sync on toolbar events
         def _on_toolbar_tool(event: wx.CommandEvent, name: str = object_entry.name) -> None:
@@ -13052,6 +13062,9 @@ class SimpleWx:
         if self.main_window is not None:
             self.main_window.Show(True)
             self._sync_main_content_container_size()
+            # Run layout sync twice after show(): wx may finalize toolbar/statusbar
+            # metrics one cycle later on some GTK themes.
+            wx.CallAfter(self._sync_main_content_container_size)
             wx.CallAfter(self._sync_main_content_container_size)
 
     def show_and_run(self) -> None:

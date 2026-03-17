@@ -74,7 +74,8 @@ Optional metadata header options:
 - `-a` / `--author`: author string in generated header (default: `swxbuilder`)
 - `-v` / `--version`: version string in generated header (default: `0.1.0`)
 - `-d` / `--date`: date string in generated header (default: current date, format `YYYY/MM/DD`)
-- `--debug`: optional debug mode for pixel-accurate geometry; generated `new_window(...)` includes `Base=0` only in this mode
+- `--debug`: optional debug mode for pixel-accurate geometry; generated `new_window(...)` includes `Base=0`
+- `--no-debug`: disables debug mode and keeps SimpleWx scaling enabled
 
 This creates `path/to/form_swx.py` by default (same directory as input).
 

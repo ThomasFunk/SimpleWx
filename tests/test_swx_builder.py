@@ -117,6 +117,17 @@ def test_build_arg_parser_keeps_output_optional() -> None:
     _unit_passed("cli parser keeps output and metadata flags optional")
 
 
+def test_build_arg_parser_accepts_no_debug_option() -> None:
+    builder = _load_builder_module()
+    parser = builder.build_arg_parser()
+
+    args = parser.parse_args(["-i", "form.ui", "--no-debug"])
+
+    assert args.input == Path("form.ui")
+    assert args.debug is False
+    _unit_passed("cli parser accepts --no-debug as scaling opt-out")
+
+
 def test_convert_static_ui_qaction_triggered_maps_to_menu_signal(tmp_path: Path) -> None:
     ui_path = tmp_path / "menu_action_signal.ui"
     ui_path.write_text(

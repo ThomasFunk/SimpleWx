@@ -1,4 +1,4 @@
-SimpleWx version 0.5.0
+SimpleWx version 0.5.1
 =======================
 
 SimpleWx is a Python wrapper around wxPython (the Python binding for wxWidgets)
@@ -173,7 +173,7 @@ Use:
 
   ./venv/bin/python tools/swx-builder/swx-builder.py -i path/to/form.ui
 
-Currently supported Qt widget classes for static import include `QPushButton`, `QLabel`, `QLineEdit`, `QCheckBox`, `QRadioButton`, `QFrame`, `QTabWidget`, `QTextEdit`, and `QSpinBox` plus `QMenuBar` / `QMenu` / `QAction`.
+Currently supported Qt widget classes for static import include `QPushButton`, `QLabel`, `QLineEdit`, `QCheckBox`, `QRadioButton`, `QFrame`, `QTabWidget`, `QTextEdit`, `QSpinBox`, `QComboBox`, `QSlider`, `QProgressBar`, `QListWidget`/`QListView`, `QTableWidget`/`QTableView`, `QTreeWidget`/`QTreeView`, `QSplitter`, and `QToolBar` plus `QMenuBar` / `QMenu` / `QAction`.
 
 For full usage, options, examples, and troubleshooting, see:
 

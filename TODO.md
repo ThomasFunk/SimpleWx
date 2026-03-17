@@ -29,7 +29,7 @@
 	- [x] Priority 1 (basic): `QComboBox`, `QSlider`, `QProgressBar`
 	- [x] Priority 2 (basic): `QFrame` (`HLine` / `VLine` -> `Separator`)
 	- [x] Priority 3: `QTreeWidget`, `QTableWidget`, `QListWidget`/`QListView`, `QTableView`, `QTreeView`
-	- [ ] Priority 4: `QSplitter`, `QToolBar`
+	- [x] Priority 4: `QSplitter`, `QToolBar`
 	- [ ] Priority 5: `QDateTimeEdit`, `QFontComboBox` (`QDateEdit`/`QTimeEdit` already covered)
 	- [ ] Priority 6 (dialogs): `QDialog`, `QDialogButtonBox`, `QFileDialog`, `QMessageBox`
 	- [ ] Priority 7 (complex widgets): `QGraphicsView`

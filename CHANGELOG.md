@@ -14,19 +14,28 @@ The format is based on Keep a Changelog.
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-03-17
+
 ### Added
 
 - Extended `swx-builder.py` static Qt import support to include `QFrame`, `QLineEdit`, `QRadioButton`, and `QCheckBox` in the documented supported subset, including frame-local widget export.
 - Added builder regression coverage for `QFrame` title mapping and frame-contained widgets.
+- Added builder regression coverage for `QSplitter` / `QToolBar` generation and CLI parsing with explicit `--no-debug` opt-out.
 
 ### Changed
 
 - Updated Qt import documentation in [README.md](README.md) and [tools/swx-builder/README.md](tools/swx-builder/README.md) to reflect the current supported widget subset and frame-title handling.
 - Marked the static Qt Designer importer task as completed in [TODO.md](TODO.md).
+- Updated `swx-builder.py` CLI to support explicit debug mode selection via `--debug` / `--no-debug` while keeping scaled output as default when no debug flag is provided.
+- Bumped library metadata in `simplewx.py` to `__version__ = "0.5.1"`.
+- Updated the README headline version from `0.5.0` to `0.5.1`.
 
 ### Fixed
 
 - Fixed `Frame` rendering in `simplewx.py` so frame geometry stays externally stable while title and child placement match the imported Qt layout more closely.
+- Fixed Qt-to-SimpleWx splitter orientation mapping for generated `QSplitter` output.
+- Fixed `ToolBar` parenting/rendering in `simplewx.py` by attaching toolbars to the top-level frame (`SetToolBar`) instead of the scrollable content container.
+- Fixed splitter pane resize behavior in `simplewx.py` by using pane sizers so child widgets expand/shrink with sash movement instead of leaving empty gaps.
 
 ## [0.5.0] - 2026-03-13
 

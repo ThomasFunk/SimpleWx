@@ -3,7 +3,7 @@ from __future__ import annotations
 
 __author__ = 'Thomas Funk'
 __coauthors__ = 'Github Copilot'
-__date__ = "2026/03/16"
+__date__ = "2026/03/17"
 
 import argparse
 import datetime
@@ -976,7 +976,7 @@ def parse_splitters(root: ET.Element, handlers: Dict[str, ConnectionSpec]) -> Li
         orientation = (_property_enum(splitter_el, "orientation") or "Qt::Orientation::Vertical").lower()
         qt_layout = "horizontal" if "horizontal" in orientation else "vertical"
 
-        # Qt and SimpleWx use opposite orientation labels for splitter direction:
+        # Recent fix: Qt and SimpleWx use opposite orientation labels for splitter direction:
         # - Qt horizontal   => side-by-side panes (vertical sash)
         # - SimpleWx vertical => SplitVertically (side-by-side panes)
         # - Qt vertical     => top/bottom panes (horizontal sash)
@@ -1376,10 +1376,10 @@ def quote(text: str) -> str:
     return repr(text)
 
 
-def _format_call(function_name: str, args: List[str]) -> str:
+def _format_call(function_name: str, args: List[str], force_multiline: bool = False) -> str:
     # Keep short calls on one line; automatically format longer ones across
     # multiple lines for readability.
-    if len(args) <= 4:
+    if len(args) <= 4 and not force_multiline:
         return f"{function_name}({', '.join(args)})"
 
     lines = [f"{function_name}("]
@@ -1885,17 +1885,24 @@ def _render_notebook_block(
 
 
 def _render_toolbar_block(lines: List[str], toolbar: ToolbarSpec) -> None:
-    toolbar_args = [
-        f"Name={quote(toolbar.name)}",
-        f"Position=[{toolbar.position[0]}, {toolbar.position[1]}]",
-        f"Data={repr([{'label': item.title, 'icon': item.icon, 'kind': item.kind, 'active': item.active, 'tooltip': item.tooltip} for item in toolbar.items])}",
-        f"Orient={quote(toolbar.orient)}",
-    ]
-    if toolbar.size is not None:
-        toolbar_args.append(f"Size=[{toolbar.size[0]}, {toolbar.size[1]}]")
-
     lines.append(f"# Toolbar {quote(toolbar.title)}")
-    lines.append(_format_call("win.add_toolbar", toolbar_args))
+    lines.append("win.add_toolbar(")
+    lines.append(f"    Name={quote(toolbar.name)},")
+    lines.append(f"    Position=[{toolbar.position[0]}, {toolbar.position[1]}],")
+    lines.append("    Data=[")
+    for item in toolbar.items:
+        lines.append("        {")
+        lines.append(f"            'label': {quote(item.title)},")
+        lines.append(f"            'icon': {repr(item.icon)},")
+        lines.append(f"            'kind': {quote(item.kind)},")
+        lines.append(f"            'active': {item.active},")
+        lines.append(f"            'tooltip': {repr(item.tooltip)},")
+        lines.append("        },")
+    lines.append("    ],")
+    lines.append(f"    Orient={quote(toolbar.orient)},")
+    if toolbar.size is not None:
+        lines.append(f"    Size=[{toolbar.size[0]}, {toolbar.size[1]}],")
+    lines.append(")")
     lines.append("")
 
 
@@ -2171,11 +2178,22 @@ def build_arg_parser() -> argparse.ArgumentParser:
             "Standard: gleiches Verzeichnis wie Input mit Namen <input>_swx.py"
         ),
     )
-    parser.add_argument(
+    # Keep debug flags mutually exclusive so CLI behavior is explicit.
+    debug_group = parser.add_mutually_exclusive_group()
+    debug_group.add_argument(
         "--debug",
+        dest="debug",
         action="store_true",
         help="Debug-Modus: generiert den new_window()-Aufruf mit Base=0 für pixelgenaue Qt-Geometrie.",
     )
+    debug_group.add_argument(
+        "--no-debug",
+        dest="debug",
+        action="store_false",
+        help="Deaktiviert Debug-Modus und lässt SimpleWx-Skalierung aktiv (kein Base=0).",
+    )
+    # Default stays scaled output (no Base=0) unless --debug is passed.
+    parser.set_defaults(debug=False)
     parser.add_argument(
         "-a",
         "--author",
