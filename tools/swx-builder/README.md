@@ -20,6 +20,8 @@ Supported widget mapping (current subset):
 - `QComboBox` -> `add_combo_box`
 - `QSlider` -> `add_slider`
 - `QProgressBar` -> `add_progress_bar`
+- `QToolBar` / `QAction` -> `add_toolbar`
+- `QSplitter` -> `add_splitter` + `add_splitter_pane`
 - `QMenuBar` / `QMenu` / `QAction` -> `add_menu_bar` / `add_menu` / `add_menu_item`
 
 Explicitly not supported:
@@ -37,6 +39,8 @@ Special handling:
 - `QFrame` children are detected geometrically and emitted with `Frame=<name>`.
 - `QLabel` widgets named `label_<frame_name>` are consumed as frame titles instead of being emitted as standalone labels.
 - `QTabWidget` pages are emitted as notebook pages; widgets on each tab are emitted with `Frame=<tab_page_name>`.
+- `QToolBar` actions are exported as toolbar tool descriptors in `Data=[...]` for `add_toolbar(...)`.
+- `QSplitter` is exported as one `add_splitter(...)` call plus two `add_splitter_pane(...)` calls; direct pane widgets fill their pane automatically when Qt Designer omits explicit child geometry.
 - Supported Qt connections are mapped to matching wx/SimpleWx events where possible (for example `QPushButton.clicked()` -> `wx.EVT_BUTTON`, `QAction.triggered()` -> `wx.EVT_MENU`).
 - Menu separators are emitted as `add_menu_item(..., Type="separator")`.
 - Common themed Qt action icons like `document-open`, `document-save`, `document-new`, `application-exit` are mapped to matching SimpleWx/wx stock icon names.

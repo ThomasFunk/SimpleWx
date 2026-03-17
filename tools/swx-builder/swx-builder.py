@@ -98,6 +98,57 @@ class MenuSpec:
     items: List[MenuItemSpec]
 
 
+@dataclass
+class ActionSpec:
+    name: str
+    title: str
+    tooltip: Optional[str] = None
+    icon: Optional[str] = None
+    checkable: int = 0
+    checked: int = 0
+    handler_name: Optional[str] = None
+    signal: Optional[str] = None
+
+
+@dataclass
+class ToolbarItemSpec:
+    name: str
+    title: str
+    kind: str = "normal"
+    tooltip: Optional[str] = None
+    icon: Optional[str] = None
+    active: int = 0
+
+
+@dataclass
+class ToolbarSpec:
+    name: str
+    title: str
+    position: Tuple[int, int]
+    size: Optional[Tuple[int, int]]
+    orient: str
+    items: List[ToolbarItemSpec]
+
+
+@dataclass
+class SplitterPaneSpec:
+    name: str
+    side: str
+    widgets: List[WidgetSpec]
+
+
+@dataclass
+class SplitterSpec:
+    name: str
+    position: Tuple[int, int]
+    size: Tuple[int, int]
+    orient: str
+    split: int
+    panes: List[SplitterPaneSpec]
+    handler_name: Optional[str] = None
+    signal: Optional[str] = None
+
+
 SUPPORTED_WIDGET_CLASSES = {
     "Line",
     "QLabel",
@@ -368,7 +419,22 @@ def _normalize_signal_name(raw: str) -> str:
 
 
 def _map_qt_icon_to_simplewx_icon(icon_name: str) -> Optional[str]:
-    normalized = icon_name.strip().lower()
+    normalized = icon_name.strip()
+    if "::" in normalized:
+        normalized = normalized.split("::")[-1]
+
+    if normalized and any(ch.isupper() for ch in normalized):
+        parts: List[str] = []
+        for index, char in enumerate(normalized):
+            if index > 0 and char.isupper() and (
+                normalized[index - 1].islower()
+                or (index + 1 < len(normalized) and normalized[index + 1].islower())
+            ):
+                parts.append("-")
+            parts.append(char.lower())
+        normalized = "".join(parts)
+
+    normalized = normalized.replace("_", "-").strip().lower()
     if not normalized:
         return None
 
@@ -462,11 +528,35 @@ def parse_connections(root: ET.Element) -> Dict[str, ConnectionSpec]:
     return handlers
 
 
-def parse_menus(
+def _collect_action_specs(
     main_widget: ET.Element,
     handlers: Dict[str, ConnectionSpec],
     ui_path: Path,
     resource_paths: Dict[str, str],
+) -> Dict[str, ActionSpec]:
+    action_specs: Dict[str, ActionSpec] = {}
+
+    for action in main_widget.findall("./action"):
+        action_name = sanitize_name((action.get("name") or "").strip(), "action", len(action_specs) + 1)
+        action_title = _property_string(action, "text") or action_name
+        connection = handlers.get(action_name)
+        action_specs[action_name] = ActionSpec(
+            name=action_name,
+            title=action_title,
+            tooltip=_property_string(action, "toolTip"),
+            icon=_property_icon(action, "icon", ui_path, resource_paths, action_name),
+            checkable=_property_bool(action, "checkable"),
+            checked=_property_bool(action, "checked"),
+            handler_name=connection.handler_name if connection is not None else None,
+            signal=_map_qt_signal_to_simplewx_event("QAction", connection.qt_signal) if connection is not None else None,
+        )
+
+    return action_specs
+
+
+def parse_menus(
+    main_widget: ET.Element,
+    action_specs: Dict[str, ActionSpec],
 ) -> Tuple[Optional[str], List[MenuSpec], int]:
     # Menus are processed separately from the normal widget stream because Qt
     # describes them as a QMenuBar/QMenu/QAction structure rather than ordinary
@@ -478,18 +568,6 @@ def parse_menus(
     menubar_name = sanitize_name((menubar_widget.get("name") or "menubar").strip(), "menubar", 0)
     menubar_geometry = _property_rect(menubar_widget, "geometry", menubar_name)
     menu_height = menubar_geometry[3] if menubar_geometry is not None else 0
-
-    # Collect QAction titles first so later addaction references can resolve to
-    # their visible menu text.
-    action_specs: Dict[str, Dict[str, Optional[str]]] = {}
-    for action in main_widget.findall("./action"):
-        action_name = sanitize_name((action.get("name") or "").strip(), "action", len(action_specs) + 1)
-        action_title = _property_string(action, "text") or action_name
-        action_specs[action_name] = {
-            "title": action_title,
-            "tooltip": _property_string(action, "toolTip"),
-            "icon": _property_icon(action, "icon", ui_path, resource_paths, action_name),
-        }
 
     menus: List[MenuSpec] = []
     running_menu_index = 1
@@ -513,8 +591,8 @@ def parse_menus(
                 continue
 
             action_name = sanitize_name(raw_action_name, "action", len(items) + 1)
-            action_spec = action_specs.get(action_name, {})
-            action_title = action_spec.get("title") or action_name
+            action_spec = action_specs.get(action_name)
+            action_title = action_spec.title if action_spec is not None else action_name
 
             # The same QAction name can appear in multiple menus, so enforce a
             # unique internal name here.
@@ -524,17 +602,15 @@ def parse_menus(
                 unique_name = f"{menu_name}_{action_name}_{seen + 1}"
             used_item_names[action_name] = seen + 1
 
-            connection = handlers.get(action_name)
-
             items.append(
                 MenuItemSpec(
                     name=unique_name,
                     title=action_title,
                     item_type="item",
-                    tooltip=action_spec.get("tooltip"),
-                    icon=action_spec.get("icon"),
-                    handler_name=connection.handler_name if connection is not None else None,
-                    signal=_map_qt_signal_to_simplewx_event("QAction", connection.qt_signal) if connection is not None else None,
+                    tooltip=action_spec.tooltip if action_spec is not None else None,
+                    icon=action_spec.icon if action_spec is not None else None,
+                    handler_name=action_spec.handler_name if action_spec is not None else None,
+                    signal=action_spec.signal if action_spec is not None else None,
                 )
             )
 
@@ -542,6 +618,72 @@ def parse_menus(
         running_menu_index += 1
 
     return menubar_name, menus, menu_height
+
+
+def _toolbar_orientation(toolbar_el: ET.Element) -> str:
+    orientation = (_property_enum(toolbar_el, "orientation") or "").lower()
+    if "vertical" in orientation:
+        return "vertical"
+
+    for attr in toolbar_el.findall("attribute"):
+        if (attr.get("name") or "").strip() != "toolBarArea":
+            continue
+        area_text = "".join(attr.itertext()).strip().lower()
+        if "left" in area_text or "right" in area_text:
+            return "vertical"
+        break
+
+    return "horizontal"
+
+
+def parse_toolbars(main_widget: ET.Element, action_specs: Dict[str, ActionSpec]) -> List[ToolbarSpec]:
+    toolbars: List[ToolbarSpec] = []
+
+    for index, toolbar_el in enumerate(main_widget.findall("./widget[@class='QToolBar']"), start=1):
+        toolbar_name = sanitize_name((toolbar_el.get("name") or "toolbar").strip(), "toolbar", index)
+        geometry = _property_rect(toolbar_el, "geometry", toolbar_name)
+        position = (geometry[0], geometry[1]) if geometry is not None else (0, 0)
+        size = (geometry[2], geometry[3]) if geometry is not None else None
+        title = _property_string(toolbar_el, "windowTitle") or toolbar_name
+        orient = _toolbar_orientation(toolbar_el)
+
+        items: List[ToolbarItemSpec] = []
+        for addaction in toolbar_el.findall("addaction"):
+            raw_action_name = (addaction.get("name") or "").strip()
+            if not raw_action_name:
+                continue
+
+            if raw_action_name == "separator":
+                items.append(ToolbarItemSpec(name=f"{toolbar_name}_separator_{len(items) + 1}", title="", kind="separator"))
+                continue
+
+            action_name = sanitize_name(raw_action_name, "action", len(items) + 1)
+            action_spec = action_specs.get(action_name)
+            kind = "check" if action_spec is not None and action_spec.checkable else "normal"
+            active = action_spec.checked if action_spec is not None else 0
+            items.append(
+                ToolbarItemSpec(
+                    name=action_name,
+                    title=action_spec.title if action_spec is not None else action_name,
+                    kind=kind,
+                    tooltip=action_spec.tooltip if action_spec is not None else None,
+                    icon=action_spec.icon if action_spec is not None else None,
+                    active=active,
+                )
+            )
+
+        toolbars.append(
+            ToolbarSpec(
+                name=toolbar_name,
+                title=title,
+                position=position,
+                size=size,
+                orient=orient,
+                items=items,
+            )
+        )
+
+    return toolbars
 
 
 def parse_window(main_widget: ET.Element, menu_height: int = 0) -> WindowSpec:
@@ -615,6 +757,10 @@ def _iter_supported_widgets(
             # Notebook widgets are parsed in a dedicated pass so page scoping
             # can be preserved in the generated output.
             continue
+        elif child_class in {"QSplitter", "QToolBar"}:
+            # Splitters and toolbars are rendered in dedicated passes because
+            # they need multi-call output and/or action resolution.
+            continue
         else:
             # Any other non-supported container: recurse without changing offsets.
             items.extend(_iter_supported_widgets(child, _offset_x, _offset_y, _group_name))
@@ -629,12 +775,15 @@ def _widget_from_element(
     offset_y: int = 0,
     group_name: Optional[str] = None,
     container: Optional[str] = None,
+    geometry_override: Optional[Tuple[int, int, int, int]] = None,
 ) -> WidgetSpec:
     qt_class = (widget_el.get("class") or "").strip()
     raw_name = (widget_el.get("name") or "").strip()
     widget_name = sanitize_name(raw_name, "widget", running_index)
 
     geometry = _property_rect(widget_el, "geometry", widget_name)
+    if geometry is None:
+        geometry = geometry_override
     if geometry is None:
         raise BuilderError(
             f"Widget '{widget_name}' ({qt_class}) hat keine geometry-Property. "
@@ -765,6 +914,133 @@ def _widget_from_element(
         container=container,
         extra=extra,
     )
+
+
+def _estimate_splitter_pane_sizes(size: Tuple[int, int], orient: str, split: int) -> Tuple[Tuple[int, int], Tuple[int, int]]:
+    width, height = size
+    if orient == "horizontal":
+        split_pos = max(1, min(split, max(1, width - 1)))
+        return (split_pos, height), (max(1, width - split_pos), height)
+
+    split_pos = max(1, min(split, max(1, height - 1)))
+    return (width, split_pos), (width, max(1, height - split_pos))
+
+
+def _iter_splitter_elements(
+    parent: ET.Element,
+    offset_x: int = 0,
+    offset_y: int = 0,
+) -> List[Tuple[ET.Element, int, int]]:
+    items: List[Tuple[ET.Element, int, int]] = []
+    for child in parent.findall("widget"):
+        child_class = (child.get("class") or "").strip()
+        child_name = sanitize_name((child.get("name") or "widget").strip(), "widget", 0)
+        child_rect = _property_rect(child, "geometry", child_name)
+        next_offset_x = offset_x + (child_rect[0] if child_rect is not None else 0)
+        next_offset_y = offset_y + (child_rect[1] if child_rect is not None else 0)
+
+        if child_class == "QSplitter":
+            items.append((child, offset_x, offset_y))
+            continue
+
+        if child_class == "QTabWidget":
+            continue
+
+        items.extend(_iter_splitter_elements(child, next_offset_x, next_offset_y))
+
+    return items
+
+
+def parse_splitters(root: ET.Element, handlers: Dict[str, ConnectionSpec]) -> List[SplitterSpec]:
+    main_widget = root.find("./widget[@class='QMainWindow']")
+    if main_widget is None:
+        raise BuilderError("Keine QMainWindow-Definition gefunden. Erwartet wird eine Qt-Designer .ui Datei.")
+
+    splitters: List[SplitterSpec] = []
+    running_index = 1
+
+    for splitter_el, offset_x, offset_y in _iter_splitter_elements(main_widget):
+        raw_name = (splitter_el.get("name") or "").strip()
+        splitter_name = sanitize_name(raw_name, "splitter", len(splitters) + 1)
+        geometry = _property_rect(splitter_el, "geometry", splitter_name)
+        if geometry is None:
+            raise BuilderError(
+                f"Widget '{splitter_name}' (QSplitter) hat keine geometry-Property. "
+                "Für statische Qt-Layouts sind absolute Koordinaten zwingend erforderlich."
+            )
+
+        x = geometry[0] + offset_x
+        y = geometry[1] + offset_y
+        width = geometry[2]
+        height = geometry[3]
+        orientation = (_property_enum(splitter_el, "orientation") or "Qt::Orientation::Vertical").lower()
+        qt_layout = "horizontal" if "horizontal" in orientation else "vertical"
+
+        # Qt and SimpleWx use opposite orientation labels for splitter direction:
+        # - Qt horizontal   => side-by-side panes (vertical sash)
+        # - SimpleWx vertical => SplitVertically (side-by-side panes)
+        # - Qt vertical     => top/bottom panes (horizontal sash)
+        # - SimpleWx horizontal => SplitHorizontally (top/bottom panes)
+        orient = "vertical" if qt_layout == "horizontal" else "horizontal"
+
+        split = (width // 2) if qt_layout == "horizontal" else (height // 2)
+        pane_sizes = _estimate_splitter_pane_sizes((width, height), qt_layout, split)
+        connection = handlers.get(splitter_name)
+
+        panes: List[SplitterPaneSpec] = []
+        pane_index = 0
+        for child in splitter_el.findall("widget"):
+            side = "first" if pane_index == 0 else "second"
+            pane_name = f"{splitter_name}_{side}pane"
+            pane_widget_items: List[WidgetSpec] = []
+            child_class = (child.get("class") or "").strip()
+
+            if child_class in SUPPORTED_WIDGET_CLASSES:
+                pane_width, pane_height = pane_sizes[min(pane_index, 1)]
+                pane_widget_items.append(
+                    _widget_from_element(
+                        child,
+                        handlers,
+                        running_index,
+                        container=pane_name,
+                        geometry_override=(0, 0, pane_width, pane_height),
+                    )
+                )
+                running_index += 1
+            else:
+                for widget_el, child_offset_x, child_offset_y, group_name in _iter_supported_widgets(child):
+                    pane_widget_items.append(
+                        _widget_from_element(
+                            widget_el,
+                            handlers,
+                            running_index,
+                            offset_x=child_offset_x,
+                            offset_y=child_offset_y,
+                            group_name=group_name,
+                            container=pane_name,
+                        )
+                    )
+                    running_index += 1
+
+            panes.append(SplitterPaneSpec(name=pane_name, side=side, widgets=pane_widget_items))
+            pane_index += 1
+            if pane_index >= 2:
+                break
+
+        splitters.append(
+            SplitterSpec(
+                name=splitter_name,
+                position=(x, y),
+                size=(width, height),
+                orient=orient,
+                split=split,
+                panes=panes,
+                handler_name=connection.handler_name if connection is not None else None,
+                signal=None,
+            )
+        )
+
+    return splitters
 
 
 def _tab_page_title(page_widget: ET.Element, fallback: str) -> str:
@@ -1444,6 +1720,18 @@ def _notebook_sort_key(notebook: NotebookSpec) -> tuple[int, int, str]:
     return (y, x, notebook.name)
 
 
+def _toolbar_sort_key(toolbar: ToolbarSpec) -> tuple[int, int, str]:
+    y = int(toolbar.position[1])
+    x = int(toolbar.position[0])
+    return (y, x, toolbar.name)
+
+
+def _splitter_sort_key(splitter: SplitterSpec) -> tuple[int, int, str]:
+    y = int(splitter.position[1])
+    x = int(splitter.position[0])
+    return (y, x, splitter.name)
+
+
 def _widget_comment_title(widget: WidgetSpec) -> str:
     """Return a readable title for section comments."""
     return widget.title if widget.title else widget.name
@@ -1596,10 +1884,63 @@ def _render_notebook_block(
     lines.append("")
 
 
+def _render_toolbar_block(lines: List[str], toolbar: ToolbarSpec) -> None:
+    toolbar_args = [
+        f"Name={quote(toolbar.name)}",
+        f"Position=[{toolbar.position[0]}, {toolbar.position[1]}]",
+        f"Data={repr([{'label': item.title, 'icon': item.icon, 'kind': item.kind, 'active': item.active, 'tooltip': item.tooltip} for item in toolbar.items])}",
+        f"Orient={quote(toolbar.orient)}",
+    ]
+    if toolbar.size is not None:
+        toolbar_args.append(f"Size=[{toolbar.size[0]}, {toolbar.size[1]}]")
+
+    lines.append(f"# Toolbar {quote(toolbar.title)}")
+    lines.append(_format_call("win.add_toolbar", toolbar_args))
+    lines.append("")
+
+
+def _render_splitter_block(
+    lines: List[str],
+    splitter: SplitterSpec,
+    emitted_handlers: set[str],
+) -> None:
+    splitter_args = [
+        f"Name={quote(splitter.name)}",
+        f"Position=[{splitter.position[0]}, {splitter.position[1]}]",
+        f"Size=[{splitter.size[0]}, {splitter.size[1]}]",
+        f"Orient={quote(splitter.orient)}",
+        f"Split={splitter.split}",
+    ]
+    if splitter.signal:
+        splitter_args.append(f"Signal={splitter.signal}")
+    if splitter.handler_name:
+        splitter_args.append(f"Function={splitter.handler_name}")
+
+    lines.append(f"# Splitter {quote(splitter.name)}")
+    lines.append(_format_call("win.add_splitter", splitter_args))
+
+    for pane in splitter.panes:
+        lines.append(
+            _format_call(
+                "win.add_splitter_pane",
+                [
+                    f"Name={quote(pane.name)}",
+                    f"Splitter={quote(splitter.name)}",
+                    f"Side={quote(pane.side)}",
+                ],
+            )
+        )
+        _render_grouped_widgets(lines, pane.widgets, emitted_handlers, pane.name, default_frame=pane.name)
+
+    lines.append("")
+
+
 def render_python(
     window: WindowSpec,
     widgets: List[WidgetSpec],
     notebooks: List[NotebookSpec],
+    splitters: List[SplitterSpec],
+    toolbars: List[ToolbarSpec],
     handlers: Dict[str, str],
     menubar_name: Optional[str],
     menus: List[MenuSpec],
@@ -1615,6 +1956,7 @@ def render_python(
     signal_refs.extend(widget.signal for widget in widgets if widget.signal)
     signal_refs.extend(item.signal for menu in menus for item in menu.items if item.signal)
     signal_refs.extend(notebook.signal for notebook in notebooks if notebook.signal)
+    signal_refs.extend(splitter.signal for splitter in splitters if splitter.signal)
 
     lines: List[str] = []
     lines.append("#!/usr/bin/env python3")
@@ -1695,8 +2037,18 @@ def render_python(
     top_entries.extend(("frame", frame) for frame in main_frames)
     top_entries.extend(("widget", widget) for widget in main_outside_widgets)
     top_entries.extend(("notebook", notebook) for notebook in notebooks)
+    top_entries.extend(("splitter", splitter) for splitter in splitters)
+    top_entries.extend(("toolbar", toolbar) for toolbar in toolbars)
     top_entries.sort(
-        key=lambda entry: _widget_sort_key(entry[1]) if entry[0] != "notebook" else _notebook_sort_key(entry[1])
+        key=lambda entry: (
+            _notebook_sort_key(entry[1])
+            if entry[0] == "notebook"
+            else _splitter_sort_key(entry[1])
+            if entry[0] == "splitter"
+            else _toolbar_sort_key(entry[1])
+            if entry[0] == "toolbar"
+            else _widget_sort_key(entry[1])
+        )
     )
 
     outside_widgets_sorted = sorted(main_outside_widgets, key=_widget_sort_key)
@@ -1722,6 +2074,14 @@ def render_python(
             lines.append(build_widget_call(item))
             if item.qt_class == "QProgressBar" and "value" in item.extra:
                 lines.append(f"win.set_value({quote(item.name)}, 'Value', {item.extra['value']})")
+            continue
+
+        if kind == "toolbar":
+            _render_toolbar_block(lines, item)
+            continue
+
+        if kind == "splitter":
+            _render_splitter_block(lines, item, emitted_handlers)
             continue
 
         _render_notebook_block(lines, item, widgets, emitted_handlers)
@@ -1758,11 +2118,17 @@ def convert_ui_to_simplewx(
     # Parse in clearly separated phases: signals, menus, window, widgets, render.
     handlers = parse_connections(root)
     resource_paths = _collect_qt_resource_paths(root, input_path)
-    menubar_name, menus, menu_height = parse_menus(main_widget, handlers, input_path, resource_paths)
+    action_specs = _collect_action_specs(main_widget, handlers, input_path, resource_paths)
+    menubar_name, menus, menu_height = parse_menus(main_widget, action_specs)
+    toolbars = parse_toolbars(main_widget, action_specs)
     window = parse_window(main_widget, menu_height=menu_height)
     notebooks, notebook_widgets = parse_notebooks(root, handlers)
+    splitters = parse_splitters(root, handlers)
     widgets = parse_widgets(root, handlers)
     widgets.extend(notebook_widgets)
+    for splitter in splitters:
+        for pane in splitter.panes:
+            widgets.extend(pane.widgets)
     widgets = _apply_frame_title_labels(widgets)
     widgets = _assign_widgets_to_frames(widgets)
     widgets = _adjust_spinbox_min_size_and_adjacent_labels(widgets)
@@ -1770,6 +2136,8 @@ def convert_ui_to_simplewx(
         window,
         widgets,
         notebooks,
+        splitters,
+        toolbars,
         handlers,
         menubar_name,
         menus,

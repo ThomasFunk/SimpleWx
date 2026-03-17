@@ -1040,3 +1040,82 @@ def test_convert_static_ui_spinbox_min_width_shifts_right_label(tmp_path: Path) 
     assert "win.add_spin_button(Name='spinBox_Counter', Position=[30, 30], Size=[80, 29])" in generated
     assert "win.add_label(Name='label_counter', Position=[129, 35], Title='Counter')" in generated
     _unit_passed("spinbox minimum width is enforced and right-side label keeps its gap")
+
+
+def test_convert_static_ui_priority4_toolbar_and_splitter_are_rendered(tmp_path: Path) -> None:
+    ui_path = tmp_path / "prio4_toolbar_splitter.ui"
+    ui_path.write_text(
+        """<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<ui version=\"4.0\">
+ <class>MainWindow</class>
+ <widget class=\"QMainWindow\" name=\"MainWindow\">
+  <property name=\"geometry\"><rect><x>0</x><y>0</y><width>544</width><height>324</height></rect></property>
+  <property name=\"windowTitle\"><string>MainWindow</string></property>
+  <widget class=\"QWidget\" name=\"centralwidget\">
+   <widget class=\"QSplitter\" name=\"splitter\">
+    <property name=\"geometry\"><rect><x>10</x><y>10</y><width>512</width><height>192</height></rect></property>
+    <property name=\"orientation\"><enum>Qt::Orientation::Horizontal</enum></property>
+    <widget class=\"QTreeView\" name=\"treeView\"/>
+    <widget class=\"QListWidget\" name=\"listWidget\"/>
+   </widget>
+  </widget>
+  <widget class=\"QMenuBar\" name=\"menubar\">
+   <property name=\"geometry\"><rect><x>0</x><y>0</y><width>544</width><height>26</height></rect></property>
+   <widget class=\"QMenu\" name=\"menuFile\">
+    <property name=\"title\"><string>File</string></property>
+    <addaction name=\"actionOpen\"/>
+   </widget>
+   <addaction name=\"menuFile\"/>
+  </widget>
+  <widget class=\"QToolBar\" name=\"toolBar\">
+   <property name=\"windowTitle\"><string>toolBar</string></property>
+   <attribute name=\"toolBarArea\"><enum>TopToolBarArea</enum></attribute>
+   <addaction name=\"actionNew\"/>
+   <addaction name=\"actionSave\"/>
+   <addaction name=\"separator\"/>
+   <addaction name=\"actionQuit\"/>
+  </widget>
+  <action name=\"actionNew\">
+   <property name=\"icon\"><iconset theme=\"QIcon::ThemeIcon::DocumentNew\"/></property>
+   <property name=\"text\"><string>New</string></property>
+   <property name=\"toolTip\"><string>Create new thing</string></property>
+  </action>
+  <action name=\"actionSave\">
+   <property name=\"icon\"><iconset theme=\"document-save\"/></property>
+   <property name=\"text\"><string>Save</string></property>
+   <property name=\"toolTip\"><string>Save em all</string></property>
+  </action>
+  <action name=\"actionQuit\">
+   <property name=\"icon\"><iconset theme=\"application-exit\"/></property>
+   <property name=\"text\"><string>Quit</string></property>
+  </action>
+  <action name=\"actionOpen\">
+   <property name=\"icon\"><iconset theme=\"document-open\"/></property>
+   <property name=\"text\"><string>Open</string></property>
+  </action>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
+""",
+        encoding="utf-8",
+    )
+
+    builder = _load_builder_module()
+    generated = builder.convert_ui_to_simplewx(ui_path)
+
+    assert "win.add_toolbar(" in generated
+    assert "Name='toolBar'" in generated
+    assert "'label': 'New'" in generated
+    assert "'icon': 'gtk-new'" in generated
+    assert "'kind': 'separator'" in generated
+    assert "win.add_splitter(" in generated
+    assert "Name='splitter'" in generated
+    assert "Orient='vertical'" in generated
+    assert "win.add_splitter_pane(" in generated
+    assert "Splitter='splitter'" in generated
+    assert "Frame='splitter_firstpane'" in generated
+    assert "Frame='splitter_secondpane'" in generated
+    assert "win.add_treeview(" in generated
+    assert "win.add_listview(" in generated
+    _unit_passed("priority 4 toolbar and splitter render with pane content")

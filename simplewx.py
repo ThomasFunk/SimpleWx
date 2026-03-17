@@ -3325,6 +3325,24 @@ class SimpleWx:
             # otherwise use default main container
             target_container = self.container if self.container is not None else self._get_container(self.default_container_name)
 
+        # Check if target container is a SplitterPane with a sizer
+        container_obj = self.get_object(object_entry.container) if object_entry.container else None
+        if container_obj and container_obj.type == "SplitterPane" and isinstance(container_obj.data, dict):
+            pane_sizer = container_obj.data.get("sizer")
+            if isinstance(pane_sizer, wx.BoxSizer):
+                # For SplitterPane children, use sizer-based layout
+                # ensure widget parent matches target container
+                if widget.GetParent() != target_container:
+                    widget.Reparent(target_container)
+                # Clear any explicit best size set during widget creation
+                # so the sizer can manage expansion
+                widget.SetMinSize((50, 50))
+                # Add with proportion=1 and flag wx.EXPAND to fill available space
+                # This makes widgets expand equally when splitter is resized
+                pane_sizer.Add(widget, proportion=1, flag=wx.EXPAND, border=0)
+                target_container.Layout()
+                return
+
         # ensure widget parent matches target container
         if widget.GetParent() != target_container:
             widget.Reparent(target_container)
@@ -8617,12 +8635,15 @@ class SimpleWx:
         side = "second" if side.startswith("sec") else "first"
 
         pane_panel = wx.Panel(splitter_object.ref, wx.ID_ANY)
-        pane_panel.SetSizer(None)
+        # Create a BoxSizer to manage children flexibly
+        pane_sizer = wx.BoxSizer(wx.VERTICAL)
+        pane_panel.SetSizer(pane_sizer)
 
         object_entry.ref = pane_panel
         object_entry.data = {
             "splitter": Splitter,
             "side": side,
+            "sizer": pane_sizer,
         }
 
         self.containers[object_entry.name] = pane_panel
@@ -11785,7 +11806,7 @@ class SimpleWx:
                             f"showpct={int(d.get('showpercent', 1))}"
                         )
 
-                border_col = wx.Colour(95, 95, 95)
+                border_col = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNSHADOW)
                 dc.SetPen(wx.Pen(border_col, 1))
                 dc.SetBrush(wx.TRANSPARENT_BRUSH)
                 dc.DrawRectangle(0, 0, w, h)
@@ -11794,12 +11815,12 @@ class SimpleWx:
                 inner_y = 1
                 inner_w = max(0, w - 2)
                 inner_h = max(0, h - 2)
-                bg_col = wx.Colour(236, 236, 236)
+                bg_col = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE)
                 dc.SetBrush(wx.Brush(bg_col))
                 dc.SetPen(wx.TRANSPARENT_PEN)
                 dc.DrawRectangle(inner_x, inner_y, inner_w, inner_h)
 
-                fill_col = wx.Colour(42, 130, 218)
+                fill_col = wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHT)
                 dc.SetBrush(wx.Brush(fill_col))
                 fill_x = inner_x
                 fill_y = inner_y
@@ -11829,11 +11850,11 @@ class SimpleWx:
                     tw, th = dc.GetTextExtent(text)
                     text_x = max(0, (w - tw) // 2)
                     text_y = max(0, (h - th) // 2)
-                    dc.SetTextForeground(wx.Colour(25, 25, 25))
+                    dc.SetTextForeground(wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNTEXT))
                     dc.DrawText(text, text_x, text_y)
                     if fill_w_draw > 0 and fill_h_draw > 0:
                         dc.SetClippingRegion(fill_x, fill_y, fill_w_draw, fill_h_draw)
-                        dc.SetTextForeground(wx.Colour(250, 250, 250))
+                        dc.SetTextForeground(wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHTTEXT))
                         dc.DrawText(text, text_x, text_y)
                         dc.DestroyClippingRegion()
             finally:
