@@ -5,7 +5,6 @@ __date__ = "2026/03/16"
 __version__ = "0.1.0"
 
 import wx
-
 from simplewx import SimpleWx as simplewx
 
 # Main Window 'MainWindow'
@@ -18,16 +17,19 @@ win.new_window(
     Statusbar=1,
 )
 
-def on_pushButton_clicked(_event):
-    pass
-
+# Menubar and menu items
 win.add_menu_bar(Name='menubar')
+
+# Menu 'New'
 win.add_menu(Name='menuNew', Menubar='menubar', Title='New')
 win.add_menu_item(Name='actionSave', Menu='menuNew', Title='Save')
 win.add_menu_item(Name='actionLoad', Menu='menuNew', Title='Load')
 win.add_menu_item(Name='actionExit', Menu='menuNew', Title='Exit')
 
 # Buttons at the bottom
+def on_pushButton_clicked(_event):
+    pass
+
 win.add_button(
     Name='pushButton',
     Position=[230, 100],

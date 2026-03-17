@@ -1316,6 +1316,16 @@ def _widget_comment_title(widget: WidgetSpec) -> str:
     return widget.title if widget.title else widget.name
 
 
+def _emit_handler_stub(lines: List[str], emitted: set[str], handler_name: Optional[str]) -> None:
+    """Emit one handler stub once, directly before its source widget/menu item."""
+    if not handler_name or handler_name in emitted:
+        return
+    emitted.add(handler_name)
+    lines.append(f"def {handler_name}(_event):")
+    lines.append("    pass")
+    lines.append("")
+
+
 def _collect_scope_widgets(
     widgets: List[WidgetSpec],
 ) -> Tuple[List[WidgetSpec], Dict[str, List[WidgetSpec]], List[WidgetSpec]]:
@@ -1344,6 +1354,7 @@ def _render_frame_block(
     lines: List[str],
     frame: WidgetSpec,
     frame_children: List[WidgetSpec],
+    emitted_handlers: set[str],
     default_frame: Optional[str] = None,
 ) -> None:
     lines.append(f"# Frame {quote(_widget_comment_title(frame))}")
@@ -1358,6 +1369,7 @@ def _render_frame_block(
             last_groupbox_comment = groupbox_comment
         else:
             last_groupbox_comment = None
+        _emit_handler_stub(lines, emitted_handlers, child.handler_name)
         lines.append(build_widget_call(child, container_frame=default_frame))
         if child.qt_class == "QProgressBar" and "value" in child.extra:
             lines.append(f"win.set_value({quote(child.name)}, 'Value', {child.extra['value']})")
@@ -1366,6 +1378,8 @@ def _render_frame_block(
 def _render_grouped_widgets(
     lines: List[str],
     widgets: List[WidgetSpec],
+    emitted_handlers: set[str],
+    section_title: str,
     default_frame: Optional[str] = None,
 ) -> None:
     frames, children_by_frame, outside_widgets = _collect_scope_widgets(widgets)
@@ -1383,7 +1397,13 @@ def _render_grouped_widgets(
 
     for kind, item in top_entries:
         if kind == "frame":
-            _render_frame_block(lines, item, children_by_frame.get(item.name, []), default_frame=default_frame)
+            _render_frame_block(
+                lines,
+                item,
+                children_by_frame.get(item.name, []),
+                emitted_handlers,
+                default_frame=default_frame,
+            )
             lines.append("")
             continue
 
@@ -1391,8 +1411,9 @@ def _render_grouped_widgets(
             if outside_are_buttons:
                 lines.append("# Buttons at the bottom")
             else:
-                lines.append("# Widgets outside frames")
+                lines.append(f"# Widgets on {quote(section_title)}")
             outside_header_emitted = True
+        _emit_handler_stub(lines, emitted_handlers, item.handler_name)
         lines.append(build_widget_call(item, container_frame=default_frame))
         if item.qt_class == "QProgressBar" and "value" in item.extra:
             lines.append(f"win.set_value({quote(item.name)}, 'Value', {item.extra['value']})")
@@ -1405,6 +1426,7 @@ def _render_notebook_block(
     lines: List[str],
     notebook: NotebookSpec,
     widgets: List[WidgetSpec],
+    emitted_handlers: set[str],
 ) -> None:
     notebook_args = [
         f"Name={quote(notebook.name)}",
@@ -1435,7 +1457,7 @@ def _render_notebook_block(
         )
 
         page_widget_items = [widget for widget in widgets if widget.container == page.name]
-        _render_grouped_widgets(lines, page_widget_items, default_frame=page.name)
+        _render_grouped_widgets(lines, page_widget_items, emitted_handlers, page.name, default_frame=page.name)
 
     lines.append("")
 
@@ -1471,8 +1493,6 @@ def render_python(
         lines.append("import wx")
     if any(signal.startswith("wx.adv.") for signal in signal_refs):
         lines.append("import wx.adv")
-    if signal_refs:
-        lines.append("")
     lines.append("from simplewx import SimpleWx as simplewx")
     lines.append("")
 
@@ -1493,22 +1513,15 @@ def render_python(
     lines.append(_format_call("win.new_window", window_args))
     lines.append("")
 
-    # Emit handler stubs only once per name even if Qt references the same
-    # connection multiple times internally.
-    emitted: List[str] = []
-    for connection in handlers.values():
-        handler_name = connection.handler_name
-        if handler_name in emitted:
-            continue
-        emitted.append(handler_name)
-        lines.append(f"def {handler_name}(_event):")
-        lines.append("    pass")
-        lines.append("")
+    emitted_handlers: set[str] = set()
 
     # Emit the menu structure before ordinary widgets.
     if menubar_name and menus:
+        lines.append("# Menubar and menu items")
         lines.append(_format_call("win.add_menu_bar", [f"Name={quote(menubar_name)}"]))
+        lines.append("")
         for menu in menus:
+            lines.append(f"# Menu {quote(menu.title)}")
             lines.append(
                 _format_call(
                     "win.add_menu",
@@ -1536,8 +1549,10 @@ def render_python(
                     args.append(f"Signal={item.signal}")
                 if item.handler_name:
                     args.append(f"Function={item.handler_name}")
+                    lines.append("")
+                    _emit_handler_stub(lines, emitted_handlers, item.handler_name)
                 lines.append(_format_call("win.add_menu_item", args))
-        lines.append("")
+            lines.append("")
 
     main_widgets = [widget for widget in widgets if widget.container is None]
     main_frames, main_children_by_frame, main_outside_widgets = _collect_scope_widgets(main_widgets)
@@ -1558,7 +1573,7 @@ def render_python(
 
     for kind, item in top_entries:
         if kind == "frame":
-            _render_frame_block(lines, item, main_children_by_frame.get(item.name, []))
+            _render_frame_block(lines, item, main_children_by_frame.get(item.name, []), emitted_handlers)
             lines.append("")
             continue
 
@@ -1567,14 +1582,15 @@ def render_python(
                 if outside_are_buttons:
                     lines.append("# Buttons at the bottom")
                 else:
-                    lines.append("# Widgets outside frames")
+                    lines.append(f"# Widgets on {quote(window.name)}")
                 outside_header_emitted = True
+            _emit_handler_stub(lines, emitted_handlers, item.handler_name)
             lines.append(build_widget_call(item))
             if item.qt_class == "QProgressBar" and "value" in item.extra:
                 lines.append(f"win.set_value({quote(item.name)}, 'Value', {item.extra['value']})")
             continue
 
-        _render_notebook_block(lines, item, widgets)
+        _render_notebook_block(lines, item, widgets, emitted_handlers)
 
     if outside_header_emitted:
         lines.append("")
