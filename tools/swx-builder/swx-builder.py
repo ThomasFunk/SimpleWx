@@ -7,6 +7,7 @@ __date__ = "2026/03/19"
 
 import argparse
 import datetime
+import re
 import sys
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
@@ -170,6 +171,9 @@ SUPPORTED_WIDGET_CLASSES = {
     "QTableView",
     "QTreeWidget",
     "QTreeView",
+    "QDateTimeEdit",
+    "QFontComboBox",
+    "QGraphicsView",
 }
 
 SUPPORTED_TOP_LEVEL_CLASSES = {
@@ -542,6 +546,15 @@ def _map_qt_signal_to_simplewx_event(qt_class: str, qt_signal: str) -> Optional[
         },
         "QTabWidget": {
             "currentchanged": "wx.EVT_NOTEBOOK_PAGE_CHANGED",
+        },
+        "QDateTimeEdit": {
+            "datetimechanged": "wx.EVT_DATE_CHANGED",
+            "datechanged": "wx.EVT_DATE_CHANGED",
+            "timechanged": "wx.EVT_TIME_CHANGED",
+        },
+        "QFontComboBox": {
+            "currentfontchanged": "wx.EVT_FONTPICKER_CHANGED",
+            "currentindexchanged": "wx.EVT_COMBOBOX",
         },
     }
     return signal_map.get(qt_class, {}).get(signal_name)
@@ -983,6 +996,46 @@ def _widget_from_element(
             extra["separator_orientation"] = "vertical"
         else:
             extra["separator_orientation"] = "horizontal"
+    if qt_class == "QDateTimeEdit":
+        dt_prop = _find_property(widget_el, "dateTime")
+        if dt_prop is not None:
+            dt_el = dt_prop.find("datetime")
+            if dt_el is not None:
+                try:
+                    year = int((dt_el.findtext("year") or "0").strip())
+                    month = int((dt_el.findtext("month") or "0").strip())
+                    day = int((dt_el.findtext("day") or "0").strip())
+                    hour = int((dt_el.findtext("hour") or "0").strip())
+                    minute = int((dt_el.findtext("minute") or "0").strip())
+                    second = int((dt_el.findtext("second") or "0").strip())
+                    if year > 0 and month > 0 and day > 0:
+                        extra["date"] = f"{year:04d}-{month:02d}-{day:02d}"
+                    if hour or minute or second:
+                        extra["time"] = f"{hour:02d}:{minute:02d}:{second:02d}"
+                except ValueError:
+                    pass
+    if qt_class == "QFontComboBox":
+        font_prop = _find_property(widget_el, "currentFont")
+        if font_prop is not None:
+            font_el = font_prop.find("font")
+            if font_el is not None:
+                family = (font_el.findtext("family") or "").strip()
+                try:
+                    size_pt = int((font_el.findtext("pointsize") or "0").strip())
+                except ValueError:
+                    size_pt = 0
+                bold_text = (font_el.findtext("bold") or "").strip().lower()
+                bold = bold_text in ("true", "1", "yes")
+                if family:
+                    extra["font_family"] = family
+                if size_pt > 0:
+                    extra["font_size"] = size_pt
+                if bold:
+                    extra["font_bold"] = True
+    if qt_class == "QGraphicsView":
+        stylesheet = _property_string(widget_el, "styleSheet") or ""
+        if stylesheet:
+            extra["raw_stylesheet"] = stylesheet
 
     return WidgetSpec(
         qt_class=qt_class,
@@ -1651,8 +1704,9 @@ def quote(text: str) -> str:
 
 
 def _format_call(function_name: str, args: List[str], force_multiline: bool = False) -> str:
-    # Keep short calls on one line; automatically format longer ones across
-    # multiple lines for readability.
+    # Global output rule:
+    # - fewer than 5 parameters => single line
+    # - 5 or more parameters  => one parameter per line
     if len(args) <= 4 and not force_multiline:
         return f"{function_name}({', '.join(args)})"
 
@@ -1978,6 +2032,79 @@ def build_widget_call(widget: WidgetSpec, container_frame: Optional[str] = None)
             args.append(f"Frame={quote(effective_frame)}")
         return _format_call("win.add_separator", args)
 
+    if widget.qt_class == "QDateTimeEdit":
+        # Primary: date picker (occupies the left ~60 % of the widget's width).
+        date_width = max(40, int(round(width * 0.60)))
+        args = [
+            f"Name={quote(widget.name)}",
+            f"Position=[{x}, {y}]",
+            f"Size=[{date_width}, {height}]",
+        ]
+        if "date" in widget.extra:
+            args.append(f"Date={quote(widget.extra['date'])}")
+        if effective_frame:
+            args.append(f"Frame={quote(effective_frame)}")
+        if widget.tooltip:
+            args.append(f"Tooltip={quote(widget.tooltip)}")
+        if widget.signal:
+            args.append(f"Signal={widget.signal}")
+        if widget.handler_name:
+            args.append(f"Function={widget.handler_name}")
+        return _format_call("win.add_datepicker_ctrl", args)
+
+    if widget.qt_class == "QFontComboBox":
+        args = [
+            f"Name={quote(widget.name)}",
+            f"Position=[{x}, {y}]",
+            f"Size=[{width}, {height}]",
+        ]
+        font_parts: list[str] = []
+        if "font_family" in widget.extra:
+            font_parts.append(quote(widget.extra["font_family"]))
+        if "font_size" in widget.extra:
+            font_parts.append(str(widget.extra["font_size"]))
+        if "font_bold" in widget.extra:
+            font_parts.append(quote("bold"))
+        if font_parts:
+            args.append(f"Font=[{', '.join(font_parts)}]")
+        if effective_frame:
+            args.append(f"Frame={quote(effective_frame)}")
+        if widget.tooltip:
+            args.append(f"Tooltip={quote(widget.tooltip)}")
+        if widget.signal:
+            args.append(f"Signal={widget.signal}")
+        if widget.handler_name:
+            args.append(f"Function={widget.handler_name}")
+        return _format_call("win.add_font_button", args)
+
+    if widget.qt_class == "QGraphicsView":
+        image_path = widget.extra.get("image_path")
+        if image_path:
+            args = [
+                f"Name={quote(widget.name)}",
+                f"Position=[{x}, {y}]",
+                f"Size=[{width}, {height}]",
+                f"Path={quote(image_path)}",
+            ]
+            if effective_frame:
+                args.append(f"Frame={quote(effective_frame)}")
+            if widget.tooltip:
+                args.append(f"Tooltip={quote(widget.tooltip)}")
+            if widget.signal:
+                args.append(f"Signal={widget.signal}")
+            if widget.handler_name:
+                args.append(f"Function={widget.handler_name}")
+            return _format_call("win.add_image", args)
+        # No image resolved — fall back to an empty frame placeholder.
+        args = [
+            f"Name={quote(widget.name)}",
+            f"Position=[{x}, {y}]",
+            f"Size=[{width}, {height}]",
+        ]
+        if effective_frame:
+            args.append(f"Frame={quote(effective_frame)}")
+        return _format_call("win.add_frame", args)
+
     raise BuilderError(f"Interner Fehler: Keine Mapping-Regel für {widget.qt_class}")
 
 
@@ -2031,6 +2158,9 @@ def _widget_inline_comment(widget: WidgetSpec) -> Optional[str]:
         "QTreeWidget": "Tree view",
         "QTreeView": "Tree view",
         "Line": "Separator",
+        "QDateTimeEdit": "DateTime edit",
+        "QFontComboBox": "Font combo",
+        "QGraphicsView": "Graphics view",
     }
 
     kind = kind_map.get(widget.qt_class)
@@ -2062,6 +2192,26 @@ def _emit_widget_block(
     lines.append(build_widget_call(widget, container_frame=default_frame))
     if widget.qt_class == "QProgressBar" and "value" in widget.extra:
         lines.append(f"win.set_value({quote(widget.name)}, 'Value', {widget.extra['value']})")
+    if widget.qt_class == "QDateTimeEdit":
+        # Emit the complementary time-picker inline (right portion of the allocation).
+        x, y = widget.position
+        width, _h = widget.size if widget.size is not None else (120, 28)
+        height = _h
+        date_width = max(40, int(round(width * 0.60)))
+        time_x = x + date_width
+        time_width = max(40, width - date_width)
+        time_name = f"{widget.name}_time"
+        time_args: List[str] = [
+            f"Name={quote(time_name)}",
+            f"Position=[{time_x}, {y}]",
+            f"Size=[{time_width}, {height}]",
+        ]
+        if "time" in widget.extra:
+            time_args.append(f"Time={quote(widget.extra['time'])}")
+        eff_frame = widget.frame if widget.frame else default_frame
+        if eff_frame:
+            time_args.append(f"Frame={quote(eff_frame)}")
+        lines.append(_format_call("win.add_timepicker_ctrl", time_args))
 
 
 def _menu_item_inline_comment(item: MenuItemSpec) -> str:
@@ -2500,6 +2650,35 @@ def render_python(
     return "\n".join(lines)
 
 
+def _extract_stylesheet_image_url(css: str) -> Optional[str]:
+    """Return the first background-image url() value found in a CSS string."""
+    m = re.search(r'background-image\s*:\s*url\s*\(\s*([^)]+)\s*\)', css)
+    if m:
+        return m.group(1).strip().strip('"\'')
+    return None
+
+
+def _try_resolve_stylesheet_resource(
+    url: str,
+    ui_path: Path,
+    resource_paths: Dict[str, str],
+) -> Optional[str]:
+    """Resolve a Qt stylesheet url(:/...) to a real file path, or None on failure."""
+    if url.startswith(":"):
+        resource_name = _normalize_qt_resource_path(url)
+        resolved = resource_paths.get(resource_name)
+        if resolved is None:
+            basename_key = "/" + PurePosixPath(resource_name).name
+            if basename_key != resource_name:
+                resolved = resource_paths.get(basename_key)
+        return resolved
+    # Plain file path (absolute or relative to the .ui directory).
+    candidate = Path(url)
+    if not candidate.is_absolute():
+        candidate = (ui_path.parent / candidate).resolve()
+    return str(candidate) if candidate.exists() else None
+
+
 def convert_ui_to_simplewx(
     input_path: Path,
     dev_mode: bool = False,
@@ -2532,6 +2711,16 @@ def convert_ui_to_simplewx(
     for splitter in splitters:
         for pane in splitter.panes:
             widgets.extend(pane.widgets)
+    # Post-process: resolve QGraphicsView stylesheet background-image paths.
+    for _w in widgets:
+        if _w.qt_class == "QGraphicsView":
+            stylesheet = _w.extra.get("raw_stylesheet", "")
+            if stylesheet:
+                image_url = _extract_stylesheet_image_url(stylesheet)
+                if image_url:
+                    resolved = _try_resolve_stylesheet_resource(image_url, input_path, resource_paths)
+                    if resolved:
+                        _w.extra["image_path"] = resolved
     widgets = _apply_frame_title_labels(widgets)
     widgets = _assign_widgets_to_frames(widgets)
     widgets = _adjust_spinbox_min_size_and_adjacent_labels(widgets)

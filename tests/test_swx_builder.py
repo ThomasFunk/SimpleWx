@@ -1341,4 +1341,222 @@ def test_convert_static_ui_priority4_toolbar_and_splitter_are_rendered(tmp_path:
     assert "Frame='splitter_secondpane'" in generated
     assert "win.add_treeview(" in generated
     assert "win.add_listview(" in generated
+    assert "win.add_splitter(Name='splitter'" not in generated
+    assert (
+        "win.add_splitter(\n"
+        "    Name='splitter',\n"
+        "    Position=[10, 10],\n"
+        "    Size=[512, 192],\n"
+        "    Orient='vertical',\n"
+        "    Split=256,\n"
+        ")"
+    ) in generated
+    assert "win.add_splitter_pane(Name='splitter_firstpane', Splitter='splitter', Side='first')" in generated
     _unit_passed("priority 4 toolbar and splitter render with pane content")
+
+
+def test_convert_static_ui_priority6_datetimeedit_maps_to_date_and_time_pickers(tmp_path: Path) -> None:
+    ui_path = tmp_path / "prio6_datetimeedit.ui"
+    ui_path.write_text(
+        """<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<ui version=\"4.0\">
+ <class>MainWindow</class>
+ <widget class=\"QMainWindow\" name=\"MainWindow\">
+  <property name=\"geometry\"><rect><x>0</x><y>0</y><width>400</width><height>200</height></rect></property>
+  <widget class=\"QWidget\" name=\"centralwidget\">
+   <widget class=\"QDateTimeEdit\" name=\"scheduleEdit\">
+    <property name=\"geometry\"><rect><x>20</x><y>30</y><width>200</width><height>29</height></rect></property>
+    <property name=\"dateTime\">
+     <datetime>
+      <hour>14</hour>
+      <minute>30</minute>
+      <second>0</second>
+      <year>2025</year>
+      <month>6</month>
+      <day>15</day>
+     </datetime>
+    </property>
+   </widget>
+  </widget>
+ </widget>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>scheduleEdit</sender>
+   <signal>dateTimeChanged(QDateTime)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>dummy()</slot>
+  </connection>
+ </connections>
+</ui>
+""",
+        encoding="utf-8",
+    )
+
+    builder = _load_builder_module()
+    generated = builder.convert_ui_to_simplewx(ui_path)
+
+    # Date picker: primary widget using the original name.
+    assert "win.add_datepicker_ctrl(" in generated
+    assert "Name='scheduleEdit'" in generated
+    assert "Date='2025-06-15'" in generated
+    assert "Signal=wx.EVT_DATE_CHANGED" in generated
+    # Time picker: secondary widget with '_time' suffix, same row, shifted x.
+    assert "win.add_timepicker_ctrl(" in generated
+    assert "Name='scheduleEdit_time'" in generated
+    assert "Time='14:30:00'" in generated
+    # Both must appear in the same generated block (time after date).
+    date_pos = generated.index("win.add_datepicker_ctrl(")
+    time_pos = generated.index("win.add_timepicker_ctrl(")
+    assert date_pos < time_pos, "date picker must precede time picker"
+    # Inline comment.
+    assert "# DateTime edit" in generated
+    _unit_passed("priority 6: QDateTimeEdit maps to date + time picker pair")
+
+
+def test_convert_static_ui_priority6_fontcombobox_maps_to_font_button(tmp_path: Path) -> None:
+    ui_path = tmp_path / "prio6_fontcombobox.ui"
+    ui_path.write_text(
+        """<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<ui version=\"4.0\">
+ <class>MainWindow</class>
+ <widget class=\"QMainWindow\" name=\"MainWindow\">
+  <property name=\"geometry\"><rect><x>0</x><y>0</y><width>400</width><height>200</height></rect></property>
+  <widget class=\"QWidget\" name=\"centralwidget\">
+   <widget class=\"QFontComboBox\" name=\"fontPicker\">
+    <property name=\"geometry\"><rect><x>20</x><y>40</y><width>280</width><height>29</height></rect></property>
+    <property name=\"currentFont\">
+     <font>
+      <family>Arial</family>
+      <pointsize>12</pointsize>
+      <bold>false</bold>
+     </font>
+    </property>
+   </widget>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
+""",
+        encoding="utf-8",
+    )
+
+    builder = _load_builder_module()
+    generated = builder.convert_ui_to_simplewx(ui_path)
+
+    assert "win.add_font_button(" in generated
+    assert "Name='fontPicker'" in generated
+    assert "Font=['Arial', 12]" in generated
+    assert "# Font combo" in generated
+    _unit_passed("priority 6: QFontComboBox maps to add_font_button with font spec")
+
+
+def test_convert_static_ui_priority7_graphicsview_stylesheet_image_maps_to_add_image(tmp_path: Path) -> None:
+    # Create a minimal PNG-like file so the QRC resolution can verify file existence.
+    png_file = tmp_path / "scene.png"
+    png_file.write_bytes(b"\x89PNG\r\n\x1a\n")  # PNG magic bytes
+
+    qrc_path = tmp_path / "images.qrc"
+    qrc_path.write_text(
+        "<RCC><qresource><file>scene.png</file></qresource></RCC>",
+        encoding="utf-8",
+    )
+
+    ui_path = tmp_path / "prio7_graphicsview.ui"
+    ui_path.write_text(
+        f"""<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<ui version=\"4.0\">
+ <class>MainWindow</class>
+ <widget class=\"QMainWindow\" name=\"MainWindow\">
+  <property name=\"geometry\"><rect><x>0</x><y>0</y><width>600</width><height>400</height></rect></property>
+  <widget class=\"QWidget\" name=\"centralwidget\">
+   <widget class=\"QGraphicsView\" name=\"sceneView\">
+    <property name=\"geometry\"><rect><x>10</x><y>10</y><width>320</width><height>280</height></rect></property>
+    <property name=\"styleSheet\">
+     <string notr=\"true\">background-image: url(:/scene.png); background-position: center;</string>
+    </property>
+   </widget>
+  </widget>
+ </widget>
+ <resources>
+  <include location=\"images.qrc\"/>
+ </resources>
+ <connections/>
+</ui>
+""",
+        encoding="utf-8",
+    )
+
+    builder = _load_builder_module()
+    generated = builder.convert_ui_to_simplewx(ui_path)
+
+    assert "win.add_image(" in generated
+    assert "Name='sceneView'" in generated
+    assert "scene.png" in generated
+    assert "# Graphics view" in generated
+    _unit_passed("priority 7: QGraphicsView with stylesheet background-image maps to add_image")
+
+
+def test_convert_static_ui_widget_call_format_rule_applies_globally(tmp_path: Path) -> None:
+    ui_path = tmp_path / "format_rule_widgets.ui"
+    ui_path.write_text(
+        """<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry"><rect><x>0</x><y>0</y><width>520</width><height>240</height></rect></property>
+  <widget class="QWidget" name="centralwidget">
+   <widget class="QPushButton" name="buttonFourArgs">
+    <property name="geometry"><rect><x>20</x><y>20</y><width>140</width><height>30</height></rect></property>
+    <property name="text"><string>Four</string></property>
+   </widget>
+   <widget class="QPushButton" name="buttonFiveArgs">
+    <property name="geometry"><rect><x>20</x><y>70</y><width>160</width><height>30</height></rect></property>
+    <property name="text"><string>Five</string></property>
+    <property name="toolTip"><string>forces multiline</string></property>
+   </widget>
+   <widget class="QComboBox" name="comboFiveArgs">
+    <property name="geometry"><rect><x>220</x><y>20</y><width>180</width><height>29</height></rect></property>
+    <property name="toolTip"><string>combo multiline</string></property>
+    <item><property name="text"><string>A</string></property></item>
+    <item><property name="text"><string>B</string></property></item>
+   </widget>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
+""",
+        encoding="utf-8",
+    )
+
+    builder = _load_builder_module()
+    generated = builder.convert_ui_to_simplewx(ui_path)
+
+    # 4 parameters -> single line.
+    assert "win.add_button(Name='buttonFourArgs', Position=[20, 20], Title='Four', Size=[140, 30])" in generated
+
+    # 5+ parameters -> multiline with one argument per line.
+    assert "win.add_button(Name='buttonFiveArgs'" not in generated
+    assert (
+        "win.add_button(\n"
+        "    Name='buttonFiveArgs',\n"
+        "    Position=[20, 70],\n"
+        "    Title='Five',\n"
+        "    Size=[160, 30],\n"
+        "    Tooltip='forces multiline',\n"
+        ")"
+    ) in generated
+
+    assert "win.add_combo_box(Name='comboFiveArgs'" not in generated
+    assert (
+        "win.add_combo_box(\n"
+        "    Name='comboFiveArgs',\n"
+        "    Position=[220, 20],\n"
+        "    Data=['A', 'B'],\n"
+        "    Size=[180, 29],\n"
+        "    Tooltip='combo multiline',\n"
+        ")"
+    ) in generated
+    _unit_passed("global format rule: <5 args single-line, >=5 args multiline for widget calls")
