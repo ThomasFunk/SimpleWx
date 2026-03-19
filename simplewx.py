@@ -11698,12 +11698,19 @@ class SimpleWx:
             except Exception:
                 pass
 
-        # Always use native wx.Gauge to avoid GTK BG_STYLE_PAINT rendering
-        # artifacts that make sibling widgets invisible until hovered.
-        # The owner-drawn path from 9b963db caused those regressions in all
-        # contexts, not just outside a debugger.  Force owner-drawn only when
-        # explicitly requested via SWX_PROGRESSBAR_FORCE_OWNERDRAW=1.
-        use_native_gauge = not force_ownerdraw
+        debugger_attached = (
+            (sys.gettrace() is not None)
+            or ("DEBUGPY_LAUNCHER_PORT" in os.environ)
+            or ("PYDEVD_USE_FRAME_EVAL" in os.environ)
+        )
+        base_debug_mode = int(getattr(self, "base", 10) or 0) == 0
+        runtime_debug_mode = debugger_attached or base_debug_mode
+
+        # Requested behavior:
+        # - VSCode/debug mode (or Base=0): use native wx.Gauge + gray underlay
+        # - normal runtime: use owner-drawn progress panel
+        # - explicit override: SWX_PROGRESSBAR_FORCE_OWNERDRAW=1
+        use_native_gauge = runtime_debug_mode and (not force_ownerdraw)
 
         def _dbg(message: str) -> None:
             if not debug_enabled:
@@ -11714,7 +11721,8 @@ class SimpleWx:
             "create: "
             f"frame={container_name}, container_type={container_type or '-'}, "
             f"mode={mode}, orient={orientation}, steps={steps}, "
-            f"native={1 if use_native_gauge else 0}, force_ownerdraw={1 if force_ownerdraw else 0}"
+            f"native={1 if use_native_gauge else 0}, force_ownerdraw={1 if force_ownerdraw else 0}, "
+            f"runtime_debug={1 if runtime_debug_mode else 0}"
         )
 
         if use_native_gauge:
