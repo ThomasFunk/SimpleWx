@@ -11690,25 +11690,20 @@ class SimpleWx:
         force_ownerdraw = force_flag in {"1", "true", "yes", "on"}
 
         container_name = params.get("frame")
-        use_native_gauge = False
         container_type = ""
         if isinstance(container_name, str) and container_name in self.widgets:
             try:
                 container_object = self.get_object(container_name)
                 container_type = str(container_object.type)
-                use_native_gauge = container_object.type == "NotebookPage"
             except Exception:
                 pass
 
-        native_notebook_flag = os.environ.get("SWX_PROGRESSBAR_NOTEBOOK_NATIVE", "0").strip().lower()
-        native_notebook_preferred = native_notebook_flag in {"1", "true", "yes", "on"}
-        native_underlay_flag = os.environ.get("SWX_PROGRESSBAR_NATIVE_UNDERLAY", "0").strip().lower()
-        native_underlay_enabled = native_underlay_flag in {"1", "true", "yes", "on"}
-        debugger_attached = (sys.gettrace() is not None) or ("DEBUGPY_LAUNCHER_PORT" in os.environ)
-        if use_native_gauge and not (debugger_attached or native_notebook_preferred):
-            use_native_gauge = False
-        if force_ownerdraw:
-            use_native_gauge = False
+        # Always use native wx.Gauge to avoid GTK BG_STYLE_PAINT rendering
+        # artifacts that make sibling widgets invisible until hovered.
+        # The owner-drawn path from 9b963db caused those regressions in all
+        # contexts, not just outside a debugger.  Force owner-drawn only when
+        # explicitly requested via SWX_PROGRESSBAR_FORCE_OWNERDRAW=1.
+        use_native_gauge = not force_ownerdraw
 
         def _dbg(message: str) -> None:
             if not debug_enabled:
@@ -11719,8 +11714,7 @@ class SimpleWx:
             "create: "
             f"frame={container_name}, container_type={container_type or '-'}, "
             f"mode={mode}, orient={orientation}, steps={steps}, "
-            f"native={1 if use_native_gauge else 0}, force_ownerdraw={1 if force_ownerdraw else 0}, "
-            f"debugger={1 if debugger_attached else 0}, notebook_native_pref={1 if native_notebook_preferred else 0}"
+            f"native={1 if use_native_gauge else 0}, force_ownerdraw={1 if force_ownerdraw else 0}"
         )
 
         if use_native_gauge:
@@ -11940,22 +11934,23 @@ class SimpleWx:
         if use_native_gauge and show_percent and isinstance(object_entry.ref, wx.Gauge):
             gauge_parent = object_entry.ref.GetParent()
             if isinstance(gauge_parent, wx.Window):
-                if native_notebook_preferred or native_underlay_enabled:
-                    native_underlay = wx.Panel(
-                        gauge_parent,
-                        wx.ID_ANY,
-                        pos=(self._scale(int(object_entry.pos_x)), self._scale(int(object_entry.pos_y))),
-                        size=(
-                            self._scale(int(object_entry.width)) if object_entry.width is not None else 1,
-                            (self._scale(int(object_entry.height)) + self._scale(3)) if object_entry.height is not None else 1,
-                        ),
-                        style=wx.BORDER_NONE,
-                    )
-                    native_underlay.SetBackgroundColour(wx.Colour(236, 236, 236))
-                    native_underlay.Show(True)
-                    object_entry.ref.Reparent(native_underlay)
-                    object_entry.ref.SetPosition((0, 0))
-                    object_entry.data["native_underlay"] = native_underlay
+                # always create an underlay panel behind the gauge so the
+                # percent label has a stable background at all render depths
+                native_underlay = wx.Panel(
+                    gauge_parent,
+                    wx.ID_ANY,
+                    pos=(self._scale(int(object_entry.pos_x)), self._scale(int(object_entry.pos_y))),
+                    size=(
+                        self._scale(int(object_entry.width)) if object_entry.width is not None else 1,
+                        (self._scale(int(object_entry.height)) + self._scale(3)) if object_entry.height is not None else 1,
+                    ),
+                    style=wx.BORDER_NONE,
+                )
+                native_underlay.SetBackgroundColour(wx.Colour(236, 236, 236))
+                native_underlay.Show(True)
+                object_entry.ref.Reparent(native_underlay)
+                object_entry.ref.SetPosition((0, 0))
+                object_entry.data["native_underlay"] = native_underlay
 
                 label_parent = object_entry.data.get("native_underlay") if isinstance(object_entry.data.get("native_underlay"), wx.Window) else gauge_parent
                 native_label = wx.StaticText(label_parent, wx.ID_ANY, "100%")
