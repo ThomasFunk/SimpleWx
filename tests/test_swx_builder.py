@@ -1355,7 +1355,7 @@ def test_convert_static_ui_priority4_toolbar_and_splitter_are_rendered(tmp_path:
     _unit_passed("priority 4 toolbar and splitter render with pane content")
 
 
-def test_convert_static_ui_priority6_datetimeedit_maps_to_date_and_time_pickers(tmp_path: Path) -> None:
+def test_convert_static_ui_priority6_datetimeedit_is_explicitly_not_supported(tmp_path: Path) -> None:
     ui_path = tmp_path / "prio6_datetimeedit.ui"
     ui_path.write_text(
         """<?xml version=\"1.0\" encoding=\"UTF-8\"?>
@@ -1394,24 +1394,10 @@ def test_convert_static_ui_priority6_datetimeedit_maps_to_date_and_time_pickers(
     )
 
     builder = _load_builder_module()
-    generated = builder.convert_ui_to_simplewx(ui_path)
+    with pytest.raises(builder.BuilderError, match=r"Unsupported widget class 'QDateTimeEdit'"):
+        builder.convert_ui_to_simplewx(ui_path)
 
-    # Date picker: primary widget using the original name.
-    assert "win.add_datepicker_ctrl(" in generated
-    assert "Name='scheduleEdit'" in generated
-    assert "Date='2025-06-15'" in generated
-    assert "Signal=wx.EVT_DATE_CHANGED" in generated
-    # Time picker: secondary widget with '_time' suffix, same row, shifted x.
-    assert "win.add_timepicker_ctrl(" in generated
-    assert "Name='scheduleEdit_time'" in generated
-    assert "Time='14:30:00'" in generated
-    # Both must appear in the same generated block (time after date).
-    date_pos = generated.index("win.add_datepicker_ctrl(")
-    time_pos = generated.index("win.add_timepicker_ctrl(")
-    assert date_pos < time_pos, "date picker must precede time picker"
-    # Inline comment.
-    assert "# DateTime edit" in generated
-    _unit_passed("priority 6: QDateTimeEdit maps to date + time picker pair")
+    _unit_passed("priority 6: QDateTimeEdit is explicitly rejected with clear error")
 
 
 def test_convert_static_ui_priority6_fontcombobox_maps_to_font_button(tmp_path: Path) -> None:

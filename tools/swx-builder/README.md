@@ -20,6 +20,8 @@ Supported widget mapping (current subset):
 - `QComboBox` -> `add_combo_box`
 - `QSlider` -> `add_slider`
 - `QProgressBar` -> `add_progress_bar`
+- `QFontComboBox` -> `add_font_button`
+- `QGraphicsView` -> `add_image` (when stylesheet `background-image` resolves), fallback `add_frame`
 - `QToolBar` / `QAction` -> `add_toolbar`
 - `QSplitter` -> `add_splitter` + `add_splitter_pane`
 - `QMenuBar` / `QMenu` / `QAction` -> `add_menu_bar` / `add_menu` / `add_menu_item`
@@ -33,6 +35,7 @@ Explicitly not supported:
 - `QStackedWidget` (no direct SimpleWx stacked-container equivalent)
 - `QCalendarWidget` (no direct SimpleWx calendar widget equivalent)
 - `QScrollBar` (scrollbars appear automatically in container widgets like `TextView`, `TreeView`, etc.; a standalone `QScrollBar` is only needed for custom scroll mechanisms, which have no SimpleWx equivalent)
+- `QDateTimeEdit` (intentionally unsupported in static import; use separate `QDateEdit` and `QTimeEdit`)
 
 Special handling:
 

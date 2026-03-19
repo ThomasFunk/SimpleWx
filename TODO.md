@@ -31,8 +31,8 @@
 	- [x] Priority 3: `QTreeWidget`, `QTableWidget`, `QListWidget`/`QListView`, `QTableView`, `QTreeView`
 	- [x] Priority 4: `QSplitter`, `QToolBar`
 	- [x] Priority 5 (dialogs): `QDialog`, `QDialogButtonBox`
-	- [ ] Priority 6: `QDateTimeEdit`, `QFontComboBox` (`QDateEdit`/`QTimeEdit` already covered)
-	- [ ] Priority 7 (complex widgets): `QGraphicsView`
+	- [x] Priority 6: `QFontComboBox` (`QDateTimeEdit` intentionally unsupported; use `QDateEdit` + `QTimeEdit`)
+	- [x] Priority 7 (complex widgets): `QGraphicsView`
 
 ## P2 – Stabilisation
 

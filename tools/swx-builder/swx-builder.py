@@ -171,9 +171,12 @@ SUPPORTED_WIDGET_CLASSES = {
     "QTableView",
     "QTreeWidget",
     "QTreeView",
-    "QDateTimeEdit",
     "QFontComboBox",
     "QGraphicsView",
+}
+
+UNSUPPORTED_WIDGET_CLASSES: Dict[str, str] = {
+    "QDateTimeEdit": "Please use separate QDateEdit and QTimeEdit widgets in Qt Designer.",
 }
 
 SUPPORTED_TOP_LEVEL_CLASSES = {
@@ -437,6 +440,16 @@ def validate_static_only(root: ET.Element) -> None:
             "Dieses Tool verarbeitet nur statische Qt-Designer UIs ohne Layout/Sizer."
         )
 
+    for widget in root.findall(".//widget"):
+        widget_class = (widget.get("class") or "").strip()
+        if widget_class not in UNSUPPORTED_WIDGET_CLASSES:
+            continue
+        widget_name = (widget.get("name") or widget_class or "<unnamed>").strip()
+        raise BuilderError(
+            f"Unsupported widget class '{widget_class}' in '{widget_name}'. "
+            f"{UNSUPPORTED_WIDGET_CLASSES[widget_class]}"
+        )
+
 
 def _find_top_level_widget(root: ET.Element) -> ET.Element:
     for widget in root.findall("./widget"):
@@ -546,11 +559,6 @@ def _map_qt_signal_to_simplewx_event(qt_class: str, qt_signal: str) -> Optional[
         },
         "QTabWidget": {
             "currentchanged": "wx.EVT_NOTEBOOK_PAGE_CHANGED",
-        },
-        "QDateTimeEdit": {
-            "datetimechanged": "wx.EVT_DATE_CHANGED",
-            "datechanged": "wx.EVT_DATE_CHANGED",
-            "timechanged": "wx.EVT_TIME_CHANGED",
         },
         "QFontComboBox": {
             "currentfontchanged": "wx.EVT_FONTPICKER_CHANGED",
@@ -996,24 +1004,6 @@ def _widget_from_element(
             extra["separator_orientation"] = "vertical"
         else:
             extra["separator_orientation"] = "horizontal"
-    if qt_class == "QDateTimeEdit":
-        dt_prop = _find_property(widget_el, "dateTime")
-        if dt_prop is not None:
-            dt_el = dt_prop.find("datetime")
-            if dt_el is not None:
-                try:
-                    year = int((dt_el.findtext("year") or "0").strip())
-                    month = int((dt_el.findtext("month") or "0").strip())
-                    day = int((dt_el.findtext("day") or "0").strip())
-                    hour = int((dt_el.findtext("hour") or "0").strip())
-                    minute = int((dt_el.findtext("minute") or "0").strip())
-                    second = int((dt_el.findtext("second") or "0").strip())
-                    if year > 0 and month > 0 and day > 0:
-                        extra["date"] = f"{year:04d}-{month:02d}-{day:02d}"
-                    if hour or minute or second:
-                        extra["time"] = f"{hour:02d}:{minute:02d}:{second:02d}"
-                except ValueError:
-                    pass
     if qt_class == "QFontComboBox":
         font_prop = _find_property(widget_el, "currentFont")
         if font_prop is not None:
@@ -2032,26 +2022,6 @@ def build_widget_call(widget: WidgetSpec, container_frame: Optional[str] = None)
             args.append(f"Frame={quote(effective_frame)}")
         return _format_call("win.add_separator", args)
 
-    if widget.qt_class == "QDateTimeEdit":
-        # Primary: date picker (occupies the left ~60 % of the widget's width).
-        date_width = max(40, int(round(width * 0.60)))
-        args = [
-            f"Name={quote(widget.name)}",
-            f"Position=[{x}, {y}]",
-            f"Size=[{date_width}, {height}]",
-        ]
-        if "date" in widget.extra:
-            args.append(f"Date={quote(widget.extra['date'])}")
-        if effective_frame:
-            args.append(f"Frame={quote(effective_frame)}")
-        if widget.tooltip:
-            args.append(f"Tooltip={quote(widget.tooltip)}")
-        if widget.signal:
-            args.append(f"Signal={widget.signal}")
-        if widget.handler_name:
-            args.append(f"Function={widget.handler_name}")
-        return _format_call("win.add_datepicker_ctrl", args)
-
     if widget.qt_class == "QFontComboBox":
         args = [
             f"Name={quote(widget.name)}",
@@ -2158,7 +2128,6 @@ def _widget_inline_comment(widget: WidgetSpec) -> Optional[str]:
         "QTreeWidget": "Tree view",
         "QTreeView": "Tree view",
         "Line": "Separator",
-        "QDateTimeEdit": "DateTime edit",
         "QFontComboBox": "Font combo",
         "QGraphicsView": "Graphics view",
     }
@@ -2192,26 +2161,6 @@ def _emit_widget_block(
     lines.append(build_widget_call(widget, container_frame=default_frame))
     if widget.qt_class == "QProgressBar" and "value" in widget.extra:
         lines.append(f"win.set_value({quote(widget.name)}, 'Value', {widget.extra['value']})")
-    if widget.qt_class == "QDateTimeEdit":
-        # Emit the complementary time-picker inline (right portion of the allocation).
-        x, y = widget.position
-        width, _h = widget.size if widget.size is not None else (120, 28)
-        height = _h
-        date_width = max(40, int(round(width * 0.60)))
-        time_x = x + date_width
-        time_width = max(40, width - date_width)
-        time_name = f"{widget.name}_time"
-        time_args: List[str] = [
-            f"Name={quote(time_name)}",
-            f"Position=[{time_x}, {y}]",
-            f"Size=[{time_width}, {height}]",
-        ]
-        if "time" in widget.extra:
-            time_args.append(f"Time={quote(widget.extra['time'])}")
-        eff_frame = widget.frame if widget.frame else default_frame
-        if eff_frame:
-            time_args.append(f"Frame={quote(eff_frame)}")
-        lines.append(_format_call("win.add_timepicker_ctrl", time_args))
 
 
 def _menu_item_inline_comment(item: MenuItemSpec) -> str:
@@ -2836,7 +2785,7 @@ def main(argv: Optional[List[str]] = None) -> int:
             build_date=str(args.date).strip() if args.date is not None else None,
         )
     except BuilderError as exc:
-        print(f"Abbruch: {exc}", file=sys.stderr)
+        print(f"Abort: {exc}", file=sys.stderr)
         return 1
 
     output_path.write_text(code, encoding="utf-8")

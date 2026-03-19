@@ -173,7 +173,9 @@ Use:
 
   ./venv/bin/python tools/swx-builder/swx-builder.py -i path/to/form.ui
 
-Currently supported Qt static import includes top-level `QMainWindow` and `QDialog`. Supported widget classes include `QPushButton`, `QLabel`, `QLineEdit`, `QCheckBox`, `QRadioButton`, `QFrame`, `QTabWidget`, `QTextEdit`, `QSpinBox`, `QComboBox`, `QSlider`, `QProgressBar`, `QDialogButtonBox` (expanded to SimpleWx buttons), `QListWidget`/`QListView`, `QTableWidget`/`QTableView`, `QTreeWidget`/`QTreeView`, `QSplitter`, and `QToolBar` plus `QMenuBar` / `QMenu` / `QAction`.
+Currently supported Qt static import includes top-level `QMainWindow` and `QDialog`. Supported widget classes include `QPushButton`, `QLabel`, `QLineEdit`, `QCheckBox`, `QRadioButton`, `QFrame`, `QTabWidget`, `QTextEdit`, `QSpinBox`, `QComboBox`, `QSlider`, `QProgressBar`, `QDialogButtonBox` (expanded to SimpleWx buttons), `QListWidget`/`QListView`, `QTableWidget`/`QTableView`, `QTreeWidget`/`QTreeView`, `QSplitter`, `QToolBar`, `QFontComboBox`, and `QGraphicsView` plus `QMenuBar` / `QMenu` / `QAction`.
+
+`QDateTimeEdit` is intentionally not supported by the static importer; use separate `QDateEdit` and `QTimeEdit` widgets in Designer.
 
 `QFileDialog` and `QMessageBox` are runtime dialog calls and are intentionally handled in application code, not as static Designer top-level windows.
 

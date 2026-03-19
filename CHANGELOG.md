@@ -20,18 +20,23 @@ The format is based on Keep a Changelog.
 - Added `QDialogButtonBox` conversion support by expanding standard buttons into generated SimpleWx `add_button(...)` calls.
 - Added builder-side generation of handler bodies for selected Qt receiver slots (`click()`, `show()`, `hide()`) so generated callbacks can directly act on target widgets.
 - Added/extended builder regression coverage in `tests/test_swx_builder.py` for dialog top-level conversion, `QDialogButtonBox` accepted/rejected mapping, `click()` slot body generation, and colon-prefixed absolute icon-path fallback.
+- Added static Qt import mapping for `QFontComboBox` to generated SimpleWx `add_font_button(...)` calls.
+- Added static Qt import mapping for `QGraphicsView` by reading stylesheet `background-image: url(...)`, resolving `.qrc` paths, and generating `add_image(...)` (or fallback `add_frame(...)` when no image is resolvable).
 
 ### Changed
 
 - Refined generated code formatting in `swx-builder.py` with inline comments for widgets/menu items/toolbar items and consistent placement of comments above associated handler definitions.
 - Refined grouped widget section formatting so `# Widgets on ...` sections and first-widget spacing are consistent across main area, notebook pages, and splitter panes.
 - Updated `examples/formbuilder/qt_minimal_expected.py` to match the current generated comment layout.
+- Documented/standardized builder call formatting rule in `_format_call(...)`: fewer than 5 parameters stay single-line; 5+ parameters are emitted multiline with one argument per line.
+- Declared `QDateTimeEdit` intentionally unsupported in the static importer; users should model date/time with separate `QDateEdit` and `QTimeEdit` widgets.
 
 ### Fixed
 
 - Fixed progressbar mode split in `simplewx.py`: debugger/dev runs use native `wx.Gauge` with gray underlay, normal runtime uses owner-draw mode, and `SWX_PROGRESSBAR_FORCE_OWNERDRAW=1` remains an explicit override.
 - Fixed `QDialogButtonBox` multi-connection handling in `swx-builder.py` by preserving all sender connections instead of last-write-wins, so accepted/rejected can both be wired correctly.
 - Fixed Qt icon resolution in `swx-builder.py` for colon-prefixed absolute path forms (for example `:/home/.../icon.png`) via basename and direct-path fallbacks when qrc key lookup does not match.
+- Fixed builder CLI error wording for unsupported widgets by emitting an English abort prefix (`Abort:`) and explicit unsupported-class guidance text.
 
 ## [0.5.2] - 2026-03-17
 
