@@ -80,6 +80,165 @@ def test_convert_static_ui_debug_mode_emits_base_zero() -> None:
     _unit_passed("debug builder mode emits Base=0 in new_window")
 
 
+@pytest.mark.parametrize("top_level_class", ["QDialog", "QMessageBox", "QFileDialog"])
+def test_convert_static_dialog_like_top_levels_with_button_box(top_level_class: str, tmp_path: Path) -> None:
+    ui_path = tmp_path / f"{top_level_class.lower()}_static.ui"
+    ui_path.write_text(
+        f"""<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<ui version=\"4.0\">
+ <class>{top_level_class}</class>
+ <widget class=\"{top_level_class}\" name=\"DialogRoot\">
+  <property name=\"geometry\"><rect><x>0</x><y>0</y><width>420</width><height>220</height></rect></property>
+  <property name=\"windowTitle\"><string>{top_level_class} Demo</string></property>
+  <widget class=\"QLabel\" name=\"labelInfo\">
+   <property name=\"geometry\"><rect><x>24</x><y>24</y><width>180</width><height>22</height></rect></property>
+   <property name=\"text\"><string>Status</string></property>
+  </widget>
+  <widget class=\"QDialogButtonBox\" name=\"buttonBox\">
+   <property name=\"geometry\"><rect><x>200</x><y>170</y><width>191</width><height>29</height></rect></property>
+   <property name=\"standardButtons\"><set>QDialogButtonBox::StandardButton::Cancel|QDialogButtonBox::StandardButton::Ok</set></property>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
+""",
+        encoding="utf-8",
+    )
+
+    builder = _load_builder_module()
+    generated = builder.convert_ui_to_simplewx(ui_path)
+
+    assert "win.new_window(Name='DialogRoot', Title='" in generated
+    assert f"Title='{top_level_class} Demo'" in generated
+    assert "win.add_label(Name='labelInfo'" in generated
+    assert "win.add_button(Name='buttonBox_cancel'" in generated
+    assert "Title='Cancel'" in generated
+    assert "win.add_button(Name='buttonBox_ok'" in generated
+    assert "Title='Ok'" in generated
+    assert generated.index("Name='buttonBox_cancel'") < generated.index("Name='buttonBox_ok'")
+    _unit_passed(f"{top_level_class} top-level ui is converted with dialog buttons")
+
+
+def test_convert_static_ui_qdialogbuttonbox_connections_map_to_generated_buttons(tmp_path: Path) -> None:
+    ui_path = tmp_path / "dialog_buttonbox_signal.ui"
+    ui_path.write_text(
+        """<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Dialog</class>
+ <widget class="QDialog" name="Dialog">
+  <property name="geometry"><rect><x>0</x><y>0</y><width>320</width><height>160</height></rect></property>
+  <property name="windowTitle"><string>Dialog</string></property>
+  <widget class="QDialogButtonBox" name="buttonBox">
+   <property name="geometry"><rect><x>110</x><y>110</y><width>181</width><height>29</height></rect></property>
+   <property name="standardButtons"><set>QDialogButtonBox::StandardButton::Cancel|QDialogButtonBox::StandardButton::Ok</set></property>
+  </widget>
+ </widget>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>accepted()</signal>
+   <receiver>Dialog</receiver>
+   <slot>accept()</slot>
+  </connection>
+    <connection>
+     <sender>buttonBox</sender>
+     <signal>rejected()</signal>
+     <receiver>Dialog</receiver>
+     <slot>reject()</slot>
+    </connection>
+ </connections>
+</ui>
+""",
+        encoding="utf-8",
+    )
+
+    builder = _load_builder_module()
+    generated = builder.convert_ui_to_simplewx(ui_path)
+
+    assert "def on_buttonBox_accepted(_event):" in generated
+    assert "def on_buttonBox_rejected(_event):" in generated
+
+    ok_call_start = generated.index("Name='buttonBox_ok'")
+    ok_call_end = generated.index("\n)", ok_call_start)
+    ok_call = generated[ok_call_start:ok_call_end]
+    assert "Signal=wx.EVT_BUTTON" in ok_call
+    assert "Function=on_buttonBox_accepted" in ok_call
+    assert "Function=on_buttonBox_rejected" not in ok_call
+
+    cancel_call_start = generated.index("Name='buttonBox_cancel'")
+    cancel_call_end = generated.index("\n)", cancel_call_start)
+    cancel_call = generated[cancel_call_start:cancel_call_end]
+    assert "Signal=wx.EVT_BUTTON" in cancel_call
+    assert "Function=on_buttonBox_rejected" in cancel_call
+    assert "Function=on_buttonBox_accepted" not in cancel_call
+    _unit_passed("qdialogbuttonbox accepted/rejected signals are attached to matching generated buttons")
+
+
+def test_convert_static_ui_qdialogbuttonbox_click_slot_generates_toggle_body(tmp_path: Path) -> None:
+    """Receiver widget + click() slot → handler body toggles the widget instead of 'pass'."""
+    ui_path = tmp_path / "dialog_click_slot.ui"
+    ui_path.write_text(
+        """<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Dialog</class>
+ <widget class="QDialog" name="Dialog">
+  <property name="geometry"><rect><x>0</x><y>0</y><width>320</width><height>200</height></rect></property>
+  <property name="windowTitle"><string>Dialog</string></property>
+  <widget class="QCheckBox" name="checkBox">
+   <property name="geometry"><rect><x>40</x><y>100</y><width>94</width><height>27</height></rect></property>
+   <property name="text"><string>All</string></property>
+  </widget>
+  <widget class="QCheckBox" name="checkBox_2">
+   <property name="geometry"><rect><x>40</x><y>130</y><width>94</width><height>27</height></rect></property>
+   <property name="text"><string>Nothing</string></property>
+  </widget>
+  <widget class="QDialogButtonBox" name="buttonBox">
+   <property name="geometry"><rect><x>110</x><y>160</y><width>181</width><height>29</height></rect></property>
+   <property name="standardButtons"><set>QDialogButtonBox::StandardButton::Cancel|QDialogButtonBox::StandardButton::Ok</set></property>
+  </widget>
+ </widget>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>accepted()</signal>
+   <receiver>checkBox</receiver>
+   <slot>click()</slot>
+  </connection>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>rejected()</signal>
+   <receiver>checkBox_2</receiver>
+   <slot>click()</slot>
+  </connection>
+ </connections>
+</ui>
+""",
+        encoding="utf-8",
+    )
+
+    builder = _load_builder_module()
+    generated = builder.convert_ui_to_simplewx(ui_path)
+
+    # accepted → toggles checkBox
+    accepted_def_pos = generated.index("def on_buttonBox_accepted(_event):")
+    accepted_body = generated[accepted_def_pos: generated.index("\n\n", accepted_def_pos)]
+    assert "win.get_widget('checkBox')" in accepted_body
+    assert "checkBox.SetValue(not" in accepted_body
+    assert "pass" not in accepted_body
+
+    # rejected → toggles checkBox_2
+    rejected_def_pos = generated.index("def on_buttonBox_rejected(_event):")
+    rejected_body = generated[rejected_def_pos: generated.index("\n\n", rejected_def_pos)]
+    assert "win.get_widget('checkBox_2')" in rejected_body
+    assert "checkBox_2.SetValue(not" in rejected_body
+    assert "pass" not in rejected_body
+
+    _unit_passed("QDialogButtonBox click() slot generates toggle body for receiver widget")
+
+
 def test_build_arg_parser_accepts_date_short_option_and_debug_long_option() -> None:
     builder = _load_builder_module()
     parser = builder.build_arg_parser()
@@ -588,6 +747,59 @@ def test_convert_static_ui_relative_icon_path_is_resolved_from_ui_dir(tmp_path: 
 
     assert f"Icon='{icon_path.resolve()}'" in generated
     _unit_passed("relative icon paths are resolved from ui directory")
+
+
+def test_convert_static_ui_colon_absolute_icon_path_resolves_via_qrc_basename(tmp_path: Path) -> None:
+        icons_dir = tmp_path / "assets"
+        icons_dir.mkdir()
+        icon_path = icons_dir / "rename.png"
+        icon_path.write_bytes(b"fake-png")
+
+        qrc_path = tmp_path / "images.qrc"
+        qrc_path.write_text(
+                """<RCC>
+    <qresource>
+        <file>assets/rename.png</file>
+    </qresource>
+</RCC>
+""",
+                encoding="utf-8",
+        )
+
+        ui_path = tmp_path / "resource_icon_abs_in_colon.ui"
+        ui_path.write_text(
+                f"""<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<ui version=\"4.0\">
+ <class>MainWindow</class>
+ <widget class=\"QMainWindow\" name=\"MainWindow\">
+    <property name=\"geometry\"><rect><x>0</x><y>0</y><width>320</width><height>200</height></rect></property>
+    <widget class=\"QWidget\" name=\"centralwidget\"/>
+    <widget class=\"QMenuBar\" name=\"menubar\">
+     <property name=\"geometry\"><rect><x>0</x><y>0</y><width>320</width><height>24</height></rect></property>
+     <widget class=\"QMenu\" name=\"menuFile\">
+        <property name=\"title\"><string>File</string></property>
+        <addaction name=\"actionRename\"/>
+     </widget>
+    </widget>
+    <action name=\"actionRename\">
+     <property name=\"icon\"><iconset><selectedon>:{icon_path.as_posix()}</selectedon></iconset></property>
+     <property name=\"text\"><string>Rename</string></property>
+    </action>
+ </widget>
+ <resources>
+    <include location=\"images.qrc\"/>
+ </resources>
+ <connections/>
+</ui>
+""",
+                encoding="utf-8",
+        )
+
+        builder = _load_builder_module()
+        generated = builder.convert_ui_to_simplewx(ui_path)
+
+        assert f"Icon='{icon_path.resolve()}'" in generated
+        _unit_passed("colon absolute selectedon icon resolves via qrc basename fallback")
 
 
 def test_convert_static_ui_missing_icon_path_fails_with_clear_error(tmp_path: Path) -> None:

@@ -3,7 +3,7 @@ from __future__ import annotations
 
 __author__ = 'Thomas Funk'
 __coauthors__ = 'Github Copilot'
-__date__ = "2026/03/17"
+__date__ = "2026/03/19"
 
 import argparse
 import datetime
@@ -34,6 +34,7 @@ class WindowSpec:
 class ConnectionSpec:
     handler_name: str
     qt_signal: str
+    body: List[str] = field(default_factory=list)
 
 
 # Represents a single Qt widget after parsing.
@@ -49,6 +50,7 @@ class WidgetSpec:
     tooltip: Optional[str]
     checked: int = 0
     handler_name: Optional[str] = None
+    handler_body: List[str] = field(default_factory=list)
     signal: Optional[str] = None
     frame: Optional[str] = None
     frame_title_height: int = 0
@@ -169,6 +171,15 @@ SUPPORTED_WIDGET_CLASSES = {
     "QTreeWidget",
     "QTreeView",
 }
+
+SUPPORTED_TOP_LEVEL_CLASSES = {
+    "QMainWindow",
+    "QDialog",
+    "QFileDialog",
+    "QMessageBox",
+}
+
+SUPPORTED_DIALOG_BUTTON_BOX_CLASS = "QDialogButtonBox"
 
 MIN_SPINBOX_WIDTH = 80
 
@@ -366,6 +377,20 @@ def _property_icon(
             resource_name = _normalize_qt_resource_path(stripped)
             resolved = resource_paths.get(resource_name)
             if resolved is None:
+                basename_key = "/" + PurePosixPath(resource_name).name
+                if basename_key != resource_name:
+                    resolved = resource_paths.get(basename_key)
+            if resolved is None:
+                # Some .ui files embed a direct file path inside a ":/..." value
+                # instead of a canonical qrc key. In that case try treating the
+                # part after ':' as an ordinary file path.
+                raw_file_path = stripped[1:]
+                if raw_file_path:
+                    try:
+                        return _resolve_icon_file_path(raw_file_path, ui_path, owner_name)
+                    except BuilderError:
+                        pass
+            if resolved is None:
                 raise BuilderError(
                     f"Qt-Ressource für '{owner_name}' nicht gefunden: {resource_name}"
                 )
@@ -407,6 +432,18 @@ def validate_static_only(root: ET.Element) -> None:
             f"Nicht unterstützt: dynamisches Layout-Element '{class_name}' in '{name}'. "
             "Dieses Tool verarbeitet nur statische Qt-Designer UIs ohne Layout/Sizer."
         )
+
+
+def _find_top_level_widget(root: ET.Element) -> ET.Element:
+    for widget in root.findall("./widget"):
+        widget_class = (widget.get("class") or "").strip()
+        if widget_class in SUPPORTED_TOP_LEVEL_CLASSES:
+            return widget
+
+    raise BuilderError(
+        "Keine unterstützte Top-Level-Widget-Definition gefunden. "
+        "Erwartet wird eine Qt-Designer .ui Datei mit QMainWindow, QDialog, QFileDialog oder QMessageBox."
+    )
 
 
 def _normalize_signal_name(raw: str) -> str:
@@ -510,27 +547,71 @@ def _map_qt_signal_to_simplewx_event(qt_class: str, qt_signal: str) -> Optional[
     return signal_map.get(qt_class, {}).get(signal_name)
 
 
-def parse_connections(root: ET.Element) -> Dict[str, ConnectionSpec]:
+def _slot_body_lines(receiver_name: str, qt_slot: str) -> List[str]:
+    """Map a Qt receiver slot to simplewx handler body lines."""
+    slot_base = qt_slot.split("(")[0].strip()
+    if slot_base == "click":
+        return [
+            f"    {receiver_name} = win.get_widget({quote(receiver_name)})",
+            f"    if {receiver_name}: {receiver_name}.SetValue(not {receiver_name}.GetValue())",
+        ]
+    if slot_base == "show":
+        return [
+            f"    {receiver_name} = win.get_widget({quote(receiver_name)})",
+            f"    if {receiver_name}: {receiver_name}.Show()",
+        ]
+    if slot_base == "hide":
+        return [
+            f"    {receiver_name} = win.get_widget({quote(receiver_name)})",
+            f"    if {receiver_name}: {receiver_name}.Hide()",
+        ]
+    return []
+
+
+def parse_connections(root: ET.Element) -> Dict[str, List[ConnectionSpec]]:
     # Build a mapping "widget name -> handler name" from the Qt <connections>
     # block. The renderer later turns this back into `Function=...`.
-    handlers: Dict[str, ConnectionSpec] = {}
+    handlers: Dict[str, List[ConnectionSpec]] = {}
     for conn in root.findall("./connections/connection"):
         sender = (conn.findtext("sender") or "").strip()
         signal = (conn.findtext("signal") or "").strip()
         if not sender or not signal:
             continue
+        receiver = (conn.findtext("receiver") or "").strip()
+        slot = (conn.findtext("slot") or "").strip()
         sender_name = sanitize_name(sender, "widget", 0)
         signal_name = _normalize_signal_name(signal)
-        handlers[sender_name] = ConnectionSpec(
-            handler_name=f"on_{sender_name}_{signal_name}",
-            qt_signal=signal,
+        receiver_name = sanitize_name(receiver, "widget", 0) if receiver else ""
+        body = _slot_body_lines(receiver_name, slot) if receiver_name and slot else []
+        handlers.setdefault(sender_name, []).append(
+            ConnectionSpec(
+                handler_name=f"on_{sender_name}_{signal_name}",
+                qt_signal=signal,
+                body=body,
+            )
         )
     return handlers
 
 
+def _pick_widget_connection(
+    qt_class: str,
+    connections: List[ConnectionSpec],
+) -> Tuple[Optional[ConnectionSpec], Optional[str], Optional[str]]:
+    if not connections:
+        return None, None, None
+
+    for connection in connections:
+        mapped_signal = _map_qt_signal_to_simplewx_event(qt_class, connection.qt_signal)
+        if mapped_signal is not None:
+            return connection, connection.handler_name, mapped_signal
+
+    fallback = connections[0]
+    return fallback, fallback.handler_name, _map_qt_signal_to_simplewx_event(qt_class, fallback.qt_signal)
+
+
 def _collect_action_specs(
     main_widget: ET.Element,
-    handlers: Dict[str, ConnectionSpec],
+    handlers: Dict[str, List[ConnectionSpec]],
     ui_path: Path,
     resource_paths: Dict[str, str],
 ) -> Dict[str, ActionSpec]:
@@ -539,7 +620,8 @@ def _collect_action_specs(
     for action in main_widget.findall("./action"):
         action_name = sanitize_name((action.get("name") or "").strip(), "action", len(action_specs) + 1)
         action_title = _property_string(action, "text") or action_name
-        connection = handlers.get(action_name)
+        action_connections = handlers.get(action_name, [])
+        connection, handler_name, mapped_signal = _pick_widget_connection("QAction", action_connections)
         action_specs[action_name] = ActionSpec(
             name=action_name,
             title=action_title,
@@ -547,8 +629,8 @@ def _collect_action_specs(
             icon=_property_icon(action, "icon", ui_path, resource_paths, action_name),
             checkable=_property_bool(action, "checkable"),
             checked=_property_bool(action, "checked"),
-            handler_name=connection.handler_name if connection is not None else None,
-            signal=_map_qt_signal_to_simplewx_event("QAction", connection.qt_signal) if connection is not None else None,
+            handler_name=handler_name,
+            signal=mapped_signal,
         )
 
     return action_specs
@@ -691,7 +773,10 @@ def parse_window(main_widget: ET.Element, menu_height: int = 0) -> WindowSpec:
     # handled later in a separate step.
     frame_name = sanitize_name(main_widget.get("name") or "mainWindow", "window", 0)
     frame_title = _property_string(main_widget, "windowTitle") or frame_name
-    has_statusbar = main_widget.find("./widget[@class='QStatusBar']") is not None
+    has_statusbar = (
+        (main_widget.get("class") or "").strip() == "QMainWindow"
+        and main_widget.find("./widget[@class='QStatusBar']") is not None
+    )
 
     geometry = _property_rect(main_widget, "geometry", frame_name)
     frame_size: Optional[Tuple[int, int]] = None
@@ -725,7 +810,7 @@ def _iter_supported_widgets(
     for child in parent.findall("widget"):
         child_class = (child.get("class") or "").strip()
         child_name_raw = sanitize_name((child.get("name") or "widget").strip(), "widget", 0)
-        if child_class in SUPPORTED_WIDGET_CLASSES:
+        if child_class in SUPPORTED_WIDGET_CLASSES or child_class == SUPPORTED_DIALOG_BUTTON_BOX_CLASS:
             items.append((child, _offset_x, _offset_y, _group_name))
             # Keep legacy behavior for most supported classes.
             # Exception: QFrame is a real geometric container, so propagate its
@@ -769,7 +854,7 @@ def _iter_supported_widgets(
 
 def _widget_from_element(
     widget_el: ET.Element,
-    handlers: Dict[str, ConnectionSpec],
+    handlers: Dict[str, List[ConnectionSpec]],
     running_index: int,
     offset_x: int = 0,
     offset_y: int = 0,
@@ -797,9 +882,8 @@ def _widget_from_element(
     text = _property_string(widget_el, "text") or _property_string(widget_el, "title") or ""
     tooltip = _property_string(widget_el, "toolTip")
     checked = _property_bool(widget_el, "checked") if qt_class in {"QCheckBox", "QRadioButton"} else 0
-    connection = handlers.get(widget_name)
-    handler_name = connection.handler_name if connection is not None else None
-    signal = _map_qt_signal_to_simplewx_event(qt_class, connection.qt_signal) if connection is not None else None
+    widget_connections = handlers.get(widget_name, [])
+    _connection, handler_name, signal = _pick_widget_connection(qt_class, widget_connections)
 
     extra: Dict[str, Any] = {}
     if qt_class == "QTextEdit":
@@ -916,6 +1000,204 @@ def _widget_from_element(
     )
 
 
+def _parse_dialog_button_box_buttons(widget_el: ET.Element) -> List[str]:
+    raw_buttons = _property_string(widget_el, "standardButtons") or ""
+    button_tokens: List[str] = []
+
+    for part in raw_buttons.split("|"):
+        token = part.strip()
+        if not token:
+            continue
+        if "::" in token:
+            token = token.split("::")[-1]
+        token = token.strip()
+        if token:
+            button_tokens.append(token)
+
+    return button_tokens
+
+
+def _dialog_button_box_button_title(token: str) -> str:
+    title_map = {
+        "Ok": "Ok",
+        "Open": "Open",
+        "Save": "Save",
+        "SaveAll": "Save All",
+        "Cancel": "Cancel",
+        "Close": "Close",
+        "Discard": "Discard",
+        "Apply": "Apply",
+        "Reset": "Reset",
+        "RestoreDefaults": "Restore Defaults",
+        "Help": "Help",
+        "Yes": "Yes",
+        "YesToAll": "Yes To All",
+        "No": "No",
+        "NoToAll": "No To All",
+        "Abort": "Abort",
+        "Retry": "Retry",
+        "Ignore": "Ignore",
+    }
+    if token in title_map:
+        return title_map[token]
+
+    parts: List[str] = []
+    for index, char in enumerate(token):
+        if index > 0 and char.isupper() and token[index - 1].islower():
+            parts.append(" ")
+        parts.append(char)
+    return "".join(parts) or token
+
+
+def _dialog_button_matches_connection(token: str, connection: Optional[ConnectionSpec]) -> bool:
+    if connection is None:
+        return False
+
+    signal_name = _normalize_signal_name(connection.qt_signal)
+    accept_tokens = {"ok", "open", "save", "saveall", "apply", "yes", "yestoall", "retry"}
+    reject_tokens = {"cancel", "close", "discard", "abort", "ignore", "no", "notoall", "reset"}
+    lowered = token.strip().lower()
+
+    if signal_name == "accepted":
+        return lowered in accept_tokens
+    if signal_name == "rejected":
+        return lowered in reject_tokens
+    return False
+
+
+def _dialog_button_connection_for_token(
+    token: str,
+    connections: List[ConnectionSpec],
+) -> Optional[ConnectionSpec]:
+    for connection in connections:
+        if _dialog_button_matches_connection(token, connection):
+            return connection
+    return None
+
+
+def _dialog_button_box_specs_from_element(
+    widget_el: ET.Element,
+    handlers: Dict[str, List[ConnectionSpec]],
+    running_index: int,
+    offset_x: int = 0,
+    offset_y: int = 0,
+    container: Optional[str] = None,
+) -> List[WidgetSpec]:
+    raw_name = (widget_el.get("name") or "").strip()
+    widget_name = sanitize_name(raw_name, "buttonbox", running_index)
+    geometry = _property_rect(widget_el, "geometry", widget_name)
+    if geometry is None:
+        raise BuilderError(
+            f"Widget '{widget_name}' ({SUPPORTED_DIALOG_BUTTON_BOX_CLASS}) hat keine geometry-Property. "
+            "Für statische Qt-Layouts sind absolute Koordinaten zwingend erforderlich."
+        )
+
+    x = geometry[0] + offset_x
+    y = geometry[1] + offset_y
+    width = geometry[2]
+    height = geometry[3]
+    button_tokens = _parse_dialog_button_box_buttons(widget_el)
+    if not button_tokens:
+        return []
+
+    orientation = (_property_enum(widget_el, "orientation") or "Qt::Orientation::Horizontal").lower()
+    is_vertical = "vertical" in orientation
+    spacing = 10
+    buttonbox_connections = handlers.get(widget_name, [])
+    specs: List[WidgetSpec] = []
+
+    if is_vertical:
+        total_spacing = spacing * max(0, len(button_tokens) - 1)
+        button_height = max(24, (height - total_spacing) // max(1, len(button_tokens)))
+        current_y = y
+        for index, token in enumerate(button_tokens, start=0):
+            button_name = sanitize_name(f"{widget_name}_{token.lower()}", "button", running_index + index)
+            matched_connection = _dialog_button_connection_for_token(token, buttonbox_connections)
+            handler_name = matched_connection.handler_name if matched_connection is not None else None
+            handler_body = matched_connection.body if matched_connection is not None else []
+            signal = "wx.EVT_BUTTON" if handler_name is not None else None
+            specs.append(
+                WidgetSpec(
+                    qt_class="QPushButton",
+                    name=button_name,
+                    position=(x, current_y),
+                    size=(width, button_height),
+                    title=_dialog_button_box_button_title(token),
+                    tooltip=None,
+                    handler_name=handler_name,
+                    handler_body=handler_body,
+                    signal=signal,
+                    container=container,
+                )
+            )
+            current_y += button_height + spacing
+        return specs
+
+    total_spacing = spacing * max(0, len(button_tokens) - 1)
+    button_width = max(80, (width - total_spacing) // max(1, len(button_tokens)))
+    total_width = button_width * len(button_tokens) + total_spacing
+    current_x = x + max(0, width - total_width)
+
+    for index, token in enumerate(button_tokens, start=0):
+        button_name = sanitize_name(f"{widget_name}_{token.lower()}", "button", running_index + index)
+        matched_connection = _dialog_button_connection_for_token(token, buttonbox_connections)
+        handler_name = matched_connection.handler_name if matched_connection is not None else None
+        handler_body = matched_connection.body if matched_connection is not None else []
+        signal = "wx.EVT_BUTTON" if handler_name is not None else None
+        specs.append(
+            WidgetSpec(
+                qt_class="QPushButton",
+                name=button_name,
+                position=(current_x, y),
+                size=(button_width, height),
+                title=_dialog_button_box_button_title(token),
+                tooltip=None,
+                handler_name=handler_name,
+                handler_body=handler_body,
+                signal=signal,
+                container=container,
+            )
+        )
+        current_x += button_width + spacing
+
+    return specs
+
+
+def _widget_specs_from_element(
+    widget_el: ET.Element,
+    handlers: Dict[str, List[ConnectionSpec]],
+    running_index: int,
+    offset_x: int = 0,
+    offset_y: int = 0,
+    group_name: Optional[str] = None,
+    container: Optional[str] = None,
+    geometry_override: Optional[Tuple[int, int, int, int]] = None,
+) -> List[WidgetSpec]:
+    qt_class = (widget_el.get("class") or "").strip()
+    if qt_class == SUPPORTED_DIALOG_BUTTON_BOX_CLASS:
+        return _dialog_button_box_specs_from_element(
+            widget_el,
+            handlers,
+            running_index,
+            offset_x=offset_x,
+            offset_y=offset_y,
+            container=container,
+        )
+
+    return [
+        _widget_from_element(
+            widget_el,
+            handlers,
+            running_index,
+            offset_x=offset_x,
+            offset_y=offset_y,
+            group_name=group_name,
+            container=container,
+            geometry_override=geometry_override,
+        )
+    ]
+
+
 def _estimate_splitter_pane_sizes(size: Tuple[int, int], orient: str, split: int) -> Tuple[Tuple[int, int], Tuple[int, int]]:
     width, height = size
     if orient == "horizontal":
@@ -951,10 +1233,8 @@ def _iter_splitter_elements(
     return items
 
 
-def parse_splitters(root: ET.Element, handlers: Dict[str, ConnectionSpec]) -> List[SplitterSpec]:
-    main_widget = root.find("./widget[@class='QMainWindow']")
-    if main_widget is None:
-        raise BuilderError("Keine QMainWindow-Definition gefunden. Erwartet wird eine Qt-Designer .ui Datei.")
+def parse_splitters(root: ET.Element, handlers: Dict[str, List[ConnectionSpec]]) -> List[SplitterSpec]:
+    main_widget = _find_top_level_widget(root)
 
     splitters: List[SplitterSpec] = []
     running_index = 1
@@ -985,7 +1265,8 @@ def parse_splitters(root: ET.Element, handlers: Dict[str, ConnectionSpec]) -> Li
 
         split = (width // 2) if qt_layout == "horizontal" else (height // 2)
         pane_sizes = _estimate_splitter_pane_sizes((width, height), qt_layout, split)
-        connection = handlers.get(splitter_name)
+        splitter_connections = handlers.get(splitter_name, [])
+        connection = splitter_connections[0] if splitter_connections else None
 
         panes: List[SplitterPaneSpec] = []
         pane_index = 0
@@ -995,32 +1276,30 @@ def parse_splitters(root: ET.Element, handlers: Dict[str, ConnectionSpec]) -> Li
             pane_widget_items: List[WidgetSpec] = []
             child_class = (child.get("class") or "").strip()
 
-            if child_class in SUPPORTED_WIDGET_CLASSES:
+            if child_class in SUPPORTED_WIDGET_CLASSES or child_class == SUPPORTED_DIALOG_BUTTON_BOX_CLASS:
                 pane_width, pane_height = pane_sizes[min(pane_index, 1)]
-                pane_widget_items.append(
-                    _widget_from_element(
-                        child,
-                        handlers,
-                        running_index,
-                        container=pane_name,
-                        geometry_override=(0, 0, pane_width, pane_height),
-                    )
+                created_widgets = _widget_specs_from_element(
+                    child,
+                    handlers,
+                    running_index,
+                    container=pane_name,
+                    geometry_override=(0, 0, pane_width, pane_height),
                 )
-                running_index += 1
+                pane_widget_items.extend(created_widgets)
+                running_index += len(created_widgets)
             else:
                 for widget_el, child_offset_x, child_offset_y, group_name in _iter_supported_widgets(child):
-                    pane_widget_items.append(
-                        _widget_from_element(
-                            widget_el,
-                            handlers,
-                            running_index,
-                            offset_x=child_offset_x,
-                            offset_y=child_offset_y,
-                            group_name=group_name,
-                            container=pane_name,
-                        )
+                    created_widgets = _widget_specs_from_element(
+                        widget_el,
+                        handlers,
+                        running_index,
+                        offset_x=child_offset_x,
+                        offset_y=child_offset_y,
+                        group_name=group_name,
+                        container=pane_name,
                     )
-                    running_index += 1
+                    pane_widget_items.extend(created_widgets)
+                    running_index += len(created_widgets)
 
             panes.append(SplitterPaneSpec(name=pane_name, side=side, widgets=pane_widget_items))
             pane_index += 1
@@ -1056,10 +1335,8 @@ def _tab_page_title(page_widget: ET.Element, fallback: str) -> str:
     return fallback
 
 
-def parse_notebooks(root: ET.Element, handlers: Dict[str, ConnectionSpec]) -> Tuple[List[NotebookSpec], List[WidgetSpec]]:
-    main_widget = root.find("./widget[@class='QMainWindow']")
-    if main_widget is None:
-        raise BuilderError("Keine QMainWindow-Definition gefunden. Erwartet wird eine Qt-Designer .ui Datei.")
+def parse_notebooks(root: ET.Element, handlers: Dict[str, List[ConnectionSpec]]) -> Tuple[List[NotebookSpec], List[WidgetSpec]]:
+    main_widget = _find_top_level_widget(root)
 
     notebooks: List[NotebookSpec] = []
     page_widgets: List[WidgetSpec] = []
@@ -1076,7 +1353,8 @@ def parse_notebooks(root: ET.Element, handlers: Dict[str, ConnectionSpec]) -> Tu
             )
 
         x, y, width, height = geometry
-        connection = handlers.get(notebook_name)
+        notebook_connections = handlers.get(notebook_name, [])
+        connection = notebook_connections[0] if notebook_connections else None
         pages: List[NotebookPageSpec] = []
 
         page_index = 0
@@ -1098,18 +1376,17 @@ def parse_notebooks(root: ET.Element, handlers: Dict[str, ConnectionSpec]) -> Tu
             )
 
             for widget_el, offset_x, offset_y, group_name in _iter_supported_widgets(page_el):
-                page_widgets.append(
-                    _widget_from_element(
-                        widget_el,
-                        handlers,
-                        running_index,
-                        offset_x=offset_x,
-                        offset_y=offset_y,
-                        group_name=group_name,
-                        container=page_name,
-                    )
+                created_widgets = _widget_specs_from_element(
+                    widget_el,
+                    handlers,
+                    running_index,
+                    offset_x=offset_x,
+                    offset_y=offset_y,
+                    group_name=group_name,
+                    container=page_name,
                 )
-                running_index += 1
+                page_widgets.extend(created_widgets)
+                running_index += len(created_widgets)
 
             page_index += 1
 
@@ -1343,30 +1620,27 @@ def _adjust_spinbox_min_size_and_adjacent_labels(widgets: List[WidgetSpec]) -> L
     return widgets
 
 
-def parse_widgets(root: ET.Element, handlers: Dict[str, ConnectionSpec]) -> List[WidgetSpec]:
+def parse_widgets(root: ET.Element, handlers: Dict[str, List[ConnectionSpec]]) -> List[WidgetSpec]:
     # Central parser for all visible, supported Qt widgets.
     # Raw XML nodes are converted into `WidgetSpec` objects here.
-    main_widget = root.find("./widget[@class='QMainWindow']")
-    if main_widget is None:
-        raise BuilderError("Keine QMainWindow-Definition gefunden. Erwartet wird eine Qt-Designer .ui Datei.")
+    main_widget = _find_top_level_widget(root)
 
     widgets: List[WidgetSpec] = []
     running_index = 1
 
     # First read all widgets with their absolute geometry.
     for widget_el, offset_x, offset_y, group_name in _iter_supported_widgets(main_widget):
-        widgets.append(
-            _widget_from_element(
-                widget_el,
-                handlers,
-                running_index,
-                offset_x=offset_x,
-                offset_y=offset_y,
-                group_name=group_name,
-                container=None,
-            )
+        created_widgets = _widget_specs_from_element(
+            widget_el,
+            handlers,
+            running_index,
+            offset_x=offset_x,
+            offset_y=offset_y,
+            group_name=group_name,
+            container=None,
         )
-        running_index += 1
+        widgets.extend(created_widgets)
+        running_index += len(created_widgets)
 
     return widgets
 
@@ -1737,13 +2011,132 @@ def _widget_comment_title(widget: WidgetSpec) -> str:
     return widget.title if widget.title else widget.name
 
 
-def _emit_handler_stub(lines: List[str], emitted: set[str], handler_name: Optional[str]) -> None:
+def _widget_inline_comment(widget: WidgetSpec) -> Optional[str]:
+    """Return a per-widget comment line for generated output."""
+    kind_map = {
+        "QLabel": "Label",
+        "QPushButton": "Button",
+        "QLineEdit": "Entry",
+        "QCheckBox": "Checkbox",
+        "QRadioButton": "Radio",
+        "QTextEdit": "Text view",
+        "QSpinBox": "Spin button",
+        "QComboBox": "Combo box",
+        "QSlider": "Slider",
+        "QProgressBar": "Progress bar",
+        "QListWidget": "List view",
+        "QListView": "List view",
+        "QTableWidget": "Grid",
+        "QTableView": "Data view",
+        "QTreeWidget": "Tree view",
+        "QTreeView": "Tree view",
+        "Line": "Separator",
+    }
+
+    kind = kind_map.get(widget.qt_class)
+    if kind is None:
+        return None
+
+    title = (widget.title or "").strip()
+    if widget.qt_class in {"QProgressBar", "Line"} or not title:
+        title = widget.name
+
+    return f"# {kind} {quote(title)}"
+
+
+def _emit_widget_block(
+    lines: List[str],
+    widget: WidgetSpec,
+    emitted_handlers: set[str],
+    leading_blank_before_comment: bool = True,
+    default_frame: Optional[str] = None,
+) -> None:
+    """Emit optional widget comment, handler defs, then widget call."""
+    widget_comment = _widget_inline_comment(widget)
+    if widget_comment:
+        if leading_blank_before_comment and lines and lines[-1] != "":
+            lines.append("")
+        lines.append(widget_comment)
+
+    _emit_handler_stub(lines, emitted_handlers, widget.handler_name, widget.handler_body or None)
+    lines.append(build_widget_call(widget, container_frame=default_frame))
+    if widget.qt_class == "QProgressBar" and "value" in widget.extra:
+        lines.append(f"win.set_value({quote(widget.name)}, 'Value', {widget.extra['value']})")
+
+
+def _menu_item_inline_comment(item: MenuItemSpec) -> str:
+    title = (item.title or item.name or "").strip() or item.name
+    item_kind = "Menu separator" if item.item_type == "separator" else "Menu item"
+    return f"# {item_kind} {quote(title)}"
+
+
+def _emit_menu_item_block(
+    lines: List[str],
+    menu_name: str,
+    item: MenuItemSpec,
+    emitted_handlers: set[str],
+) -> None:
+    if lines and lines[-1] != "":
+        lines.append("")
+    lines.append(_menu_item_inline_comment(item))
+
+    args = [
+        f"Name={quote(item.name)}",
+        f"Menu={quote(menu_name)}",
+    ]
+    if item.item_type != "item":
+        args.append(f"Type={quote(item.item_type)}")
+    if item.title:
+        args.append(f"Title={quote(item.title)}")
+    if item.tooltip:
+        args.append(f"Tooltip={quote(item.tooltip)}")
+    if item.icon:
+        args.append(f"Icon={quote(item.icon)}")
+    if item.signal:
+        args.append(f"Signal={item.signal}")
+    if item.handler_name:
+        args.append(f"Function={item.handler_name}")
+        _emit_handler_stub(lines, emitted_handlers, item.handler_name)
+    lines.append(_format_call("win.add_menu_item", args))
+
+
+def _emit_widgets_header(
+    lines: List[str],
+    section_title: str,
+    outside_are_buttons: bool,
+    header_state: Dict[str, bool],
+) -> None:
+    """Emit '# Widgets on ...' / '# Buttons at the bottom' with controlled spacing.
+
+    Rule: first emitted widgets header has no leading blank line; all following
+    widgets headers get one leading blank line.
+    """
+    if header_state.get("widgets_header_emitted_any", False):
+        if lines and lines[-1] != "":
+            lines.append("")
+    header_state["widgets_header_emitted_any"] = True
+
+    if outside_are_buttons:
+        lines.append("# Buttons at the bottom")
+    else:
+        lines.append(f"# Widgets on {quote(section_title)}")
+
+
+def _emit_handler_stub(
+    lines: List[str],
+    emitted: set[str],
+    handler_name: Optional[str],
+    body: Optional[List[str]] = None,
+) -> None:
     """Emit one handler stub once, directly before its source widget/menu item."""
     if not handler_name or handler_name in emitted:
         return
     emitted.add(handler_name)
     lines.append(f"def {handler_name}(_event):")
-    lines.append("    pass")
+    if body:
+        lines.extend(body)
+    else:
+        lines.append("    pass")
     lines.append("")
 
 
@@ -1790,10 +2183,7 @@ def _render_frame_block(
             last_groupbox_comment = groupbox_comment
         else:
             last_groupbox_comment = None
-        _emit_handler_stub(lines, emitted_handlers, child.handler_name)
-        lines.append(build_widget_call(child, container_frame=default_frame))
-        if child.qt_class == "QProgressBar" and "value" in child.extra:
-            lines.append(f"win.set_value({quote(child.name)}, 'Value', {child.extra['value']})")
+        _emit_widget_block(lines, child, emitted_handlers, default_frame=default_frame)
 
 
 def _render_grouped_widgets(
@@ -1801,6 +2191,7 @@ def _render_grouped_widgets(
     widgets: List[WidgetSpec],
     emitted_handlers: set[str],
     section_title: str,
+    header_state: Dict[str, bool],
     default_frame: Optional[str] = None,
 ) -> None:
     frames, children_by_frame, outside_widgets = _collect_scope_widgets(widgets)
@@ -1815,6 +2206,7 @@ def _render_grouped_widgets(
     outside_are_buttons = bool(outside_widgets_sorted) and all(
         widget.qt_class == "QPushButton" for widget in outside_widgets_sorted
     )
+    first_widget_after_header = False
 
     for kind, item in top_entries:
         if kind == "frame":
@@ -1829,15 +2221,17 @@ def _render_grouped_widgets(
             continue
 
         if not outside_header_emitted:
-            if outside_are_buttons:
-                lines.append("# Buttons at the bottom")
-            else:
-                lines.append(f"# Widgets on {quote(section_title)}")
+            _emit_widgets_header(lines, section_title, outside_are_buttons, header_state)
             outside_header_emitted = True
-        _emit_handler_stub(lines, emitted_handlers, item.handler_name)
-        lines.append(build_widget_call(item, container_frame=default_frame))
-        if item.qt_class == "QProgressBar" and "value" in item.extra:
-            lines.append(f"win.set_value({quote(item.name)}, 'Value', {item.extra['value']})")
+            first_widget_after_header = True
+        _emit_widget_block(
+            lines,
+            item,
+            emitted_handlers,
+            leading_blank_before_comment=not first_widget_after_header,
+            default_frame=default_frame,
+        )
+        first_widget_after_header = False
 
     if outside_header_emitted:
         lines.append("")
@@ -1848,6 +2242,7 @@ def _render_notebook_block(
     notebook: NotebookSpec,
     widgets: List[WidgetSpec],
     emitted_handlers: set[str],
+    header_state: Dict[str, bool],
 ) -> None:
     notebook_args = [
         f"Name={quote(notebook.name)}",
@@ -1879,7 +2274,16 @@ def _render_notebook_block(
         )
 
         page_widget_items = [widget for widget in widgets if widget.container == page.name]
-        _render_grouped_widgets(lines, page_widget_items, emitted_handlers, page.name, default_frame=page.name)
+        if page_widget_items and lines and lines[-1] != "":
+            lines.append("")
+        _render_grouped_widgets(
+            lines,
+            page_widget_items,
+            emitted_handlers,
+            page.name,
+            header_state,
+            default_frame=page.name,
+        )
 
     lines.append("")
 
@@ -1891,6 +2295,9 @@ def _render_toolbar_block(lines: List[str], toolbar: ToolbarSpec) -> None:
     lines.append(f"    Position=[{toolbar.position[0]}, {toolbar.position[1]}],")
     lines.append("    Data=[")
     for item in toolbar.items:
+        item_title = (item.title or item.name or "").strip() or item.name
+        item_kind = "separator" if item.kind == "separator" else "item"
+        lines.append(f"        # Toolbar {item_kind} {quote(item_title)}")
         lines.append("        {")
         lines.append(f"            'label': {quote(item.title)},")
         lines.append(f"            'icon': {repr(item.icon)},")
@@ -1910,6 +2317,7 @@ def _render_splitter_block(
     lines: List[str],
     splitter: SplitterSpec,
     emitted_handlers: set[str],
+    header_state: Dict[str, bool],
 ) -> None:
     splitter_args = [
         f"Name={quote(splitter.name)}",
@@ -1928,6 +2336,9 @@ def _render_splitter_block(
 
     for pane in splitter.panes:
         lines.append(
+            f"# Splitter pane {quote(pane.name)} attached to {quote(splitter.name)} on the {quote(pane.side)} side"
+        )
+        lines.append(
             _format_call(
                 "win.add_splitter_pane",
                 [
@@ -1937,7 +2348,16 @@ def _render_splitter_block(
                 ],
             )
         )
-        _render_grouped_widgets(lines, pane.widgets, emitted_handlers, pane.name, default_frame=pane.name)
+        if pane.widgets and lines and lines[-1] != "":
+            lines.append("")
+        _render_grouped_widgets(
+            lines,
+            pane.widgets,
+            emitted_handlers,
+            pane.name,
+            header_state,
+            default_frame=pane.name,
+        )
 
     lines.append("")
 
@@ -2016,25 +2436,7 @@ def render_python(
                 )
             )
             for item in menu.items:
-                args = [
-                    f"Name={quote(item.name)}",
-                    f"Menu={quote(menu.name)}",
-                ]
-                if item.item_type != "item":
-                    args.append(f"Type={quote(item.item_type)}")
-                if item.title:
-                    args.append(f"Title={quote(item.title)}")
-                if item.tooltip:
-                    args.append(f"Tooltip={quote(item.tooltip)}")
-                if item.icon:
-                    args.append(f"Icon={quote(item.icon)}")
-                if item.signal:
-                    args.append(f"Signal={item.signal}")
-                if item.handler_name:
-                    args.append(f"Function={item.handler_name}")
-                    lines.append("")
-                    _emit_handler_stub(lines, emitted_handlers, item.handler_name)
-                lines.append(_format_call("win.add_menu_item", args))
+                _emit_menu_item_block(lines, menu.name, item, emitted_handlers)
             lines.append("")
 
     main_widgets = [widget for widget in widgets if widget.container is None]
@@ -2060,6 +2462,7 @@ def render_python(
 
     outside_widgets_sorted = sorted(main_outside_widgets, key=_widget_sort_key)
     outside_header_emitted = False
+    header_state: Dict[str, bool] = {"widgets_header_emitted_any": False}
     outside_are_buttons = bool(outside_widgets_sorted) and all(
         widget.qt_class == "QPushButton" for widget in outside_widgets_sorted
     )
@@ -2072,15 +2475,9 @@ def render_python(
 
         if kind == "widget":
             if not outside_header_emitted:
-                if outside_are_buttons:
-                    lines.append("# Buttons at the bottom")
-                else:
-                    lines.append(f"# Widgets on {quote(window.name)}")
+                _emit_widgets_header(lines, window.name, outside_are_buttons, header_state)
                 outside_header_emitted = True
-            _emit_handler_stub(lines, emitted_handlers, item.handler_name)
-            lines.append(build_widget_call(item))
-            if item.qt_class == "QProgressBar" and "value" in item.extra:
-                lines.append(f"win.set_value({quote(item.name)}, 'Value', {item.extra['value']})")
+            _emit_widget_block(lines, item, emitted_handlers)
             continue
 
         if kind == "toolbar":
@@ -2088,10 +2485,10 @@ def render_python(
             continue
 
         if kind == "splitter":
-            _render_splitter_block(lines, item, emitted_handlers)
+            _render_splitter_block(lines, item, emitted_handlers, header_state)
             continue
 
-        _render_notebook_block(lines, item, widgets, emitted_handlers)
+        _render_notebook_block(lines, item, widgets, emitted_handlers, header_state)
 
     if outside_header_emitted:
         lines.append("")
@@ -2118,16 +2515,15 @@ def convert_ui_to_simplewx(
 
     root = tree.getroot()
     validate_static_only(root)
-    main_widget = root.find("./widget[@class='QMainWindow']")
-    if main_widget is None:
-        raise BuilderError("Keine QMainWindow-Definition gefunden. Erwartet wird eine Qt-Designer .ui Datei.")
+    main_widget = _find_top_level_widget(root)
 
     # Parse in clearly separated phases: signals, menus, window, widgets, render.
     handlers = parse_connections(root)
     resource_paths = _collect_qt_resource_paths(root, input_path)
     action_specs = _collect_action_specs(main_widget, handlers, input_path, resource_paths)
-    menubar_name, menus, menu_height = parse_menus(main_widget, action_specs)
-    toolbars = parse_toolbars(main_widget, action_specs)
+    is_main_window = (main_widget.get("class") or "").strip() == "QMainWindow"
+    menubar_name, menus, menu_height = parse_menus(main_widget, action_specs) if is_main_window else (None, [], 0)
+    toolbars = parse_toolbars(main_widget, action_specs) if is_main_window else []
     window = parse_window(main_widget, menu_height=menu_height)
     notebooks, notebook_widgets = parse_notebooks(root, handlers)
     splitters = parse_splitters(root, handlers)

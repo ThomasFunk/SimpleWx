@@ -173,7 +173,7 @@ Use:
 
   ./venv/bin/python tools/swx-builder/swx-builder.py -i path/to/form.ui
 
-Currently supported Qt widget classes for static import include `QPushButton`, `QLabel`, `QLineEdit`, `QCheckBox`, `QRadioButton`, `QFrame`, `QTabWidget`, `QTextEdit`, `QSpinBox`, `QComboBox`, `QSlider`, `QProgressBar`, `QListWidget`/`QListView`, `QTableWidget`/`QTableView`, `QTreeWidget`/`QTreeView`, `QSplitter`, and `QToolBar` plus `QMenuBar` / `QMenu` / `QAction`.
+Currently supported Qt static import includes top-level `QMainWindow`, `QDialog`, `QFileDialog`, and `QMessageBox`. Supported widget classes include `QPushButton`, `QLabel`, `QLineEdit`, `QCheckBox`, `QRadioButton`, `QFrame`, `QTabWidget`, `QTextEdit`, `QSpinBox`, `QComboBox`, `QSlider`, `QProgressBar`, `QDialogButtonBox` (expanded to SimpleWx buttons), `QListWidget`/`QListView`, `QTableWidget`/`QTableView`, `QTreeWidget`/`QTreeView`, `QSplitter`, and `QToolBar` plus `QMenuBar` / `QMenu` / `QAction`.
 
 For full usage, options, examples, and troubleshooting, see:
 
@@ -237,16 +237,15 @@ For manual GUIs and swx-builder generated GUIs, the following environment flags 
   - enables concise progress-bar debug output (`create`, `layout`, `paint`, `size`)
 - `SWX_NOTEBOOK_DEBUG=1`
   - enables notebook geometry drift/fix logs
-- `SWX_PROGRESSBAR_NOTEBOOK_NATIVE=1`
-  - forces native `wx.Gauge` for progress bars on notebook pages (stable fallback for GTK/debug runs)
+- default runtime behavior:
+  - in debugger/dev runs (`sys.gettrace`/debugpy envs or `Base=0`) progress bars use native `wx.Gauge` with gray underlay
+  - in normal runtime progress bars use owner-drawn mode
 - `SWX_PROGRESSBAR_FORCE_OWNERDRAW=1`
   - forces owner-draw progress bar, even on notebook pages
 
 Examples:
 
     SWX_PROGRESSBAR_DEBUG=1 SWX_NOTEBOOK_DEBUG=1 python your_gui.py
-
-    SWX_PROGRESSBAR_NOTEBOOK_NATIVE=1 python your_gui.py
 
     SWX_PROGRESSBAR_FORCE_OWNERDRAW=1 SWX_PROGRESSBAR_DEBUG=1 python your_gui.py
 

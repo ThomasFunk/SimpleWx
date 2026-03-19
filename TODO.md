@@ -30,8 +30,8 @@
 	- [x] Priority 2 (basic): `QFrame` (`HLine` / `VLine` -> `Separator`)
 	- [x] Priority 3: `QTreeWidget`, `QTableWidget`, `QListWidget`/`QListView`, `QTableView`, `QTreeView`
 	- [x] Priority 4: `QSplitter`, `QToolBar`
-	- [ ] Priority 5: `QDateTimeEdit`, `QFontComboBox` (`QDateEdit`/`QTimeEdit` already covered)
-	- [ ] Priority 6 (dialogs): `QDialog`, `QDialogButtonBox`, `QFileDialog`, `QMessageBox`
+	- [x] Priority 5 (dialogs): `QDialog`, `QDialogButtonBox`, `QFileDialog`, `QMessageBox`
+	- [ ] Priority 6: `QDateTimeEdit`, `QFontComboBox` (`QDateEdit`/`QTimeEdit` already covered)
 	- [ ] Priority 7 (complex widgets): `QGraphicsView`
 
 ## P2 – Stabilisation

@@ -22,11 +22,19 @@ win.add_menu_bar(Name='menubar')
 
 # Menu 'New'
 win.add_menu(Name='menuNew', Menubar='menubar', Title='New')
+
+# Menu item 'Save'
 win.add_menu_item(Name='actionSave', Menu='menuNew', Title='Save')
+
+# Menu item 'Load'
 win.add_menu_item(Name='actionLoad', Menu='menuNew', Title='Load')
+
+# Menu item 'Exit'
 win.add_menu_item(Name='actionExit', Menu='menuNew', Title='Exit')
 
 # Buttons at the bottom
+
+# Button 'Press Me'
 def on_pushButton_clicked(_event):
     pass
 
