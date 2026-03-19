@@ -4,6 +4,7 @@ __coauthors__ = 'Github Copilot'
 __date__ = "2026/03/11"
 
 import wx
+import os
 
 
 _LAST_SCOPE: str | None = None
@@ -168,3 +169,63 @@ def test_notebook_progressbar_page_does_not_shift_geometry(gui_window) -> None:
     _passed(scope, "Notebook position stays stable on tab switches")
     assert tuple(notebook.GetSize()) == initial_size
     _passed(scope, "Notebook size stays stable on progressbar page")
+
+
+def test_progressbar_mode_split_debug_vs_runtime(gui_window, monkeypatch) -> None:
+    scope = "Progressbar mode"
+
+    monkeypatch.delenv("DEBUGPY_LAUNCHER_PORT", raising=False)
+    monkeypatch.delenv("PYDEVD_USE_FRAME_EVAL", raising=False)
+    monkeypatch.delenv("SWX_PROGRESSBAR_FORCE_OWNERDRAW", raising=False)
+
+    win = gui_window(name="pb_runtime")
+    win.add_progress_bar(
+        Name="pb_runtime",
+        Position=[20, 20],
+        Size=[220, 28],
+        Steps=100,
+        ShowPercent=1,
+    )
+    runtime_obj = win.get_object("pb_runtime")
+    assert isinstance(runtime_obj.ref, wx.Panel)
+    _passed(scope, "Runtime mode uses owner-drawn panel")
+    assert int(runtime_obj.data.get("native", 0)) == 0
+    _passed(scope, "Runtime metadata reports non-native mode")
+
+    monkeypatch.setenv("DEBUGPY_LAUNCHER_PORT", "99999")
+    monkeypatch.delenv("SWX_PROGRESSBAR_FORCE_OWNERDRAW", raising=False)
+
+    win = gui_window(name="pb_debug_env")
+    win.add_progress_bar(
+        Name="pb_debug",
+        Position=[20, 20],
+        Size=[220, 28],
+        Steps=100,
+        ShowPercent=1,
+    )
+    debug_obj = win.get_object("pb_debug")
+    assert isinstance(debug_obj.ref, wx.Gauge)
+    _passed(scope, "Debug env uses native gauge")
+    assert int(debug_obj.data.get("native", 0)) == 1
+    _passed(scope, "Debug env metadata reports native mode")
+    assert isinstance(debug_obj.data.get("native_underlay"), wx.Panel)
+    _passed(scope, "Debug env creates gray underlay panel")
+
+    monkeypatch.setenv("SWX_PROGRESSBAR_FORCE_OWNERDRAW", "1")
+
+    win = gui_window(name="pb_debug_force")
+    win.add_progress_bar(
+        Name="pb_debug_force",
+        Position=[20, 20],
+        Size=[220, 28],
+        Steps=100,
+        ShowPercent=1,
+    )
+    forced_obj = win.get_object("pb_debug_force")
+    assert isinstance(forced_obj.ref, wx.Panel)
+    _passed(scope, "Force owner-draw override works in debug env")
+    assert int(forced_obj.data.get("native", 0)) == 0
+    _passed(scope, "Override metadata reports non-native mode")
+
+    monkeypatch.delenv("DEBUGPY_LAUNCHER_PORT", raising=False)
+    monkeypatch.delenv("SWX_PROGRESSBAR_FORCE_OWNERDRAW", raising=False)
