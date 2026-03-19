@@ -16,7 +16,7 @@ The format is based on Keep a Changelog.
 
 ### Added
 
-- Extended `tools/swx-builder/swx-builder.py` static Qt import support for dialog-style top-level classes: `QDialog`, `QFileDialog`, and `QMessageBox` (alongside `QMainWindow`).
+- Extended `tools/swx-builder/swx-builder.py` static Qt import support for `QDialog` top-level windows (alongside `QMainWindow`).
 - Added `QDialogButtonBox` conversion support by expanding standard buttons into generated SimpleWx `add_button(...)` calls.
 - Added builder-side generation of handler bodies for selected Qt receiver slots (`click()`, `show()`, `hide()`) so generated callbacks can directly act on target widgets.
 - Added/extended builder regression coverage in `tests/test_swx_builder.py` for dialog top-level conversion, `QDialogButtonBox` accepted/rejected mapping, `click()` slot body generation, and colon-prefixed absolute icon-path fallback.
