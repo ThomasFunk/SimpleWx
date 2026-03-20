@@ -1438,6 +1438,46 @@ def test_convert_static_ui_priority6_fontcombobox_maps_to_font_button(tmp_path: 
     _unit_passed("priority 6: QFontComboBox maps to add_font_button with font spec")
 
 
+def test_convert_static_ui_priority6_separate_date_and_time_edits_are_emitted(tmp_path: Path) -> None:
+    ui_path = tmp_path / "prio6_date_time_edits.ui"
+    ui_path.write_text(
+        """<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<ui version=\"4.0\">
+ <class>MainWindow</class>
+ <widget class=\"QMainWindow\" name=\"MainWindow\">
+  <property name=\"geometry\"><rect><x>0</x><y>0</y><width>460</width><height>220</height></rect></property>
+  <widget class=\"QWidget\" name=\"centralwidget\">
+   <widget class=\"QDateEdit\" name=\"dateEdit\">
+    <property name=\"geometry\"><rect><x>20</x><y>50</y><width>120</width><height>29</height></rect></property>
+    <property name=\"date\"><date><year>2026</year><month>3</month><day>20</day></date></property>
+   </widget>
+   <widget class=\"QTimeEdit\" name=\"timeEdit\">
+    <property name=\"geometry\"><rect><x>160</x><y>50</y><width>120</width><height>29</height></rect></property>
+    <property name=\"time\"><time><hour>14</hour><minute>45</minute><second>30</second></time></property>
+   </widget>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
+""",
+        encoding="utf-8",
+    )
+
+    builder = _load_builder_module()
+    generated = builder.convert_ui_to_simplewx(ui_path)
+
+    assert "win.add_date_picker(" in generated
+    assert "Name='dateEdit'" in generated
+    assert "Date='2026-03-20'" in generated
+    assert "# Date picker" in generated
+    assert "win.add_time_picker(" in generated
+    assert "Name='timeEdit'" in generated
+    assert "Time='14:45:30'" in generated
+    assert "# Time picker" in generated
+    _unit_passed("priority 6: separate QDateEdit/QTimeEdit map to date/time picker calls")
+
+
 def test_convert_static_ui_priority7_graphicsview_stylesheet_image_maps_to_add_image(tmp_path: Path) -> None:
     # Create a minimal PNG-like file so the QRC resolution can verify file existence.
     png_file = tmp_path / "scene.png"

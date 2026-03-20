@@ -33,7 +33,6 @@ win.add_menu_item(Name='actionLoad', Menu='menuNew', Title='Load')
 win.add_menu_item(Name='actionExit', Menu='menuNew', Title='Exit')
 
 # Buttons at the bottom
-
 # Button 'Press Me'
 def on_pushButton_clicked(_event):
     pass

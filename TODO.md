@@ -25,7 +25,7 @@
 	- `use_gettext`
 	- `translate`
 
-- [ ] swx-builder: remaining Qt widget mappings (prioritised)
+- [x] swx-builder: remaining Qt widget mappings (prioritised)
 	- [x] Priority 1 (basic): `QComboBox`, `QSlider`, `QProgressBar`
 	- [x] Priority 2 (basic): `QFrame` (`HLine` / `VLine` -> `Separator`)
 	- [x] Priority 3: `QTreeWidget`, `QTableWidget`, `QListWidget`/`QListView`, `QTableView`, `QTreeView`

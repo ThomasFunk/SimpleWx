@@ -173,6 +173,8 @@ SUPPORTED_WIDGET_CLASSES = {
     "QTreeView",
     "QFontComboBox",
     "QGraphicsView",
+    "QDateEdit",
+    "QTimeEdit",
 }
 
 UNSUPPORTED_WIDGET_CLASSES: Dict[str, str] = {
@@ -427,6 +429,58 @@ def _property_rect(widget: ET.Element, name: str, widget_name: str) -> Optional[
     return (x, y, width, height)
 
 
+def _property_date_iso(widget: ET.Element, name: str) -> Optional[str]:
+    prop = _find_property(widget, name)
+    if prop is None:
+        return None
+    date_el = prop.find("date")
+    if date_el is None:
+        return None
+
+    year_raw = (date_el.findtext("year") or "").strip()
+    month_raw = (date_el.findtext("month") or "").strip()
+    day_raw = (date_el.findtext("day") or "").strip()
+    if not (year_raw and month_raw and day_raw):
+        return None
+
+    try:
+        year = int(year_raw)
+        month = int(month_raw)
+        day = int(day_raw)
+    except ValueError:
+        return None
+
+    if year <= 0 or month <= 0 or day <= 0:
+        return None
+    return f"{year:04d}-{month:02d}-{day:02d}"
+
+
+def _property_time_hms(widget: ET.Element, name: str) -> Optional[str]:
+    prop = _find_property(widget, name)
+    if prop is None:
+        return None
+    time_el = prop.find("time")
+    if time_el is None:
+        return None
+
+    hour_raw = (time_el.findtext("hour") or "").strip()
+    minute_raw = (time_el.findtext("minute") or "").strip()
+    second_raw = (time_el.findtext("second") or "0").strip() or "0"
+    if not (hour_raw and minute_raw):
+        return None
+
+    try:
+        hour = int(hour_raw)
+        minute = int(minute_raw)
+        second = int(second_raw)
+    except ValueError:
+        return None
+
+    if hour < 0 or minute < 0 or second < 0:
+        return None
+    return f"{hour:02d}:{minute:02d}:{second:02d}"
+
+
 def validate_static_only(root: ET.Element) -> None:
     # The builder intentionally supports only purely static UIs.
     # As soon as Qt layouts/sizers appear in the XML, abort with a clear error
@@ -563,6 +617,12 @@ def _map_qt_signal_to_simplewx_event(qt_class: str, qt_signal: str) -> Optional[
         "QFontComboBox": {
             "currentfontchanged": "wx.EVT_FONTPICKER_CHANGED",
             "currentindexchanged": "wx.EVT_COMBOBOX",
+        },
+        "QDateEdit": {
+            "datechanged": "wx.adv.EVT_DATE_CHANGED",
+        },
+        "QTimeEdit": {
+            "timechanged": "wx.adv.EVT_TIME_CHANGED",
         },
     }
     return signal_map.get(qt_class, {}).get(signal_name)
@@ -1026,6 +1086,14 @@ def _widget_from_element(
         stylesheet = _property_string(widget_el, "styleSheet") or ""
         if stylesheet:
             extra["raw_stylesheet"] = stylesheet
+    if qt_class == "QDateEdit":
+        date_value = _property_date_iso(widget_el, "date")
+        if date_value:
+            extra["date"] = date_value
+    if qt_class == "QTimeEdit":
+        time_value = _property_time_hms(widget_el, "time")
+        if time_value:
+            extra["time"] = time_value
 
     return WidgetSpec(
         qt_class=qt_class,
@@ -2047,6 +2115,46 @@ def build_widget_call(widget: WidgetSpec, container_frame: Optional[str] = None)
             args.append(f"Function={widget.handler_name}")
         return _format_call("win.add_font_button", args)
 
+    if widget.qt_class == "QDateEdit":
+        args = [
+            f"Name={quote(widget.name)}",
+            f"Position=[{x}, {y}]",
+            f"Size=[{width}, {height}]",
+        ]
+        if "date" in widget.extra:
+            args.append(f"Date={quote(str(widget.extra['date']))}")
+        if widget.title:
+            args.append(f"Title={quote(widget.title)}")
+        if effective_frame:
+            args.append(f"Frame={quote(effective_frame)}")
+        if widget.tooltip:
+            args.append(f"Tooltip={quote(widget.tooltip)}")
+        if widget.signal:
+            args.append(f"Signal={widget.signal}")
+        if widget.handler_name:
+            args.append(f"Function={widget.handler_name}")
+        return _format_call("win.add_date_picker", args)
+
+    if widget.qt_class == "QTimeEdit":
+        args = [
+            f"Name={quote(widget.name)}",
+            f"Position=[{x}, {y}]",
+            f"Size=[{width}, {height}]",
+        ]
+        if "time" in widget.extra:
+            args.append(f"Time={quote(str(widget.extra['time']))}")
+        if widget.title:
+            args.append(f"Title={quote(widget.title)}")
+        if effective_frame:
+            args.append(f"Frame={quote(effective_frame)}")
+        if widget.tooltip:
+            args.append(f"Tooltip={quote(widget.tooltip)}")
+        if widget.signal:
+            args.append(f"Signal={widget.signal}")
+        if widget.handler_name:
+            args.append(f"Function={widget.handler_name}")
+        return _format_call("win.add_time_picker", args)
+
     if widget.qt_class == "QGraphicsView":
         image_path = widget.extra.get("image_path")
         if image_path:
@@ -2130,6 +2238,8 @@ def _widget_inline_comment(widget: WidgetSpec) -> Optional[str]:
         "Line": "Separator",
         "QFontComboBox": "Font combo",
         "QGraphicsView": "Graphics view",
+        "QDateEdit": "Date picker",
+        "QTimeEdit": "Time picker",
     }
 
     kind = kind_map.get(widget.qt_class)
@@ -2272,17 +2382,27 @@ def _render_frame_block(
 ) -> None:
     lines.append(f"# Frame {quote(_widget_comment_title(frame))}")
     lines.append(build_widget_call(frame, container_frame=default_frame))
+    if frame_children:
+        lines.append("")
 
     last_groupbox_comment: Optional[str] = None
     for child in sorted(frame_children, key=_widget_sort_key):
+        just_emitted_groupbox = False
         if child.qt_class == "QRadioButton" and child.group and child.group.startswith("groupBox_"):
             groupbox_comment = child.group[len("groupBox_"):]
             if groupbox_comment and groupbox_comment != last_groupbox_comment:
+                if last_groupbox_comment is not None:  # Not the first GroupBox
+                    lines.append("")
                 lines.append(f"# GroupBox {quote(groupbox_comment)}")
+                just_emitted_groupbox = True
             last_groupbox_comment = groupbox_comment
         else:
             last_groupbox_comment = None
-        _emit_widget_block(lines, child, emitted_handlers, default_frame=default_frame)
+        _emit_widget_block(
+            lines, child, emitted_handlers,
+            leading_blank_before_comment=not just_emitted_groupbox,
+            default_frame=default_frame,
+        )
 
 
 def _render_grouped_widgets(
@@ -2573,10 +2693,15 @@ def render_python(
             continue
 
         if kind == "widget":
+            first_widget_after_header = False
             if not outside_header_emitted:
                 _emit_widgets_header(lines, window.name, outside_are_buttons, header_state)
                 outside_header_emitted = True
-            _emit_widget_block(lines, item, emitted_handlers)
+                first_widget_after_header = True
+            _emit_widget_block(
+                lines, item, emitted_handlers,
+                leading_blank_before_comment=not first_widget_after_header,
+            )
             continue
 
         if kind == "toolbar":

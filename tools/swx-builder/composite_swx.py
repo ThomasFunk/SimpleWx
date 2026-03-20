@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+
+__author__ = 'swxbuilder'
+__date__ = "2026/03/19"
+__version__ = "0.1.0"
+
 from simplewx import SimpleWx as simplewx
 
 # Main Window 'MainWindow'
@@ -7,6 +12,8 @@ win.new_window(Name='MainWindow', Title='MainWindow', Base=0, Size=[470, 415])
 
 # Frame 'Composite Manager'
 win.add_frame(Name='frame_Composite_Manager', Position=[10, 10], Size=[450, 50], Title='Composite Manager')
+
+# Radio 'Xcompmgr'
 win.add_radio_button(
     Name='radioButton',
     Position=[60, 10],
@@ -15,6 +22,8 @@ win.add_radio_button(
     Active=0,
     Frame='frame_Composite_Manager',
 )
+
+# Radio 'Compton'
 win.add_radio_button(
     Name='radioButton_2',
     Position=[280, 10],
@@ -26,6 +35,8 @@ win.add_radio_button(
 
 # Frame 'Shadows'
 win.add_frame(Name='frame_Shadows', Position=[10, 60], Size=[220, 250], Title='Shadows')
+
+# Checkbox 'Enable Shadows'
 win.add_check_button(
     Name='checkBox',
     Position=[10, 20],
@@ -33,6 +44,8 @@ win.add_check_button(
     Active=0,
     Frame='frame_Shadows',
 )
+
+# Checkbox 'On Dock/Panels'
 win.add_check_button(
     Name='checkBox_2',
     Position=[10, 40],
@@ -40,6 +53,8 @@ win.add_check_button(
     Active=0,
     Frame='frame_Shadows',
 )
+
+# Checkbox "Shadows on drag'n'drop"
 win.add_check_button(
     Name='checkBox_5',
     Position=[10, 60],
@@ -47,7 +62,8 @@ win.add_check_button(
     Active=0,
     Frame='frame_Shadows',
 )
-win.add_label(Name='label_8', Position=[15, 94], Title='Opacity:', Frame='frame_Shadows')
+
+# Entry '0.10'
 win.add_entry(
     Name='lineEdit_5',
     Position=[150, 90],
@@ -55,7 +71,11 @@ win.add_entry(
     Title='0.10',
     Frame='frame_Shadows',
 )
-win.add_label(Name='label_6', Position=[15, 124], Title='Blur Radius:', Frame='frame_Shadows')
+
+# Label 'Opacity:'
+win.add_label(Name='label_8', Position=[15, 94], Title='Opacity:', Frame='frame_Shadows')
+
+# Entry '1234'
 win.add_entry(
     Name='lineEdit_4',
     Position=[150, 120],
@@ -63,7 +83,11 @@ win.add_entry(
     Title='1234',
     Frame='frame_Shadows',
 )
-win.add_label(Name='label_9', Position=[15, 154], Title='Left Offset:', Frame='frame_Shadows')
+
+# Label 'Blur Radius:'
+win.add_label(Name='label_6', Position=[15, 124], Title='Blur Radius:', Frame='frame_Shadows')
+
+# Entry '-15'
 win.add_entry(
     Name='lineEdit_6',
     Position=[150, 150],
@@ -71,7 +95,11 @@ win.add_entry(
     Title='-15',
     Frame='frame_Shadows',
 )
-win.add_label(Name='label_10', Position=[15, 184], Title='Top Offset:', Frame='frame_Shadows')
+
+# Label 'Left Offset:'
+win.add_label(Name='label_9', Position=[15, 154], Title='Left Offset:', Frame='frame_Shadows')
+
+# Entry '-15'
 win.add_entry(
     Name='lineEdit_7',
     Position=[150, 180],
@@ -79,7 +107,11 @@ win.add_entry(
     Title='-15',
     Frame='frame_Shadows',
 )
-win.add_label(Name='label_17', Position=[15, 214], Title='Shadow color:', Frame='frame_Shadows')
+
+# Label 'Top Offset:'
+win.add_label(Name='label_10', Position=[15, 184], Title='Top Offset:', Frame='frame_Shadows')
+
+# Entry 'FFFFFF'
 win.add_entry(
     Name='lineEdit_12',
     Position=[150, 210],
@@ -88,8 +120,13 @@ win.add_entry(
     Frame='frame_Shadows',
 )
 
+# Label 'Shadow color:'
+win.add_label(Name='label_17', Position=[15, 214], Title='Shadow color:', Frame='frame_Shadows')
+
 # Frame 'Fading'
 win.add_frame(Name='frame_Fading', Position=[240, 60], Size=[220, 250], Title='Fading')
+
+# Checkbox 'Enable Fading'
 win.add_check_button(
     Name='checkBox_6',
     Position=[10, 20],
@@ -97,6 +134,8 @@ win.add_check_button(
     Active=0,
     Frame='frame_Fading',
 )
+
+# Checkbox 'Fade on Opacity change'
 win.add_check_button(
     Name='checkBox_3',
     Position=[10, 40],
@@ -104,6 +143,8 @@ win.add_check_button(
     Active=0,
     Frame='frame_Fading',
 )
+
+# Checkbox 'Fade on Open/Close'
 win.add_check_button(
     Name='checkBox_4',
     Position=[10, 60],
@@ -111,7 +152,8 @@ win.add_check_button(
     Active=0,
     Frame='frame_Fading',
 )
-win.add_label(Name='label_13', Position=[15, 93], Title='Fade-in Steps:', Frame='frame_Fading')
+
+# Entry '0.028'
 win.add_entry(
     Name='lineEdit_8',
     Position=[150, 90],
@@ -119,7 +161,11 @@ win.add_entry(
     Title='0.028',
     Frame='frame_Fading',
 )
-win.add_label(Name='label_12', Position=[15, 123], Title='Fade-out Steps:', Frame='frame_Fading')
+
+# Label 'Fade-in Steps:'
+win.add_label(Name='label_13', Position=[15, 93], Title='Fade-in Steps:', Frame='frame_Fading')
+
+# Entry '0.03'
 win.add_entry(
     Name='lineEdit_9',
     Position=[150, 120],
@@ -127,7 +173,11 @@ win.add_entry(
     Title='0.03',
     Frame='frame_Fading',
 )
-win.add_label(Name='label_14', Position=[15, 153], Title='Fade Step Time:', Frame='frame_Fading')
+
+# Label 'Fade-out Steps:'
+win.add_label(Name='label_12', Position=[15, 123], Title='Fade-out Steps:', Frame='frame_Fading')
+
+# Entry '10'
 win.add_entry(
     Name='lineEdit_10',
     Position=[150, 150],
@@ -135,7 +185,11 @@ win.add_entry(
     Title='10',
     Frame='frame_Fading',
 )
-win.add_label(Name='label_16', Position=[15, 213], Title='Opacity on menus:', Frame='frame_Fading')
+
+# Label 'Fade Step Time:'
+win.add_label(Name='label_14', Position=[15, 153], Title='Fade Step Time:', Frame='frame_Fading')
+
+# Entry '0.10'
 win.add_entry(
     Name='lineEdit_11',
     Position=[150, 210],
@@ -144,14 +198,27 @@ win.add_entry(
     Frame='frame_Fading',
 )
 
+# Label 'Opacity on menus:'
+win.add_label(Name='label_16', Position=[15, 213], Title='Opacity on menus:', Frame='frame_Fading')
+
 # Frame 'Additional Options'
 win.add_frame(Name='frame_Additional_Options', Position=[10, 320], Size=[450, 55], Title='Additional Options')
+
+# Entry 'lineEdit_13'
 win.add_entry(Name='lineEdit_13', Position=[10, 10], Size=[431, 24], Frame='frame_Additional_Options')
 
 # Buttons at the bottom
+
+# Button 'Restart'
 win.add_button(Name='pushButton_6', Position=[10, 380], Title='Restart', Size=[80, 24])
+
+# Button 'Help'
 win.add_button(Name='pushButton_7', Position=[135, 380], Title='Help', Size=[80, 24])
+
+# Button 'Save'
 win.add_button(Name='pushButton_4', Position=[260, 380], Title='Save', Size=[80, 24])
+
+# Button 'Cancel'
 win.add_button(Name='pushButton_5', Position=[380, 380], Title='Cancel', Size=[80, 24])
 
 if __name__ == '__main__':

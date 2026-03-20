@@ -177,6 +177,8 @@ Currently supported Qt static import includes top-level `QMainWindow` and `QDial
 
 `QDateTimeEdit` is intentionally not supported by the static importer; use separate `QDateEdit` and `QTimeEdit` widgets in Designer.
 
+On Linux/GTK, use at least `135px` width for `QTimeEdit` in Designer; narrower controls can cause truncated time text in the generated SimpleWx time picker.
+
 `QFileDialog` and `QMessageBox` are runtime dialog calls and are intentionally handled in application code, not as static Designer top-level windows.
 
 For full usage, options, examples, and troubleshooting, see:

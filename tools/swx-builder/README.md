@@ -8,23 +8,26 @@ If the `.ui` contains `QLayout`/Sizer-style layout elements, the converter abort
 
 Supported widget mapping (current subset):
 
-- `QPushButton` -> `add_button`
-- `QLabel` -> `add_label`
-- `QFrame` -> `add_frame`
-- `QLineEdit` -> `add_entry`
-- `QCheckBox` -> `add_check_button`
-- `QRadioButton` -> `add_radio_button`
-- `QTabWidget` -> `add_notebook` + `add_nb_page`
-- `QTextEdit` -> `add_text_view`
-- `QSpinBox` -> `add_spin_button`
-- `QComboBox` -> `add_combo_box`
-- `QSlider` -> `add_slider`
-- `QProgressBar` -> `add_progress_bar`
-- `QFontComboBox` -> `add_font_button`
-- `QGraphicsView` -> `add_image` (when stylesheet `background-image` resolves), fallback `add_frame`
-- `QToolBar` / `QAction` -> `add_toolbar`
-- `QSplitter` -> `add_splitter` + `add_splitter_pane`
-- `QMenuBar` / `QMenu` / `QAction` -> `add_menu_bar` / `add_menu` / `add_menu_item`
+- `QPushButton`            ->     `add_button`
+- `QLabel`                 ->     `add_label`
+- `QFrame`                 ->     `add_frame`
+- `QLineEdit`              ->     `add_entry`
+- `QCheckBox`              ->     `add_check_button`
+- `QRadioButton`           ->     `add_radio_button`
+- `QTabWidget`             ->     `add_notebook` + `add_nb_page`
+- `QTextEdit`              ->     `add_text_view`
+- `QSpinBox`               ->     `add_spin_button`
+- `QComboBox`              ->     `add_combo_box`
+- `QSlider`                ->     `add_slider`
+- `QProgressBar`           ->     `add_progress_bar`
+- `QFontComboBox`          ->     `add_font_button`
+- `QGraphicsView`          ->     `add_image` (when stylesheet `background-image` resolves), fallback `add_frame`
+- `QToolBar` + contained `QAction` entries
+                           ->     `add_toolbar` (as `Data=[...]` tool items)
+- `QSplitter`              ->     `add_splitter` + `add_splitter_pane`
+- `QMenuBar`               ->     `add_menu_bar`
+- `QMenu`                  ->     `add_menu`
+- `QAction` inside `QMenu` ->     `add_menu_item`
 
 Explicitly not supported:
 
@@ -57,6 +60,9 @@ Special handling:
     - example: `spin_width=61` -> extra `19px`
     - if the label was at `x=110`, move it to `x=129` (`110 + 19`)
   - This keeps the original visual gap stable across GTK themes.
+- On GTK, `QTimeEdit` exported to SimpleWx `add_time_picker(...)` should have at least `135px` width.
+  - With smaller widths, the GTK time picker can truncate parts of the displayed time text.
+  - Practical recommendation in Qt Designer: set `QTimeEdit.width >= 135` before exporting.
 
 ## Usage
 

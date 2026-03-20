@@ -30,6 +30,7 @@ The format is based on Keep a Changelog.
 - Updated `examples/formbuilder/qt_minimal_expected.py` to match the current generated comment layout.
 - Documented/standardized builder call formatting rule in `_format_call(...)`: fewer than 5 parameters stay single-line; 5+ parameters are emitted multiline with one argument per line.
 - Declared `QDateTimeEdit` intentionally unsupported in the static importer; users should model date/time with separate `QDateEdit` and `QTimeEdit` widgets.
+- Documented GTK-specific sizing guidance for `QTimeEdit` in the builder docs: use at least `135px` width to avoid truncated time text in generated SimpleWx time pickers.
 
 ### Fixed
 
