@@ -3,8 +3,8 @@ from __future__ import annotations
 
 __author__ = 'Thomas Funk'
 __coauthors__ = 'Github Copilot & Gemini'
-__date__ = "2026/03/17"
-__version__ = "0.5.2"
+__date__ = "2026/03/21"
+__version__ = "0.6.0"
 
 from dataclasses import dataclass, field
 from typing import Optional, Any, Dict, Callable
@@ -13,11 +13,16 @@ import gettext
 import os
 import re
 import sys
+import time
 import wx
 import wx.adv
 import wx.dataview as wxdataview
 import wx.grid as wxgrid
 import wx.richtext as wxrichtext
+# --- NSD IPC Extension ---
+import socket
+import json
+import threading
 
 # Global flag to track whether wx image handlers have been initialized
 _WX_IMAGE_HANDLERS_INITIALIZED = False
@@ -139,6 +144,98 @@ class _SimpleTextPrintout(wx.Printout):
         _ = page_width
         return True
 
+class _NSDClientThread(threading.Thread):
+    """Background IPC helper for nsd Unix-socket communication.
+
+    The thread keeps a long-lived receive connection to the daemon, parses
+    newline-delimited JSON messages, and forwards them to the wx main thread
+    via `wx.CallAfter`.
+    """
+
+    def __init__(self, socket_path: str, callback: Callable[[dict[str, Any]], None]):
+        """Initialize IPC thread state.
+
+        Parameters
+        ----------
+
+        socket_path : str
+            Unix domain socket path (for example `/tmp/nsd.sock`).
+
+        callback : Callable[[dict[str, Any]], None]
+            Function invoked for each decoded JSON message.
+        """
+        super().__init__(daemon=True)
+        self.socket_path = str(socket_path)
+        self.callback = callback
+        self.running = True
+        self._recv_buffer = ""
+
+    def stop(self) -> None:
+        """Request graceful thread shutdown on next loop iteration."""
+        self.running = False
+
+    def _dispatch_buffered_messages(self, chunk: str) -> None:
+        """Parse buffered newline-delimited JSON and dispatch valid messages."""
+        self._recv_buffer += chunk
+        while "\n" in self._recv_buffer:
+            raw_message, self._recv_buffer = self._recv_buffer.split("\n", 1)
+            raw_message = raw_message.strip()
+            if raw_message == "":
+                continue
+            try:
+                msg = json.loads(raw_message)
+            except json.JSONDecodeError:
+                continue
+            wx.CallAfter(self.callback, msg)
+
+    @staticmethod
+    def send_once(socket_path: str, msg_dict: dict[str, Any]) -> None:
+        """Send one newline-delimited JSON message to the nsd socket."""
+        with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as s:
+            s.connect(socket_path)
+            s.sendall((json.dumps(msg_dict) + "\n").encode("utf-8"))
+
+    def run(self):
+        """Start receive loop, reconnecting automatically on transient errors."""
+        while self.running:
+            try:
+                if not os.path.exists(self.socket_path):
+                    time.sleep(1)
+                    continue
+                with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as s:
+                    s.settimeout(1.0)
+                    s.connect(self.socket_path)
+                    while self.running:
+                        try:
+                            data = s.recv(4096)
+                        except socket.timeout:
+                            continue
+                        if not data:
+                            break
+                        try:
+                            chunk = data.decode("utf-8")
+                        except UnicodeDecodeError:
+                            continue
+                        self._dispatch_buffered_messages(chunk)
+
+                    trailing = self._recv_buffer.strip()
+                    if trailing:
+                        try:
+                            msg = json.loads(trailing)
+                            wx.CallAfter(self.callback, msg)
+                        except json.JSONDecodeError:
+                            pass
+                    self._recv_buffer = ""
+            except (ConnectionRefusedError, BrokenPipeError, FileNotFoundError, OSError):
+                time.sleep(2)
+
+    def send(self, msg_dict: dict[str, Any]) -> None:
+        """Send one JSON message through the configured nsd socket path."""
+        try:
+            self.send_once(self.socket_path, msg_dict)
+        except Exception as e:
+            print(f"[NSD-IPC Error] {e}")
+
 class SimpleWx:
     """
     Main API class for the SimpleWx rapid UI library.
@@ -206,6 +303,8 @@ class SimpleWx:
         self._translator: Callable[[str], str] = lambda text: str(text)
         self._modeless_dialogs: list[wx.Dialog] = []
         self._window_modal_parents: dict[int, dict[str, Any]] = {}
+        self._nsd_socket_path = "/tmp/nsd.sock"
+        self._nsd_thread: Optional[_NSDClientThread] = None
 
     def _register_modeless_dialog(self, dialog: wx.Dialog) -> None:
         """
@@ -4286,6 +4385,7 @@ class SimpleWx:
 
         win.main_quit()
         """
+        self.disable_nsd()
         if self.main_window is not None:
             self.main_window.Destroy()
 
@@ -13072,6 +13172,93 @@ class SimpleWx:
         # persist updated data map back to object
         object_entry.data = data
 
+    def enable_nsd(self, callback: Callable[[dict[str, Any]], None], socket_path: str = "/tmp/nsd.sock") -> None:
+        """Enable background IPC communication with the nsd daemon.
+
+        Parameters
+        ----------
+
+        callback : Callable[[dict[str, Any]], None]
+            Handler called on the wx main thread for incoming nsd messages.
+
+        socket_path : str, optional
+            Unix socket path used for nsd IPC. Defaults to `/tmp/nsd.sock`.
+
+        Returns
+        -------
+
+        None.
+
+        Notes
+        -----
+
+        Calling `enable_nsd(...)` again replaces the currently running IPC
+        listener thread.
+        """
+        if not callable(callback):
+            raise ValueError("enable_nsd(callback=...) requires a callable callback")
+
+        self._nsd_socket_path = str(socket_path or "/tmp/nsd.sock")
+        if self._nsd_thread is not None:
+            self._nsd_thread.stop()
+
+        self._nsd_thread = _NSDClientThread(self._nsd_socket_path, callback)
+        self._nsd_thread.start()
+
+    def disable_nsd(self) -> None:
+        """Disable background IPC communication with the nsd daemon.
+
+        Returns
+        -------
+
+        None.
+        """
+        if self._nsd_thread is not None:
+            self._nsd_thread.stop()
+            self._nsd_thread = None
+
+    def nsd_send(self, action: str, payload: Optional[dict[str, Any]] = None, msg_type: str = "command") -> None:
+        """Send one IPC message to the nsd daemon.
+
+        Parameters
+        ----------
+
+        action : str
+            Message action name (for example `show_notification`, `mounted`).
+
+        payload : dict[str, Any] | None, optional
+            Additional JSON payload dictionary. Defaults to `{}`.
+
+        msg_type : str, optional
+            Message type (`command`, `broadcast`, `event`, ...).
+
+        Returns
+        -------
+
+        None.
+
+        Notes
+        -----
+
+        If `enable_nsd(...)` is active, the thread transport is reused.
+        Otherwise this method sends directly via a one-shot socket connection.
+        """
+        message = {
+                "src": getattr(self, "app_name", "simplewx_app"),
+                "type": msg_type,
+                "action": action,
+                "payload": payload or {}
+            }
+
+        if self._nsd_thread is not None:
+            self._nsd_thread.send(message)
+            return
+
+        try:
+            _NSDClientThread.send_once(self._nsd_socket_path, message)
+        except Exception as e:
+            print(f"[NSD-IPC Error] {e}")
+            
     def show(self) -> None:
         """
         Shows the main window without entering the event loop.

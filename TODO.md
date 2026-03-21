@@ -34,6 +34,13 @@
 	- [x] Priority 6: `QFontComboBox` (`QDateTimeEdit` intentionally unsupported; use `QDateEdit` + `QTimeEdit`)
 	- [x] Priority 7 (complex widgets): `QGraphicsView`
 
+- [x] NSD IPC integration for SimpleWx apps
+	- [x] Added `enable_nsd(...)` and `nsd_send(...)` API in `simplewx.py`
+	- [x] Added lifecycle helper `disable_nsd(...)` and cleanup in `main_quit()`
+	- [x] Added unit tests for IPC API behavior (`tests/test_unit_core.py`)
+	- [x] Added complete mounted-event example (`examples/samples/nsd_mounted_listener.py`)
+	- [x] Documented JSON envelope and payload formats for `show_notification` and `mounted` in `README.md`
+
 ## P2 – Stabilisation
 
 - [x] Smoke tests for core examples (startup + basic interactions).

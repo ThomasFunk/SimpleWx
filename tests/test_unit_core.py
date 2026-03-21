@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 __author__ = 'Thomas Funk'
 __coauthors__ = 'Github Copilot'
-__date__ = "2026/03/11"
+__date__ = "2026/03/21"
 
 import wx
+import simplewx as simplewx_module
 
 from simplewx import SimpleWx
 
@@ -89,3 +90,93 @@ def test_resolve_art_id_known_and_unknown() -> None:
     assert sw._resolve_art_id(" GTK-SAVE ") == wx.ART_FILE_SAVE
     assert sw._resolve_art_id("not-existing-icon") == wx.ART_MISSING_IMAGE
     _unit_passed("_resolve_art_id maps known/unknown")
+
+
+def test_enable_nsd_starts_thread_and_tracks_socket_path() -> None:
+    original_thread_class = simplewx_module._NSDClientThread
+    created: dict[str, object] = {}
+
+    class FakeNSDThread:
+        def __init__(self, socket_path: str, callback):
+            created["socket_path"] = socket_path
+            created["callback"] = callback
+            created["started"] = False
+            created["stopped"] = False
+
+        def start(self) -> None:
+            created["started"] = True
+
+        def stop(self) -> None:
+            created["stopped"] = True
+
+        def send(self, _msg: dict) -> None:
+            pass
+
+    try:
+        simplewx_module._NSDClientThread = FakeNSDThread  # type: ignore[assignment]
+        sw = _new_simplewx_stub()
+        sw._nsd_thread = None
+        sw._nsd_socket_path = "/tmp/nsd.sock"
+
+        callback = lambda _msg: None
+        sw.enable_nsd(callback, socket_path="/tmp/custom_nsd.sock")
+
+        assert created["socket_path"] == "/tmp/custom_nsd.sock"
+        assert created["callback"] is callback
+        assert created["started"] is True
+        assert sw._nsd_socket_path == "/tmp/custom_nsd.sock"
+        _unit_passed("enable_nsd starts thread and stores socket path")
+    finally:
+        simplewx_module._NSDClientThread = original_thread_class  # type: ignore[assignment]
+
+
+def test_nsd_send_uses_running_nsd_thread_and_payload_shape() -> None:
+    sw = _new_simplewx_stub()
+    sent_messages: list[dict] = []
+
+    class FakeThread:
+        def send(self, msg: dict) -> None:
+            sent_messages.append(msg)
+
+    sw._nsd_thread = FakeThread()
+    sw._nsd_socket_path = "/tmp/nsd.sock"
+    sw.app_name = "demo_gui"
+
+    sw.nsd_send("show_notification", {"title": "Hello", "message": "World"}, msg_type="command")
+
+    assert len(sent_messages) == 1
+    assert sent_messages[0] == {
+        "src": "demo_gui",
+        "type": "command",
+        "action": "show_notification",
+        "payload": {"title": "Hello", "message": "World"},
+    }
+    _unit_passed("nsd_send uses active thread and keeps nsd message schema")
+
+
+def test_nsd_send_without_enable_uses_send_once_with_socket_path() -> None:
+    original_send_once = simplewx_module._NSDClientThread.send_once
+    calls: list[tuple[str, dict]] = []
+
+    def fake_send_once(socket_path: str, msg_dict: dict) -> None:
+        calls.append((socket_path, msg_dict))
+
+    try:
+        simplewx_module._NSDClientThread.send_once = staticmethod(fake_send_once)
+
+        sw = _new_simplewx_stub()
+        sw._nsd_thread = None
+        sw._nsd_socket_path = "/tmp/nsd-custom.sock"
+
+        sw.nsd_send("mounted", {"device": "/dev/sdb1"}, msg_type="event")
+
+        assert len(calls) == 1
+        socket_path, msg = calls[0]
+        assert socket_path == "/tmp/nsd-custom.sock"
+        assert msg["src"] == "simplewx_app"
+        assert msg["type"] == "event"
+        assert msg["action"] == "mounted"
+        assert msg["payload"] == {"device": "/dev/sdb1"}
+        _unit_passed("nsd_send works without enable_nsd via send_once")
+    finally:
+        simplewx_module._NSDClientThread.send_once = original_send_once

@@ -1,4 +1,4 @@
-SimpleWx version 0.5.2
+SimpleWx version 0.6.0
 =======================
 
 SimpleWx is a Python wrapper around wxPython (the Python binding for wxWidgets)
@@ -139,6 +139,8 @@ Basic examples for a quick start:
     - locale/de/LC_MESSAGES/simplewx_demo.po.
   - Compiled runtime file: 
     - locale/de/LC_MESSAGES/simplewx_demo.mo.
+- **NSD IPC mounted listener:**
+  - examples/samples/nsd_mounted_listener.py
 
 You can rebuild it with:
 
@@ -184,6 +186,61 @@ On Linux/GTK, use at least `135px` width for `QTimeEdit` in Designer; narrower c
 For full usage, options, examples, and troubleshooting, see:
 
   `tools/swx-builder/README.md`
+
+
+NSD IPC JSON PAYLOADS
+---------------------
+
+SimpleWx apps can connect to nsd daemon via:
+
+    win.enable_nsd(on_nsd_message, socket_path="/tmp/nsd.sock")
+
+Messages follow the common envelope:
+
+```json
+{
+  "src": "nsd.notifications | nsd.automount | your_client",
+  "type": "broadcast | command | event",
+  "action": "show_notification | mounted | ...",
+  "payload": { }
+}
+```
+
+Expected payload for `action: show_notification` (broadcast from nsd notifications plugin):
+
+```json
+{
+  "src": "nsd.notifications",
+  "type": "broadcast",
+  "action": "show_notification",
+  "payload": {
+    "app": "string",
+    "title": "string",
+    "message": "string",
+    "icon": "string",
+    "timeout": 5000
+  }
+}
+```
+
+Expected payload for `action: mounted` (broadcast from nsd automount plugin):
+
+```json
+{
+  "src": "nsd.automount",
+  "type": "broadcast",
+  "action": "mounted",
+  "payload": {
+    "device": "/dev/sdb1",
+    "mount_point": "/run/media/user/LABEL",
+    "label": "LABEL",
+    "uuid": "UUID-STRING",
+    "fs_type": "vfat"
+  }
+}
+```
+
+Implementation note: `payload` should always be handled as optional and type-checked (`dict`), because clients may send custom actions.
 
 
 INSTALLATION

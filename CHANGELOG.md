@@ -22,6 +22,9 @@ The format is based on Keep a Changelog.
 - Added/extended builder regression coverage in `tests/test_swx_builder.py` for dialog top-level conversion, `QDialogButtonBox` accepted/rejected mapping, `click()` slot body generation, and colon-prefixed absolute icon-path fallback.
 - Added static Qt import mapping for `QFontComboBox` to generated SimpleWx `add_font_button(...)` calls.
 - Added static Qt import mapping for `QGraphicsView` by reading stylesheet `background-image: url(...)`, resolving `.qrc` paths, and generating `add_image(...)` (or fallback `add_frame(...)` when no image is resolvable).
+- Added SimpleWx nsd IPC API in `simplewx.py`: `enable_nsd(...)`, `disable_nsd(...)`, and `nsd_send(...)`.
+- Added `examples/samples/nsd_mounted_listener.py` as a complete GUI example reacting to nsd `mounted` broadcasts.
+- Added NSD IPC unit coverage in `tests/test_unit_core.py` for listener setup and send-path behavior.
 
 ### Changed
 
@@ -31,6 +34,7 @@ The format is based on Keep a Changelog.
 - Documented/standardized builder call formatting rule in `_format_call(...)`: fewer than 5 parameters stay single-line; 5+ parameters are emitted multiline with one argument per line.
 - Declared `QDateTimeEdit` intentionally unsupported in the static importer; users should model date/time with separate `QDateEdit` and `QTimeEdit` widgets.
 - Documented GTK-specific sizing guidance for `QTimeEdit` in the builder docs: use at least `135px` width to avoid truncated time text in generated SimpleWx time pickers.
+- Documented NSD IPC JSON envelope and payload formats (`show_notification`, `mounted`) in `README.md` for GUI/client integration.
 
 ### Fixed
 
@@ -38,6 +42,26 @@ The format is based on Keep a Changelog.
 - Fixed `QDialogButtonBox` multi-connection handling in `swx-builder.py` by preserving all sender connections instead of last-write-wins, so accepted/rejected can both be wired correctly.
 - Fixed Qt icon resolution in `swx-builder.py` for colon-prefixed absolute path forms (for example `:/home/.../icon.png`) via basename and direct-path fallbacks when qrc key lookup does not match.
 - Fixed builder CLI error wording for unsupported widgets by emitting an English abort prefix (`Abort:`) and explicit unsupported-class guidance text.
+- Fixed SimpleWx nsd IPC receive/send robustness by using newline-delimited JSON framing, buffered parsing, and one-shot fallback send when no listener thread is active.
+
+## [0.6.0] - 2026-03-21
+
+### Added
+
+- Added SimpleWx nsd IPC API in `simplewx.py`: `enable_nsd(...)`, `disable_nsd(...)`, and `nsd_send(...)`.
+- Added `examples/samples/nsd_mounted_listener.py` as a complete GUI example reacting to nsd `mounted` broadcasts.
+- Added NSD IPC unit coverage in `tests/test_unit_core.py` for listener setup and send-path behavior.
+
+### Changed
+
+- Bumped library metadata in `simplewx.py` to `__version__ = "0.6.0"`.
+- Updated the README headline version from `0.5.2` to `0.6.0`.
+- Documented NSD IPC JSON envelope and payload formats (`show_notification`, `mounted`) in `README.md` for GUI/client integration.
+- Updated `TODO.md` with completed NSD IPC integration work items.
+
+### Fixed
+
+- Fixed SimpleWx nsd IPC receive/send robustness by using newline-delimited JSON framing, buffered parsing, and one-shot fallback send when no listener thread is active.
 
 ## [0.5.2] - 2026-03-17
 
